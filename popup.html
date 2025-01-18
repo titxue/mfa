@@ -10,7 +10,6 @@
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
       background-color: #ffffff;
-      min-height: 100px;
     }
     .header {
       padding: 16px;
@@ -103,10 +102,7 @@
     .form-container {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset: 0;
       background-color: white;
       z-index: 100;
     }
@@ -144,7 +140,6 @@
       border-bottom: 1px solid #e1e4e8;
       font-size: 16px;
       outline: none;
-      transition: border-color 0.2s;
     }
     .input-group input:focus {
       border-bottom-color: #1a73e8;
@@ -154,7 +149,7 @@
       right: 16px;
       top: 8px;
     }
-    button.form-button {
+    .form-button {
       padding: 8px 16px;
       border: none;
       background: none;
@@ -163,7 +158,7 @@
       font-weight: 500;
       cursor: pointer;
     }
-    button.form-button:hover {
+    .form-button:hover {
       background-color: #f6fafe;
     }
     .toast-container {
