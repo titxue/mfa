@@ -136,13 +136,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             // 注入内容脚本
             await chrome.scripting.executeScript({
               target: { tabId: tab.id },
-              func: (code) => {
+              func: (code, accountName) => {
+                // 获取所有可能的输入框
                 const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
                 
                 // 查找可能的 TOTP 输入框
                 const totpInput = Array.from(inputs).find(input => {
+                  // 检查输入框的各种属性
                   const attrs = input.getAttributeNames();
-                  return attrs.some(attr => {
+                  const hasOTPAttr = attrs.some(attr => {
                     const value = input.getAttribute(attr).toLowerCase();
                     return value.includes('otp') || 
                            value.includes('2fa') || 
@@ -151,7 +153,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                            value.includes('verification') ||
                            value.includes('security') ||
                            value.includes('code');
-                  }) || input.placeholder?.toLowerCase().includes('code');
+                  });
+
+                  if (hasOTPAttr) return true;
+
+                  // 检查周围的文本是否包含账户名称
+                  const nearbyText = [];
+                  let element = input;
+                  
+                  // 向上查找最多4层
+                  for (let i = 0; i < 4 && element; i++) {
+                    // 获取元素内的所有文本
+                    const walker = document.createTreeWalker(
+                      element,
+                      NodeFilter.SHOW_TEXT,
+                      null,
+                      false
+                    );
+                    
+                    let node;
+                    while (node = walker.nextNode()) {
+                      nearbyText.push(node.textContent.toLowerCase());
+                    }
+                    
+                    // 获取label文本
+                    if (element.tagName === 'INPUT' && element.id) {
+                      const label = document.querySelector(`label[for="${element.id}"]`);
+                      if (label) {
+                        nearbyText.push(label.textContent.toLowerCase());
+                      }
+                    }
+                    
+                    element = element.parentElement;
+                  }
+                  
+                  // 检查是否包含账户名称
+                  const accountNameLower = accountName.toLowerCase();
+                  return nearbyText.some(text => 
+                    text.includes(accountNameLower) || 
+                    accountNameLower.includes(text.trim())
+                  );
                 });
 
                 if (totpInput) {
@@ -162,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 return false;
               },
-              args: [code]
+              args: [code, account.name]
             });
             showToast('验证码已自动填充');
           } catch (error) {
