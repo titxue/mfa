@@ -58,28 +58,73 @@ const TOTP = {
   }
 };
 
-// 缓存的状态
-let cachedApiKey = '';
-let cachedAccounts = [];
+// 公共函数
+const Utils = {
+  // 检查输入框是否是 TOTP 输入框
+  isTOTPInput: (input) => {
+    const attrs = input.getAttributeNames();
+    return attrs.some(attr => {
+      const value = input.getAttribute(attr).toLowerCase();
+      return value.includes('otp') || 
+             value.includes('2fa') || 
+             value.includes('totp') || 
+             value.includes('authenticator') ||
+             value.includes('verification') ||
+             value.includes('security') ||
+             value.includes('code');
+    });
+  },
 
-// 初始化缓存
-async function initCache() {
-  const [{ apiKey }, { accounts }] = await Promise.all([
-    chrome.storage.local.get('apiKey'),
-    chrome.storage.sync.get('accounts')
-  ]);
-  cachedApiKey = apiKey || '';
-  cachedAccounts = accounts || [];
-  console.log('状态缓存已初始化');
-}
+  // 收集页面信息
+  collectPageInfo: () => {
+    const pageInfo = {
+      title: document.title,
+      domain: window.location.hostname,
+      texts: [],
+      labels: []
+    };
 
-// 监听消息
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === 'settingsUpdated' || message.type === 'accountsUpdated') {
-    console.log('收到更新通知:', message.type);
-    initCache();
+    // 收集所有可见文本
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode: (node) => {
+          const style = window.getComputedStyle(node.parentElement);
+          return style.display !== 'none' && style.visibility !== 'hidden' && node.textContent.trim() ? 
+                 NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+        }
+      }
+    );
+
+    while (walker.nextNode()) {
+      const text = walker.currentNode.textContent.trim();
+      if (text) pageInfo.texts.push(text);
+    }
+
+    // 收集所有表单标签
+    document.querySelectorAll('label').forEach(label => {
+      const text = label.textContent.trim();
+      if (text) pageInfo.labels.push(text);
+    });
+
+    return pageInfo;
+  },
+
+  // 填充验证码
+  fillTOTPCode: (code) => {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+    const totpInput = Array.from(inputs).find(Utils.isTOTPInput);
+
+    if (totpInput) {
+      totpInput.value = code.replace(/\s/g, '');
+      totpInput.dispatchEvent(new Event('input', { bubbles: true }));
+      totpInput.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    }
+    return false;
   }
-});
+};
 
 // 调用 DeepSeek API
 async function callDeepSeekAPI(prompt, apiKey) {
@@ -95,12 +140,7 @@ async function callDeepSeekAPI(prompt, apiKey) {
     },
     body: JSON.stringify({
       model: 'deepseek-chat',
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
+      messages: [{ role: 'user', content: prompt }],
       temperature: 0.1,
       max_tokens: 100
     })
@@ -119,55 +159,40 @@ async function callDeepSeekAPI(prompt, apiKey) {
 // 分析页面并自动填充
 async function analyzeAndFill(tab) {
   try {
-    // 使用缓存的 API key
-    if (!cachedApiKey) {
+    // 获取 API key 和账户列表
+    const [{ apiKey }, { accounts }] = await Promise.all([
+      chrome.storage.local.get('apiKey'),
+      chrome.storage.sync.get('accounts')
+    ]);
+
+    if (!apiKey) {
       console.log('未设置 API Key，跳过自动填充');
       return;
     }
 
-    // 使用缓存的账户列表
-    if (!cachedAccounts || cachedAccounts.length === 0) {
+    if (!accounts?.length) {
       console.log('无可用账户，跳过自动填充');
+      return;
+    }
+
+    // 检查是否有 TOTP 输入框
+    const [hasInput] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: () => {
+        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+        return Array.from(inputs).some(Utils.isTOTPInput);
+      }
+    });
+
+    if (!hasInput?.result) {
+      console.log('未找到验证码输入框，跳过自动填充');
       return;
     }
 
     // 收集页面信息
     const [pageResult] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: () => {
-        const pageInfo = {
-          title: document.title,
-          domain: window.location.hostname,
-          texts: [],
-          labels: []
-        };
-
-        // 收集所有可见文本
-        const walker = document.createTreeWalker(
-          document.body,
-          NodeFilter.SHOW_TEXT,
-          {
-            acceptNode: (node) => {
-              const style = window.getComputedStyle(node.parentElement);
-              return style.display !== 'none' && style.visibility !== 'hidden' && node.textContent.trim() ? 
-                     NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-            }
-          }
-        );
-
-        while (walker.nextNode()) {
-          const text = walker.currentNode.textContent.trim();
-          if (text) pageInfo.texts.push(text);
-        }
-
-        // 收集所有表单标签
-        document.querySelectorAll('label').forEach(label => {
-          const text = label.textContent.trim();
-          if (text) pageInfo.labels.push(text);
-        });
-
-        return pageInfo;
-      }
+      func: Utils.collectPageInfo
     });
 
     if (!pageResult?.result) {
@@ -177,32 +202,6 @@ async function analyzeAndFill(tab) {
 
     const pageInfo = pageResult.result;
     console.log('收集到的页面信息:', pageInfo);
-
-    // 检查是否有可能的 TOTP 输入框
-    const [hasInput] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => {
-        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
-        return Array.from(inputs).some(input => {
-          const attrs = input.getAttributeNames();
-          return attrs.some(attr => {
-            const value = input.getAttribute(attr).toLowerCase();
-            return value.includes('otp') || 
-                   value.includes('2fa') || 
-                   value.includes('totp') || 
-                   value.includes('authenticator') ||
-                   value.includes('verification') ||
-                   value.includes('security') ||
-                   value.includes('code');
-          });
-        });
-      }
-    });
-
-    if (!hasInput?.result) {
-      console.log('未找到验证码输入框，跳过自动填充');
-      return;
-    }
 
     // 使用 AI 分析页面内容和账户列表
     const prompt = `
@@ -215,13 +214,13 @@ async function analyzeAndFill(tab) {
       - 表单标签: ${pageInfo.labels.join(' ')}
       
       账户列表：
-      ${cachedAccounts.map(a => `- ${a.name}`).join('\n')}
+      ${accounts.map(a => `- ${a.name}`).join('\n')}
       
       请分析页面内容和账户列表，选择最合适的账户。只需要返回账户名称，不需要其他解释。
       如果没有合适的账户，返回空字符串。
     `;
 
-    const matchedAccountName = await callDeepSeekAPI(prompt, cachedApiKey);
+    const matchedAccountName = await callDeepSeekAPI(prompt, apiKey);
     console.log('AI 选择的账户:', matchedAccountName);
 
     if (!matchedAccountName) {
@@ -229,40 +228,17 @@ async function analyzeAndFill(tab) {
       return;
     }
 
-    const matchedAccount = cachedAccounts.find(a => a.name === matchedAccountName);
+    const matchedAccount = accounts.find(a => a.name === matchedAccountName);
     if (!matchedAccount) {
       console.log('未找到匹配的账户，跳过自动填充');
       return;
     }
 
-    // 生成验证码
+    // 生成并填充验证码
     const code = await TOTP.generateTOTP(matchedAccount.secret);
-
-    // 填充验证码
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: (code) => {
-        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
-        const totpInput = Array.from(inputs).find(input => {
-          const attrs = input.getAttributeNames();
-          return attrs.some(attr => {
-            const value = input.getAttribute(attr).toLowerCase();
-            return value.includes('otp') || 
-                   value.includes('2fa') || 
-                   value.includes('totp') || 
-                   value.includes('authenticator') ||
-                   value.includes('verification') ||
-                   value.includes('security') ||
-                   value.includes('code');
-          });
-        });
-
-        if (totpInput) {
-          totpInput.value = code.replace(/\s/g, '');
-          totpInput.dispatchEvent(new Event('input', { bubbles: true }));
-          totpInput.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      },
+      func: Utils.fillTOTPCode,
       args: [code]
     });
 
@@ -280,7 +256,4 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
       await analyzeAndFill(tab);
     }
   }
-});
-
-// 初始化
-initCache(); 
+}); 
