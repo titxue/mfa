@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let accounts = [];
   let accountItems = [];
 
-  // 直接初始化界面
+  // 初始化空状态界面
   accountList.innerHTML = `
     <div class="empty-state">
       <svg class="empty-state-icon" viewBox="0 0 24 24">
@@ -33,21 +33,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       scrollTop: container.scrollTop
     };
     chrome.storage.local.set({ state });
-  }
-
-  // 恢复表单状态和滚动位置
-  async function restoreState() {
-    const { state } = await chrome.storage.local.get('state');
-    if (state) {
-      if (state.formVisible) {
-        formContainer.classList.add('show');
-      }
-      accountInput.value = state.accountValue || '';
-      secretInput.value = state.secretValue || '';
-      if (state.scrollTop) {
-        container.scrollTop = state.scrollTop;
-      }
-    }
   }
 
   // 创建圆形进度条
@@ -76,13 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     text.textContent = Math.ceil(percent / (100/30));
   }
 
-  // 加载保存的账户
-  async function loadAccounts() {
-    const result = await chrome.storage.sync.get('accounts');
-    accounts = result.accounts || [];
-    await renderAccounts();
-  }
-
   // 保存账户
   async function saveAccounts() {
     await chrome.storage.sync.set({ accounts });
@@ -96,7 +74,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     toast.textContent = message;
     toastContainer.appendChild(toast);
 
-    // 强制重绘以触发动画
     toast.offsetHeight;
     toast.classList.add('show');
 
@@ -104,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       toast.classList.remove('show');
       setTimeout(() => {
         toastContainer.removeChild(toast);
-      }, 300); // 等待淡出动画完成
+      }, 300);
     }, duration);
   }
 
@@ -118,7 +95,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     accountItem.dataset.account = account.name;
     accountItem.dataset.secret = account.secret;
 
-    // 创建账户信息区域
     const accountInfo = document.createElement('div');
     accountInfo.className = 'account-info';
     accountInfo.innerHTML = `
@@ -126,22 +102,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="account-code">${formattedCode}</div>
     `;
 
-    // 添加圆形进度条
     const progress = createProgressRing();
     const remainingSeconds = TOTP.getRemainingSeconds();
     const percentage = (remainingSeconds / 30) * 100;
     setProgress(progress.circle, progress.text, progress.circumference, percentage);
 
-    // 组装界面
     accountItem.appendChild(accountInfo);
     accountItem.appendChild(progress.container);
 
-    // 长按删除功能
     let pressTimer;
     let isLongPress = false;
     const originalBackground = accountItem.style.background;
 
-    accountItem.addEventListener('mousedown', () => {
+    const handlePress = () => {
       pressTimer = setTimeout(() => {
         isLongPress = true;
         accountItem.style.background = '#ffebee';
@@ -152,55 +125,33 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         accountItem.style.background = originalBackground;
       }, 800);
-    });
+    };
 
-    accountItem.addEventListener('mouseup', () => {
+    const handleRelease = () => {
       clearTimeout(pressTimer);
       if (!isLongPress) {
-        // 点击复制验证码
         navigator.clipboard.writeText(code).then(() => {
           showToast('验证码已复制到剪贴板');
         });
       }
       isLongPress = false;
-    });
+    };
 
-    accountItem.addEventListener('mouseleave', () => {
+    const handleCancel = () => {
       clearTimeout(pressTimer);
       accountItem.style.background = originalBackground;
       isLongPress = false;
-    });
+    };
 
-    // 添加触摸支持
-    accountItem.addEventListener('touchstart', (e) => {
-      pressTimer = setTimeout(() => {
-        isLongPress = true;
-        accountItem.style.background = '#ffebee';
-        const confirmDelete = confirm(`确定要删除账户 "${account.name}" 吗？`);
-        if (confirmDelete) {
-          accounts = accounts.filter(a => a.name !== account.name);
-          saveAccounts();
-        }
-        accountItem.style.background = originalBackground;
-      }, 800);
-    });
+    // 鼠标事件
+    accountItem.addEventListener('mousedown', handlePress);
+    accountItem.addEventListener('mouseup', handleRelease);
+    accountItem.addEventListener('mouseleave', handleCancel);
 
-    accountItem.addEventListener('touchend', (e) => {
-      clearTimeout(pressTimer);
-      if (!isLongPress) {
-        // 点击复制验证码
-        navigator.clipboard.writeText(code).then(() => {
-          showToast('验证码已复制到剪贴板');
-        });
-      }
-      isLongPress = false;
-    });
-
-    accountItem.addEventListener('touchcancel', () => {
-      clearTimeout(pressTimer);
-      accountItem.style.background = originalBackground;
-      isLongPress = false;
-    });
+    // 触摸事件
+    accountItem.addEventListener('touchstart', handlePress);
+    accountItem.addEventListener('touchend', handleRelease);
+    accountItem.addEventListener('touchcancel', handleCancel);
 
     return {
       element: accountItem,
@@ -242,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return accountItems;
   }
 
-  // 优化更新逻辑
+  // 更新所有账户
   function updateAll() {
     if (accountItems.length > 0) {
       const remainingSeconds = TOTP.getRemainingSeconds();
@@ -255,13 +206,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // 添加新账户按钮
+  // 事件监听
   addNewButton.addEventListener('click', () => {
     formContainer.classList.add('show');
     saveState();
   });
 
-  // 保存按钮
   saveButton.addEventListener('click', async () => {
     const name = accountInput.value.trim();
     const secret = secretInput.value.trim();
@@ -272,7 +222,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-      // 验证密钥是否有效
       await TOTP.generateTOTP(secret);
       accounts.push({ name, secret });
       await saveAccounts();
@@ -285,7 +234,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 取消按钮
   cancelButton.addEventListener('click', () => {
     formContainer.classList.remove('show');
     accountInput.value = '';
@@ -293,30 +241,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     saveState();
   });
 
-  // 监听输入变化
   accountInput.addEventListener('input', saveState);
   secretInput.addEventListener('input', saveState);
-
-  // 监听滚动
   container.addEventListener('scroll', saveState);
 
-  // 优化初始化顺序
+  // 初始化
   try {
-    // 并行加载数据
     const [stateResult, accountsResult] = await Promise.all([
       chrome.storage.local.get('state'),
       chrome.storage.sync.get('accounts')
     ]);
 
-    // 设置账户数据
     accounts = accountsResult.accounts || [];
     
-    // 如果有账户数据，立即渲染
     if (accounts.length > 0) {
       accountItems = await renderAccounts();
     }
 
-    // 恢复状态
     if (stateResult.state) {
       const { state } = stateResult;
       if (state.formVisible) {
@@ -329,8 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
     
-    // 开始定时更新
-    const updateTimer = setInterval(updateAll, 1000);
+    setInterval(updateAll, 1000);
   } catch (error) {
     console.error('初始化失败:', error);
     accountList.innerHTML = `
