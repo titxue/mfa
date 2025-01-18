@@ -11,6 +11,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const toastContainer = document.getElementById('toastContainer');
 
   let accounts = [];
+  let accountItems = [];
+
+  // 直接初始化界面
+  accountList.innerHTML = `
+    <div class="empty-state">
+      <svg class="empty-state-icon" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+      </svg>
+      <div>暂无账户</div>
+      <div style="margin-top: 8px; font-size: 12px; opacity: 0.7">点击右上角添加账户开始使用</div>
+    </div>
+  `;
 
   // 保存表单状态和滚动位置
   function saveState() {
@@ -74,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 保存账户
   async function saveAccounts() {
     await chrome.storage.sync.set({ accounts });
-    await renderAccounts();
+    accountItems = await renderAccounts();
   }
 
   // 显示 Toast 消息
@@ -207,33 +219,38 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 渲染账户列表
   async function renderAccounts() {
-    // 创建所有账户项（不等待动画帧）
+    if (accounts.length === 0) {
+      accountList.innerHTML = `
+        <div class="empty-state">
+          <svg class="empty-state-icon" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+          </svg>
+          <div>暂无账户</div>
+          <div style="margin-top: 8px; font-size: 12px; opacity: 0.7">点击右上角添加账户开始使用</div>
+        </div>
+      `;
+      return [];
+    }
+
+    const fragment = document.createDocumentFragment();
     const accountItems = await Promise.all(accounts.map(createAccountItem));
-    
-    // 清除骨架屏并添加实际内容
-    requestAnimationFrame(() => {
-      accountList.innerHTML = '';
-      accountItems.forEach(item => accountList.appendChild(item.element));
-    });
+    accountItems.forEach(item => fragment.appendChild(item.element));
+
+    accountList.innerHTML = '';
+    accountList.appendChild(fragment);
 
     return accountItems;
   }
 
-  let accountItems = [];
-
   // 优化更新逻辑
   function updateAll() {
-    if (accounts.length > 0) {
+    if (accountItems.length > 0) {
       const remainingSeconds = TOTP.getRemainingSeconds();
-      
-      // 使用 RAF 进行批量更新
-      requestAnimationFrame(() => {
-        accountItems.forEach(item => {
-          item.updateProgress();
-          if (remainingSeconds === 30) {
-            item.updateCode();
-          }
-        });
+      accountItems.forEach(item => {
+        item.updateProgress();
+        if (remainingSeconds === 30) {
+          item.updateCode();
+        }
       });
     }
   }
@@ -291,6 +308,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       chrome.storage.sync.get('accounts')
     ]);
 
+    // 设置账户数据
+    accounts = accountsResult.accounts || [];
+    
+    // 如果有账户数据，立即渲染
+    if (accounts.length > 0) {
+      accountItems = await renderAccounts();
+    }
+
     // 恢复状态
     if (stateResult.state) {
       const { state } = stateResult;
@@ -300,24 +325,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       accountInput.value = state.accountValue || '';
       secretInput.value = state.secretValue || '';
       if (state.scrollTop) {
-        requestAnimationFrame(() => {
-          container.scrollTop = state.scrollTop;
-        });
+        container.scrollTop = state.scrollTop;
       }
     }
-
-    // 设置账户数据
-    accounts = accountsResult.accounts || [];
-    
-    // 渲染账户列表
-    accountItems = await renderAccounts();
     
     // 开始定时更新
-    setInterval(updateAll, 1000);
+    const updateTimer = setInterval(updateAll, 1000);
   } catch (error) {
     console.error('初始化失败:', error);
     accountList.innerHTML = `
-      <div class="loading" style="color: #d93025;">
+      <div class="empty-state" style="color: #d93025;">
         <span>加载失败，请重试</span>
       </div>
     `;
