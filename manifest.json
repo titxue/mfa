@@ -8,15 +8,19 @@
     "activeTab",
     "scripting",
     "clipboardWrite",
-    "generativeContentScripts",
     "webNavigation",
     "tabs"
   ],
   "host_permissions": [
     "<all_urls>"
   ],
+  "web_accessible_resources": [{
+    "resources": ["totp.js"],
+    "matches": ["<all_urls>"]
+  }],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "popup.html"

@@ -89,7 +89,12 @@ async function analyzeAndFill(tab) {
       }
     });
 
-    const pageInfo = pageResult[0].result;
+    if (!pageResult?.result) {
+      console.log('无法获取页面信息，跳过自动填充');
+      return;
+    }
+
+    const pageInfo = pageResult.result;
     console.log('收集到的页面信息:', pageInfo);
 
     // 检查是否有可能的 TOTP 输入框
@@ -113,7 +118,7 @@ async function analyzeAndFill(tab) {
       }
     });
 
-    if (!hasInput.result) {
+    if (!hasInput?.result) {
       console.log('未找到验证码输入框，跳过自动填充');
       return;
     }
