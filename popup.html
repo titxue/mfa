@@ -38,6 +38,8 @@
     }
     .account-list {
       padding: 8px 0;
+      min-height: 100px;
+      will-change: contents;
     }
     .account-item {
       padding: 16px;
@@ -45,6 +47,9 @@
       align-items: center;
       border-bottom: 1px solid #f1f3f4;
       position: relative;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeIn 0.3s ease forwards;
     }
     .account-info {
       flex-grow: 1;
@@ -64,6 +69,7 @@
       font-size: 32px;
       color: #202124;
       letter-spacing: 2px;
+      transition: opacity 0.2s;
     }
     .progress-container {
       position: absolute;
@@ -86,7 +92,8 @@
     .progress-ring-circle.progress {
       stroke: #1a73e8;
       stroke-dasharray: 100 100;
-      transition: stroke-dashoffset 1s linear;
+      transition: stroke-dashoffset 0.3s linear;
+      will-change: stroke-dashoffset;
     }
     .progress-text {
       position: absolute;
@@ -186,6 +193,36 @@
       opacity: 1;
       transform: translateY(0);
     }
+    /* 添加淡入动画 */
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    /* 添加加载动画 */
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100px;
+      color: #5f6368;
+      font-size: 14px;
+    }
+    .loading-spinner {
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+      border: 2px solid #e1e4e8;
+      border-top-color: #1a73e8;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 <body>
@@ -196,7 +233,10 @@
 
   <div class="container">
     <div class="account-list" id="accountList">
-      <!-- 账户列表将通过 JavaScript 动态填充 -->
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <span>加载中...</span>
+      </div>
     </div>
   </div>
 

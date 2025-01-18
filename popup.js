@@ -207,24 +207,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 渲染账户列表
   async function renderAccounts() {
-    accountList.innerHTML = '';
+    // 先清空列表并显示加载动画
+    accountList.innerHTML = `
+      <div class="loading">
+        <div class="loading-spinner"></div>
+        <span>加载中...</span>
+      </div>
+    `;
+
+    // 使用 requestAnimationFrame 延迟渲染
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
+    // 创建所有账户项
     const accountItems = await Promise.all(accounts.map(createAccountItem));
-    accountItems.forEach(item => accountList.appendChild(item.element));
+    
+    // 清除加载动画
+    accountList.innerHTML = '';
+
+    // 分批添加账户项以避免长时间阻塞
+    const batchSize = 3;
+    for (let i = 0; i < accountItems.length; i += batchSize) {
+      const batch = accountItems.slice(i, i + batchSize);
+      batch.forEach(item => accountList.appendChild(item.element));
+      // 等待下一帧再继续
+      if (i + batchSize < accountItems.length) {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+    }
+
     return accountItems;
   }
 
   let accountItems = [];
 
-  // 更新所有 TOTP 码和进度条
+  // 优化更新逻辑
   async function updateAll() {
     if (accounts.length > 0) {
       const remainingSeconds = TOTP.getRemainingSeconds();
-      // 只在需要更新验证码时更新
-      if (remainingSeconds === 30) {
-        await Promise.all(accountItems.map(item => item.updateCode()));
-      }
-      // 更新所有进度条
-      accountItems.forEach(item => item.updateProgress());
+      
+      // 使用 requestAnimationFrame 进行更新
+      requestAnimationFrame(() => {
+        // 更新所有进度条
+        accountItems.forEach(item => item.updateProgress());
+        
+        // 只在需要时更新验证码
+        if (remainingSeconds === 30) {
+          Promise.all(accountItems.map(item => item.updateCode()));
+        }
+      });
     }
   }
 
@@ -274,8 +304,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   container.addEventListener('scroll', saveState);
 
   // 初始化
-  await loadAccounts();
-  accountItems = await renderAccounts();
-  await restoreState();
-  setInterval(updateAll, 1000);
+  try {
+    // 先恢复状态，这样可以立即显示表单（如果之前是打开的）
+    await restoreState();
+    
+    // 然后加载账户数据
+    await loadAccounts();
+    
+    // 获取账户项引用
+    accountItems = await renderAccounts();
+    
+    // 开始定时更新
+    setInterval(updateAll, 1000);
+  } catch (error) {
+    console.error('初始化失败:', error);
+    // 显示错误信息
+    accountList.innerHTML = `
+      <div class="loading" style="color: #d93025;">
+        <span>加载失败，请重试</span>
+      </div>
+    `;
+  }
 }); 
