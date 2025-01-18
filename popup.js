@@ -94,6 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     accountItem.className = 'account-item';
     accountItem.dataset.account = account.name;
     accountItem.dataset.secret = account.secret;
+    accountItem.style.backgroundColor = 'white';
 
     const accountInfo = document.createElement('div');
     accountInfo.className = 'account-info';
@@ -112,18 +113,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let pressTimer;
     let isLongPress = false;
-    const originalBackground = accountItem.style.background;
 
     const handlePress = () => {
       pressTimer = setTimeout(() => {
         isLongPress = true;
-        accountItem.style.background = '#ffebee';
+        accountItem.style.backgroundColor = '#ffebee';
         const confirmDelete = confirm(`确定要删除账户 "${account.name}" 吗？`);
         if (confirmDelete) {
           accounts = accounts.filter(a => a.name !== account.name);
           saveAccounts();
         }
-        accountItem.style.background = originalBackground;
+        accountItem.style.backgroundColor = 'white';
       }, 800);
     };
 
@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const handleCancel = () => {
       clearTimeout(pressTimer);
-      accountItem.style.background = originalBackground;
+      accountItem.style.backgroundColor = 'white';
       isLongPress = false;
     };
 
