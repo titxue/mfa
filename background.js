@@ -58,6 +58,9 @@ const TOTP = {
   }
 };
 
+// 存储当前活跃的自动填充信息
+let activeAutoFill = null;
+
 // 调用 DeepSeek API
 async function callDeepSeekAPI(prompt, apiKey) {
   if (!apiKey) {
@@ -91,6 +94,60 @@ async function callDeepSeekAPI(prompt, apiKey) {
 
   const data = await response.json();
   return data.choices[0].message.content.trim();
+}
+
+// 自动更新验证码
+async function updateCode() {
+  if (!activeAutoFill) return;
+
+  try {
+    const { tabId, account } = activeAutoFill;
+    
+    // 检查标签页是否还存在
+    try {
+      await chrome.tabs.get(tabId);
+    } catch (error) {
+      console.log('标签页已关闭，停止自动更新');
+      activeAutoFill = null;
+      return;
+    }
+
+    // 生成新的验证码
+    const code = await TOTP.generateTOTP(account.secret);
+
+    // 填充新的验证码
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      func: (code) => {
+        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+        const totpInput = Array.from(inputs).find(input => {
+          const attrs = input.getAttributeNames();
+          return attrs.some(attr => {
+            const value = input.getAttribute(attr).toLowerCase();
+            return value.includes('otp') || 
+                   value.includes('2fa') || 
+                   value.includes('totp') || 
+                   value.includes('authenticator') ||
+                   value.includes('verification') ||
+                   value.includes('security') ||
+                   value.includes('code');
+          });
+        });
+
+        if (totpInput) {
+          totpInput.value = code.replace(/\s/g, '');
+          totpInput.dispatchEvent(new Event('input', { bubbles: true }));
+          totpInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      },
+      args: [code]
+    });
+
+    console.log('验证码已更新');
+  } catch (error) {
+    console.error('更新验证码失败:', error);
+    activeAutoFill = null;
+  }
 }
 
 // 分析页面并自动填充
@@ -240,14 +297,23 @@ async function analyzeAndFill(tab) {
           totpInput.value = code.replace(/\s/g, '');
           totpInput.dispatchEvent(new Event('input', { bubbles: true }));
           totpInput.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
         }
+        return false;
       },
       args: [code]
     });
 
+    // 设置当前活跃的自动填充信息
+    activeAutoFill = {
+      tabId: tab.id,
+      account: matchedAccount
+    };
+
     console.log('自动填充完成');
   } catch (error) {
     console.error('自动填充失败:', error);
+    activeAutoFill = null;
   }
 }
 
@@ -259,4 +325,23 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
       await analyzeAndFill(tab);
     }
   }
-}); 
+});
+
+// 监听标签页关闭事件
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (activeAutoFill?.tabId === tabId) {
+    console.log('标签页已关闭，停止自动更新');
+    activeAutoFill = null;
+  }
+});
+
+// 监听标签页更新事件
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (activeAutoFill?.tabId === tabId && changeInfo.url) {
+    console.log('页面已更新，停止自动更新');
+    activeAutoFill = null;
+  }
+});
+
+// 启动定时更新
+setInterval(updateCode, 1000); 
