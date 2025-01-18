@@ -127,12 +127,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       }, 800);
     };
 
-    const handleRelease = () => {
+    const handleRelease = async () => {
       clearTimeout(pressTimer);
       if (!isLongPress) {
-        navigator.clipboard.writeText(code).then(() => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          try {
+            const response = await chrome.tabs.sendMessage(tab.id, { 
+              action: 'fillCode', 
+              code 
+            });
+            if (response.success) {
+              showToast('验证码已自动填充');
+            } else {
+              // 如果没有找到输入框，则复制到剪贴板
+              await navigator.clipboard.writeText(code);
+              showToast('验证码已复制到剪贴板');
+            }
+          } catch (error) {
+            // 如果内容脚本未注入，则复制到剪贴板
+            await navigator.clipboard.writeText(code);
+            showToast('验证码已复制到剪贴板');
+          }
+        } else {
+          await navigator.clipboard.writeText(code);
           showToast('验证码已复制到剪贴板');
-        });
+        }
       }
       isLongPress = false;
     };
