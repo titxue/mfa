@@ -179,8 +179,31 @@ async function analyzeAndFill(tab) {
     const [hasInput] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       func: () => {
+        function isTOTPInput(input) {
+          const attrs = input.getAttributeNames();
+          return attrs.some(attr => {
+            const value = input.getAttribute(attr).toLowerCase();
+            return value.includes('otp') || 
+                   value.includes('2fa') || 
+                   value.includes('totp') || 
+                   value.includes('authenticator') ||
+                   value.includes('verification') ||
+                   value.includes('security') ||
+                   value.includes('code');
+          });
+        }
+
         const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
-        return Array.from(inputs).some(Utils.isTOTPInput);
+        console.log('找到的输入框数量:', inputs.length);
+        const hasTotp = Array.from(inputs).some(input => {
+          const isTotp = isTOTPInput(input);
+          if (isTotp) {
+            console.log('找到 TOTP 输入框:', input);
+          }
+          return isTotp;
+        });
+        console.log('是否有 TOTP 输入框:', hasTotp);
+        return hasTotp;
       }
     });
 
@@ -236,13 +259,52 @@ async function analyzeAndFill(tab) {
 
     // 生成并填充验证码
     const code = await TOTP.generateTOTP(matchedAccount.secret);
-    await chrome.scripting.executeScript({
+    const [fillResult] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      func: Utils.fillTOTPCode,
+      func: (code) => {
+        function isTOTPInput(input) {
+          const attrs = input.getAttributeNames();
+          return attrs.some(attr => {
+            const value = input.getAttribute(attr).toLowerCase();
+            return value.includes('otp') || 
+                   value.includes('2fa') || 
+                   value.includes('totp') || 
+                   value.includes('authenticator') ||
+                   value.includes('verification') ||
+                   value.includes('security') ||
+                   value.includes('code');
+          });
+        }
+
+        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+        console.log('准备填充验证码，找到的输入框数量:', inputs.length);
+        
+        const totpInput = Array.from(inputs).find(input => {
+          const isTotp = isTOTPInput(input);
+          if (isTotp) {
+            console.log('找到要填充的 TOTP 输入框:', input);
+          }
+          return isTotp;
+        });
+
+        if (totpInput) {
+          const cleanCode = code.replace(/\s/g, '');
+          console.log('填充验证码:', cleanCode);
+          totpInput.value = cleanCode;
+          totpInput.dispatchEvent(new Event('input', { bubbles: true }));
+          totpInput.dispatchEvent(new Event('change', { bubbles: true }));
+          return { success: true, value: cleanCode };
+        }
+        return { success: false };
+      },
       args: [code]
     });
 
-    console.log('自动填充完成');
+    if (fillResult?.result?.success) {
+      console.log('自动填充成功，验证码:', fillResult.result.value);
+    } else {
+      console.log('自动填充失败');
+    }
   } catch (error) {
     console.error('自动填充失败:', error);
   }
