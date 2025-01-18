@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const accountList = document.getElementById('accountList');
   const container = document.querySelector('.container');
   const progressTemplate = document.getElementById('progressRingTemplate');
+  const toastContainer = document.getElementById('toastContainer');
 
   let accounts = [];
 
@@ -76,6 +77,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     await renderAccounts();
   }
 
+  // 显示 Toast 消息
+  function showToast(message, duration = 2000) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+
+    // 强制重绘以触发动画
+    toast.offsetHeight;
+    toast.classList.add('show');
+
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        toastContainer.removeChild(toast);
+      }, 300); // 等待淡出动画完成
+    }, duration);
+  }
+
   // 创建账户项
   async function createAccountItem(account) {
     const code = await TOTP.generateTOTP(account.secret);
@@ -119,7 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           saveAccounts();
         }
         accountItem.style.background = originalBackground;
-      }, 800); // 800ms 长按时间
+      }, 800);
     });
 
     accountItem.addEventListener('mouseup', () => {
@@ -127,11 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!isLongPress) {
         // 点击复制验证码
         navigator.clipboard.writeText(code).then(() => {
-          const originalText = accountInfo.querySelector('.account-name').textContent;
-          accountInfo.querySelector('.account-name').textContent = '验证码已复制';
-          setTimeout(() => {
-            accountInfo.querySelector('.account-name').textContent = originalText;
-          }, 1000);
+          showToast('验证码已复制到剪贴板');
         });
       }
       isLongPress = false;
@@ -162,11 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!isLongPress) {
         // 点击复制验证码
         navigator.clipboard.writeText(code).then(() => {
-          const originalText = accountInfo.querySelector('.account-name').textContent;
-          accountInfo.querySelector('.account-name').textContent = '验证码已复制';
-          setTimeout(() => {
-            accountInfo.querySelector('.account-name').textContent = originalText;
-          }, 1000);
+          showToast('验证码已复制到剪贴板');
         });
       }
       isLongPress = false;

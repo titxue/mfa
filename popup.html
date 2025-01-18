@@ -162,6 +162,30 @@
     button.form-button:hover {
       background-color: #f6fafe;
     }
+    /* Toast 消息样式 */
+    .toast-container {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      pointer-events: none;
+    }
+    .toast {
+      background-color: #323232;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-bottom: 8px;
+      opacity: 0;
+      transform: translateY(100%);
+      transition: all 0.3s ease;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -206,6 +230,9 @@
       <div class="progress-text"></div>
     </div>
   </template>
+
+  <!-- 添加 Toast 容器 -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <script src="totp.js"></script>
   <script src="popup.js"></script>
