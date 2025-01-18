@@ -185,91 +185,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.id) {
           try {
-            showToast('正在收集页面信息...', 1000);
-            // 注入内容脚本分析页面
-            const [pageResult] = await chrome.scripting.executeScript({
-              target: { tabId: tab.id },
-              func: async () => {
-                // 收集页面信息
-                const pageInfo = {
-                  title: document.title,
-                  domain: window.location.hostname,
-                  texts: [],
-                  labels: []
-                };
-
-                // 收集所有可见文本
-                const walker = document.createTreeWalker(
-                  document.body,
-                  NodeFilter.SHOW_TEXT,
-                  {
-                    acceptNode: (node) => {
-                      const style = window.getComputedStyle(node.parentElement);
-                      return style.display !== 'none' && style.visibility !== 'hidden' && node.textContent.trim() ? 
-                             NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
-                    }
-                  }
-                );
-
-                while (walker.nextNode()) {
-                  const text = walker.currentNode.textContent.trim();
-                  if (text) pageInfo.texts.push(text);
-                }
-
-                // 收集所有表单标签
-                document.querySelectorAll('label').forEach(label => {
-                  const text = label.textContent.trim();
-                  if (text) pageInfo.labels.push(text);
-                });
-
-                return pageInfo;
-              }
-            });
-
-            const pageInfo = pageResult.result;
-            console.log('收集到的页面信息:', pageInfo);
-            
-            // 使用 DeepSeek API 分析页面内容和账户列表
-            const prompt = `
-              我正在浏览一个网页，需要你帮我从以下账户列表中选择最合适的账户来填写验证码。
-              
-              页面信息：
-              - 标题: ${pageInfo.title}
-              - 域名: ${pageInfo.domain}
-              - 页面文本: ${pageInfo.texts.join(' ')}
-              - 表单标签: ${pageInfo.labels.join(' ')}
-              
-              账户列表：
-              ${accounts.map(a => `- ${a.name}`).join('\n')}
-              
-              请分析页面内容和账户列表，选择最合适的账户。只需要返回账户名称，不需要其他解释。
-              如果没有合适的账户，返回空字符串。
-            `;
-
-            try {
-              const matchedAccountName = await callDeepSeekAPI(prompt);
-              console.log('AI 选择的账户:', matchedAccountName);
-              
-              let matchedAccount = null;
-              if (matchedAccountName) {
-                matchedAccount = accounts.find(a => a.name === matchedAccountName);
-                if (matchedAccount && matchedAccount.name !== account.name) {
-                  console.log('切换到账户:', matchedAccount.name);
-                  const matchedCode = await TOTP.generateTOTP(matchedAccount.secret);
-                  code = matchedCode;
-                  showToast(`已自动选择账户: ${matchedAccount.name}`);
-                } else {
-                  console.log('使用当前账户:', account.name);
-                }
-              } else {
-                console.log('没有找到匹配的账户，使用当前账户:', account.name);
-              }
-            } catch (error) {
-              console.error('AI 分析失败:', error);
-              showToast(error.message);
-            }
-
-            showToast('正在填充验证码...', 1000);
             // 注入填充脚本
             const fillResult = await chrome.scripting.executeScript({
               target: { tabId: tab.id },
@@ -307,7 +222,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               args: [code]
             });
             console.log('填充结果:', fillResult);
-            showToast('验证码已自动填充');
+            
+            if (fillResult[0].result) {
+              showToast('验证码已自动填充');
+            } else {
+              await navigator.clipboard.writeText(code);
+              showToast('验证码已复制到剪贴板');
+            }
           } catch (error) {
             console.error('自动填充失败:', error);
             // 如果自动填充失败，则复制到剪贴板
