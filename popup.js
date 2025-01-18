@@ -9,9 +9,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   const container = document.querySelector('.container');
   const progressTemplate = document.getElementById('progressRingTemplate');
   const toastContainer = document.getElementById('toastContainer');
+  const settingsButton = document.getElementById('settings');
+  const settingsContainer = document.getElementById('settingsContainer');
+  const settingsSaveButton = document.getElementById('settingsSave');
+  const settingsCancelButton = document.getElementById('settingsCancel');
+  const apiKeyInput = document.getElementById('apiKey');
 
   let accounts = [];
   let accountItems = [];
+  let apiKey = '';
 
   // 初始化空状态界面
   accountList.innerHTML = `
@@ -23,6 +29,46 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div style="margin-top: 8px; font-size: 12px; opacity: 0.7">点击右上角添加账户开始使用</div>
     </div>
   `;
+
+  // 保存设置
+  function saveSettings() {
+    chrome.storage.local.set({ apiKey: apiKeyInput.value });
+    apiKey = apiKeyInput.value;
+    settingsContainer.classList.remove('show');
+  }
+
+  // 调用 DeepSeek API
+  async function callDeepSeekAPI(prompt) {
+    if (!apiKey) {
+      throw new Error('请先设置 API Key');
+    }
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 100
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('API 调用失败');
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
+  }
 
   // 保存表单状态和滚动位置
   function saveState() {
@@ -175,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const pageInfo = pageResult.result;
             
-            // 使用 Chrome AI API 分析页面内容和账户列表
+            // 使用 DeepSeek API 分析页面内容和账户列表
             const prompt = `
               我正在浏览一个网页，需要你帮我从以下账户列表中选择最合适的账户来填写验证码。
               
@@ -192,19 +238,20 @@ document.addEventListener('DOMContentLoaded', async () => {
               如果没有合适的账户，返回空字符串。
             `;
 
-            // 调用 Chrome AI API
-            const model = await chrome.runtime.getGenerativeModel({ model: "gemini-pro" });
-            const aiResult = await model.generateContent(prompt);
-            const matchedAccountName = aiResult.text.trim();
-            
-            let matchedAccount = null;
-            if (matchedAccountName) {
-              matchedAccount = accounts.find(a => a.name === matchedAccountName);
-              if (matchedAccount && matchedAccount.name !== account.name) {
-                const matchedCode = await TOTP.generateTOTP(matchedAccount.secret);
-                code = matchedCode;
-                showToast(`已自动选择账户: ${matchedAccount.name}`);
+            try {
+              const matchedAccountName = await callDeepSeekAPI(prompt);
+              let matchedAccount = null;
+              if (matchedAccountName) {
+                matchedAccount = accounts.find(a => a.name === matchedAccountName);
+                if (matchedAccount && matchedAccount.name !== account.name) {
+                  const matchedCode = await TOTP.generateTOTP(matchedAccount.secret);
+                  code = matchedCode;
+                  showToast(`已自动选择账户: ${matchedAccount.name}`);
+                }
               }
+            } catch (error) {
+              console.error('AI 分析失败:', error);
+              showToast(error.message);
             }
 
             // 注入填充脚本
@@ -240,8 +287,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             showToast('验证码已自动填充');
           } catch (error) {
-            console.error('AI 分析失败:', error);
-            // 如果 AI 分析失败，使用原始验证码
+            console.error('自动填充失败:', error);
+            // 如果自动填充失败，则复制到剪贴板
             await navigator.clipboard.writeText(code);
             showToast('验证码已复制到剪贴板');
           }
@@ -361,14 +408,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   secretInput.addEventListener('input', saveState);
   container.addEventListener('scroll', saveState);
 
+  // 设置相关事件监听
+  settingsButton.addEventListener('click', () => {
+    settingsContainer.classList.add('show');
+    apiKeyInput.value = apiKey;
+  });
+
+  settingsSaveButton.addEventListener('click', saveSettings);
+
+  settingsCancelButton.addEventListener('click', () => {
+    settingsContainer.classList.remove('show');
+    apiKeyInput.value = apiKey;
+  });
+
   // 初始化
   try {
-    const [stateResult, accountsResult] = await Promise.all([
+    const [stateResult, accountsResult, settingsResult] = await Promise.all([
       chrome.storage.local.get('state'),
-      chrome.storage.sync.get('accounts')
+      chrome.storage.sync.get('accounts'),
+      chrome.storage.local.get('apiKey')
     ]);
 
     accounts = accountsResult.accounts || [];
+    apiKey = settingsResult.apiKey || '';
     
     if (accounts.length > 0) {
       accountItems = await renderAccounts();
