@@ -1,197 +1,407 @@
-import { TOTP, findTOTPInput, fillTOTPCode } from './shared.js';
+document.addEventListener('DOMContentLoaded', async () => {
+  const accountInput = document.getElementById('account');
+  const secretInput = document.getElementById('secret');
+  const saveButton = document.getElementById('save');
+  const cancelButton = document.getElementById('cancel');
+  const addNewButton = document.getElementById('addNew');
+  const formContainer = document.getElementById('formContainer');
+  const accountList = document.getElementById('accountList');
+  const container = document.querySelector('.container');
+  const progressTemplate = document.getElementById('progressRingTemplate');
+  const toastContainer = document.getElementById('toastContainer');
+  const settingsButton = document.getElementById('settings');
+  const settingsContainer = document.getElementById('settingsContainer');
+  const settingsSaveButton = document.getElementById('settingsSave');
+  const settingsCancelButton = document.getElementById('settingsCancel');
+  const apiKeyInput = document.getElementById('apiKey');
 
-// 存储账户列表
-let accounts = [];
+  let accounts = [];
+  let accountItems = [];
+  let apiKey = '';
 
-// 初始化
-async function init() {
+  // 初始化空状态界面
+  accountList.innerHTML = `
+    <div class="empty-state">
+      <svg class="empty-state-icon" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+      </svg>
+      <div>暂无账户</div>
+      <div style="margin-top: 8px; font-size: 12px; opacity: 0.7">点击右上角添加账户开始使用</div>
+    </div>
+  `;
+
+  // 保存设置
+  function saveSettings() {
+    chrome.storage.local.set({ apiKey: apiKeyInput.value });
+    apiKey = apiKeyInput.value;
+    settingsContainer.classList.remove('show');
+    // 通知 background 更新
+    chrome.runtime.sendMessage({ type: 'settingsUpdated' });
+  }
+
+  // 调用 DeepSeek API
+  async function callDeepSeekAPI(prompt) {
+    if (!apiKey) {
+      throw new Error('请先设置 API Key');
+    }
+
+    showToast('正在分析页面...', 1000);
+    console.log('发送到 AI 的提示词:', prompt);
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.1,
+        max_tokens: 100
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('API 错误:', error);
+      throw new Error(`API 调用失败: ${error.error?.message || '未知错误'}`);
+    }
+
+    const data = await response.json();
+    console.log('AI 响应:', data);
+    return data.choices[0].message.content.trim();
+  }
+
+  // 保存表单状态和滚动位置
+  function saveState() {
+    const state = {
+      formVisible: formContainer.classList.contains('show'),
+      accountValue: accountInput.value,
+      secretValue: secretInput.value,
+      scrollTop: container.scrollTop
+    };
+    chrome.storage.local.set({ state });
+  }
+
+  // 创建圆形进度条
+  function createProgressRing() {
+    const progressRing = progressTemplate.content.cloneNode(true);
+    const circle = progressRing.querySelector('.progress');
+    const text = progressRing.querySelector('.progress-text');
+    const radius = circle.r.baseVal.value;
+    const circumference = radius * 2 * Math.PI;
+    
+    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDashoffset = circumference;
+
+    return {
+      container: progressRing,
+      circle,
+      text,
+      circumference
+    };
+  }
+
+  // 更新进度条
+  function setProgress(circle, text, circumference, percent) {
+    const offset = circumference - (percent / 100 * circumference);
+    circle.style.strokeDashoffset = offset;
+    text.textContent = Math.ceil(percent / (100/30));
+  }
+
+  // 保存账户
+  async function saveAccounts() {
+    await chrome.storage.sync.set({ accounts });
+    accountItems = await renderAccounts();
+    // 通知 background 更新
+    chrome.runtime.sendMessage({ type: 'accountsUpdated' });
+  }
+
+  // 显示 Toast 消息
+  function showToast(message, duration = 2000) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    toastContainer.appendChild(toast);
+
+    toast.offsetHeight;
+    toast.classList.add('show');
+
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => {
+        toastContainer.removeChild(toast);
+      }, 300);
+    }, duration);
+  }
+
+  // 创建账户项
+  async function createAccountItem(account) {
+    const code = await TOTP.generateTOTP(account.secret);
+    const formattedCode = code.match(/.{1,3}/g).join(' ');
+    
+    const accountItem = document.createElement('div');
+    accountItem.className = 'account-item';
+    accountItem.dataset.account = account.name;
+    accountItem.dataset.secret = account.secret;
+    accountItem.style.backgroundColor = 'white';
+
+    const accountInfo = document.createElement('div');
+    accountInfo.className = 'account-info';
+    accountInfo.innerHTML = `
+      <div class="account-name">${account.name}</div>
+      <div class="account-code">${formattedCode}</div>
+    `;
+
+    const progress = createProgressRing();
+    const remainingSeconds = TOTP.getRemainingSeconds();
+    const percentage = (remainingSeconds / 30) * 100;
+    setProgress(progress.circle, progress.text, progress.circumference, percentage);
+
+    accountItem.appendChild(accountInfo);
+    accountItem.appendChild(progress.container);
+
+    let pressTimer;
+    let isLongPress = false;
+
+    const handlePress = () => {
+      pressTimer = setTimeout(() => {
+        isLongPress = true;
+        accountItem.style.backgroundColor = '#ffebee';
+        const confirmDelete = confirm(`确定要删除账户 "${account.name}" 吗？`);
+        if (confirmDelete) {
+          accounts = accounts.filter(a => a.name !== account.name);
+          saveAccounts();
+        }
+        accountItem.style.backgroundColor = 'white';
+      }, 800);
+    };
+
+    const handleRelease = async () => {
+      clearTimeout(pressTimer);
+      if (!isLongPress) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          try {
+            // 注入填充脚本
+            const fillResult = await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: (code) => {
+                const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+                console.log('找到的输入框:', inputs.length);
+                
+                // 查找可能的 TOTP 输入框
+                const totpInput = Array.from(inputs).find(input => {
+                  const attrs = input.getAttributeNames();
+                  const matched = attrs.some(attr => {
+                    const value = input.getAttribute(attr).toLowerCase();
+                    return value.includes('otp') || 
+                           value.includes('2fa') || 
+                           value.includes('totp') || 
+                           value.includes('authenticator') ||
+                           value.includes('verification') ||
+                           value.includes('security') ||
+                           value.includes('code');
+                  });
+                  if (matched) {
+                    console.log('找到匹配的输入框:', input);
+                  }
+                  return matched;
+                });
+
+                if (totpInput) {
+                  totpInput.value = code.replace(/\s/g, '');
+                  totpInput.dispatchEvent(new Event('input', { bubbles: true }));
+                  totpInput.dispatchEvent(new Event('change', { bubbles: true }));
+                  return true;
+                }
+                return false;
+              },
+              args: [code]
+            });
+            console.log('填充结果:', fillResult);
+            
+            if (fillResult[0].result) {
+              showToast('验证码已自动填充');
+            } else {
+              await navigator.clipboard.writeText(code);
+              showToast('验证码已复制到剪贴板');
+            }
+          } catch (error) {
+            console.error('自动填充失败:', error);
+            // 如果自动填充失败，则复制到剪贴板
+            await navigator.clipboard.writeText(code);
+            showToast('验证码已复制到剪贴板');
+          }
+        } else {
+          await navigator.clipboard.writeText(code);
+          showToast('验证码已复制到剪贴板');
+        }
+      }
+      isLongPress = false;
+    };
+
+    const handleCancel = () => {
+      clearTimeout(pressTimer);
+      accountItem.style.backgroundColor = 'white';
+      isLongPress = false;
+    };
+
+    // 鼠标事件
+    accountItem.addEventListener('mousedown', handlePress);
+    accountItem.addEventListener('mouseup', handleRelease);
+    accountItem.addEventListener('mouseleave', handleCancel);
+
+    // 触摸事件
+    accountItem.addEventListener('touchstart', handlePress);
+    accountItem.addEventListener('touchend', handleRelease);
+    accountItem.addEventListener('touchcancel', handleCancel);
+
+    return {
+      element: accountItem,
+      updateCode: async () => {
+        const newCode = await TOTP.generateTOTP(account.secret);
+        const formattedNewCode = newCode.match(/.{1,3}/g).join(' ');
+        accountInfo.querySelector('.account-code').textContent = formattedNewCode;
+      },
+      updateProgress: () => {
+        const remainingSeconds = TOTP.getRemainingSeconds();
+        const percentage = (remainingSeconds / 30) * 100;
+        setProgress(progress.circle, progress.text, progress.circumference, percentage);
+      }
+    };
+  }
+
+  // 渲染账户列表
+  async function renderAccounts() {
+    if (accounts.length === 0) {
+      accountList.innerHTML = `
+        <div class="empty-state">
+          <svg class="empty-state-icon" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+          </svg>
+          <div>暂无账户</div>
+          <div style="margin-top: 8px; font-size: 12px; opacity: 0.7">点击右上角添加账户开始使用</div>
+        </div>
+      `;
+      return [];
+    }
+
+    const fragment = document.createDocumentFragment();
+    const accountItems = await Promise.all(accounts.map(createAccountItem));
+    accountItems.forEach(item => fragment.appendChild(item.element));
+
+    accountList.innerHTML = '';
+    accountList.appendChild(fragment);
+
+    return accountItems;
+  }
+
+  // 更新所有账户
+  function updateAll() {
+    if (accountItems.length > 0) {
+      const remainingSeconds = TOTP.getRemainingSeconds();
+      accountItems.forEach(item => {
+        item.updateProgress();
+        if (remainingSeconds === 30) {
+          item.updateCode();
+        }
+      });
+    }
+  }
+
+  // 事件监听
+  addNewButton.addEventListener('click', () => {
+    formContainer.classList.add('show');
+    saveState();
+  });
+
+  saveButton.addEventListener('click', async () => {
+    const name = accountInput.value.trim();
+    const secret = secretInput.value.trim();
+
+    if (!name || !secret) {
+      alert('请填写所有字段');
+      return;
+    }
+
+    try {
+      await TOTP.generateTOTP(secret);
+      accounts.push({ name, secret });
+      await saveAccounts();
+      formContainer.classList.remove('show');
+      accountInput.value = '';
+      secretInput.value = '';
+      saveState();
+    } catch (error) {
+      alert('无效的密钥格式');
+    }
+  });
+
+  cancelButton.addEventListener('click', () => {
+    formContainer.classList.remove('show');
+    accountInput.value = '';
+    secretInput.value = '';
+    saveState();
+  });
+
+  accountInput.addEventListener('input', saveState);
+  secretInput.addEventListener('input', saveState);
+  container.addEventListener('scroll', saveState);
+
+  // 设置相关事件监听
+  settingsButton.addEventListener('click', () => {
+    settingsContainer.classList.add('show');
+    apiKeyInput.value = apiKey;
+  });
+
+  settingsSaveButton.addEventListener('click', saveSettings);
+
+  settingsCancelButton.addEventListener('click', () => {
+    settingsContainer.classList.remove('show');
+    apiKeyInput.value = apiKey;
+  });
+
+  // 初始化
   try {
-    // 加载账户列表
-    const result = await chrome.storage.sync.get('accounts');
-    accounts = result.accounts || [];
+    const [stateResult, accountsResult, settingsResult] = await Promise.all([
+      chrome.storage.local.get('state'),
+      chrome.storage.sync.get('accounts'),
+      chrome.storage.local.get('apiKey')
+    ]);
+
+    accounts = accountsResult.accounts || [];
+    apiKey = settingsResult.apiKey || '';
     
-    // 渲染账户列表
-    renderAccounts();
+    if (accounts.length > 0) {
+      accountItems = await renderAccounts();
+    }
+
+    if (stateResult.state) {
+      const { state } = stateResult;
+      if (state.formVisible) {
+        formContainer.classList.add('show');
+      }
+      accountInput.value = state.accountValue || '';
+      secretInput.value = state.secretValue || '';
+      if (state.scrollTop) {
+        container.scrollTop = state.scrollTop;
+      }
+    }
     
-    // 启动定时更新
-    setInterval(updateCodes, 1000);
+    setInterval(updateAll, 1000);
   } catch (error) {
     console.error('初始化失败:', error);
-    showError('加载账户列表失败，请重试');
-  }
-}
-
-// 渲染账户列表
-function renderAccounts() {
-  const container = document.querySelector('.account-list');
-  container.innerHTML = '';
-  
-  if (accounts.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <p>暂无账户</p>
-        <button id="add-account">添加账户</button>
+    accountList.innerHTML = `
+      <div class="empty-state" style="color: #d93025;">
+        <span>加载失败，请重试</span>
       </div>
     `;
-    return;
   }
-  
-  accounts.forEach((account, index) => {
-    const item = document.createElement('div');
-    item.className = 'account-item';
-    item.innerHTML = `
-      <div class="account-info">
-        <div class="account-name">${account.name}</div>
-        <div class="code-container">
-          <div class="code" data-index="${index}">------</div>
-          <div class="progress-container">
-            <div class="progress-bar"></div>
-          </div>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="copy-btn" data-index="${index}">复制</button>
-        <button class="fill-btn" data-index="${index}">填充</button>
-        <button class="edit-btn" data-index="${index}">编辑</button>
-        <button class="delete-btn" data-index="${index}">删除</button>
-      </div>
-    `;
-    container.appendChild(item);
-  });
-}
-
-// 更新验证码和进度条
-async function updateCodes() {
-  const remainingSeconds = TOTP.getRemainingSeconds();
-  const progress = (remainingSeconds / 30) * 100;
-  
-  document.querySelectorAll('.progress-bar').forEach(bar => {
-    bar.style.width = `${progress}%`;
-  });
-  
-  if (remainingSeconds === 30) {
-    const codeElements = document.querySelectorAll('.code');
-    for (let i = 0; i < codeElements.length; i++) {
-      const index = codeElements[i].dataset.index;
-      const account = accounts[index];
-      try {
-        const code = await TOTP.generateTOTP(account.secret);
-        codeElements[i].textContent = code;
-      } catch (error) {
-        console.error('生成验证码失败:', error);
-        codeElements[i].textContent = '错误';
-      }
-    }
-  }
-}
-
-// 复制验证码
-async function copyCode(index) {
-  try {
-    const code = await TOTP.generateTOTP(accounts[index].secret);
-    await navigator.clipboard.writeText(code);
-    showToast('验证码已复制');
-  } catch (error) {
-    console.error('复制验证码失败:', error);
-    showError('复制失败，请重试');
-  }
-}
-
-// 填充验证码
-async function fillCode(index) {
-  try {
-    // 获取当前标签页
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab) throw new Error('未找到当前标签页');
-    
-    // 生成验证码
-    const code = await TOTP.generateTOTP(accounts[index].secret);
-    
-    // 注入并执行填充脚本
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: (code, { findTOTPInput, fillTOTPCode }) => {
-        const input = findTOTPInput();
-        return fillTOTPCode(input, code);
-      },
-      args: [code, { findTOTPInput, fillTOTPCode }]
-    });
-    
-    if (result.result) {
-      showToast('验证码已填充');
-    } else {
-      showError('未找到验证码输入框');
-    }
-  } catch (error) {
-    console.error('填充验证码失败:', error);
-    showError('填充失败，请重试');
-  }
-}
-
-// 显示错误信息
-function showError(message) {
-  const container = document.querySelector('.error-container');
-  container.textContent = message;
-  container.style.display = 'block';
-  setTimeout(() => {
-    container.style.display = 'none';
-  }, 3000);
-}
-
-// 显示提示信息
-function showToast(message) {
-  const container = document.querySelector('.toast-container');
-  container.textContent = message;
-  container.style.display = 'block';
-  setTimeout(() => {
-    container.style.display = 'none';
-  }, 2000);
-}
-
-// 绑定事件处理
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-  
-  // 复制按钮点击事件
-  document.addEventListener('click', (e) => {
-    if (e.target.matches('.copy-btn')) {
-      const index = parseInt(e.target.dataset.index);
-      copyCode(index);
-    }
-  });
-  
-  // 填充按钮点击事件
-  document.addEventListener('click', (e) => {
-    if (e.target.matches('.fill-btn')) {
-      const index = parseInt(e.target.dataset.index);
-      fillCode(index);
-    }
-  });
-  
-  // 编辑按钮点击事件
-  document.addEventListener('click', (e) => {
-    if (e.target.matches('.edit-btn')) {
-      const index = parseInt(e.target.dataset.index);
-      // TODO: 实现编辑功能
-    }
-  });
-  
-  // 删除按钮点击事件
-  document.addEventListener('click', (e) => {
-    if (e.target.matches('.delete-btn')) {
-      const index = parseInt(e.target.dataset.index);
-      if (confirm('确定要删除这个账户吗？')) {
-        accounts.splice(index, 1);
-        chrome.storage.sync.set({ accounts });
-        renderAccounts();
-      }
-    }
-  });
-  
-  // 添加账户按钮点击事件
-  document.addEventListener('click', (e) => {
-    if (e.target.matches('#add-account')) {
-      // TODO: 实现添加账户功能
-    }
-  });
 }); 
