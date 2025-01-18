@@ -133,18 +133,119 @@ document.addEventListener('DOMContentLoaded', async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.id) {
           try {
-            // 注入内容脚本
+            // 注入内容脚本分析页面
+            const [result] = await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: async () => {
+                // 收集页面信息
+                const pageInfo = {
+                  title: document.title,
+                  domain: window.location.hostname,
+                  texts: [],
+                  labels: []
+                };
+
+                // 收集所有可见文本
+                const walker = document.createTreeWalker(
+                  document.body,
+                  NodeFilter.SHOW_TEXT,
+                  {
+                    acceptNode: (node) => {
+                      const style = window.getComputedStyle(node.parentElement);
+                      return style.display !== 'none' && style.visibility !== 'hidden' && node.textContent.trim() ? 
+                             NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                    }
+                  }
+                );
+
+                while (walker.nextNode()) {
+                  const text = walker.currentNode.textContent.trim();
+                  if (text) pageInfo.texts.push(text);
+                }
+
+                // 收集所有表单标签
+                document.querySelectorAll('label').forEach(label => {
+                  const text = label.textContent.trim();
+                  if (text) pageInfo.labels.push(text);
+                });
+
+                return pageInfo;
+              }
+            });
+
+            const pageInfo = result[0].result;
+            
+            // 使用 AI 分析页面内容和账户列表
+            const matchedAccount = await new Promise((resolve) => {
+              // 模拟 AI 分析过程
+              const scores = accounts.map(account => {
+                let score = 0;
+                const accountLower = account.name.toLowerCase();
+                const domain = pageInfo.domain.toLowerCase();
+                
+                // 域名匹配
+                if (domain.includes(accountLower) || accountLower.includes(domain)) {
+                  score += 5;
+                }
+
+                // 标题匹配
+                if (pageInfo.title.toLowerCase().includes(accountLower)) {
+                  score += 3;
+                }
+
+                // 文本内容匹配
+                pageInfo.texts.forEach(text => {
+                  const textLower = text.toLowerCase();
+                  if (textLower.includes(accountLower) || 
+                      textLower.includes('login') || 
+                      textLower.includes('sign in') ||
+                      textLower.includes('2fa') ||
+                      textLower.includes('verification')) {
+                    score += 1;
+                  }
+                });
+
+                // 标签匹配
+                pageInfo.labels.forEach(label => {
+                  const labelLower = label.toLowerCase();
+                  if (labelLower.includes('code') ||
+                      labelLower.includes('otp') ||
+                      labelLower.includes('2fa') ||
+                      labelLower.includes('verification')) {
+                    score += 2;
+                  }
+                });
+
+                return { account, score };
+              });
+
+              // 选择得分最高的账户
+              const bestMatch = scores.reduce((best, current) => 
+                current.score > best.score ? current : best
+              , { score: -1 });
+
+              resolve(bestMatch.score > 0 ? bestMatch.account : null);
+            });
+
+            if (matchedAccount) {
+              // 如果找到匹配的账户，使用它的验证码
+              if (matchedAccount.name !== account.name) {
+                const matchedCode = await TOTP.generateTOTP(matchedAccount.secret);
+                code = matchedCode;
+                showToast(`已自动选择账户: ${matchedAccount.name}`);
+              }
+            }
+
+            // 注入填充脚本
             await chrome.scripting.executeScript({
               target: { tabId: tab.id },
-              func: (code, accountName) => {
-                // 获取所有可能的输入框
+              func: (code) => {
                 const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
                 
                 // 查找可能的 TOTP 输入框
                 const totpInput = Array.from(inputs).find(input => {
-                  // 检查输入框的各种属性
                   const attrs = input.getAttributeNames();
-                  const hasOTPAttr = attrs.some(attr => {
+                  return attrs.some(attr => {
                     const value = input.getAttribute(attr).toLowerCase();
                     return value.includes('otp') || 
                            value.includes('2fa') || 
@@ -154,45 +255,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                            value.includes('security') ||
                            value.includes('code');
                   });
-
-                  if (hasOTPAttr) return true;
-
-                  // 检查周围的文本是否包含账户名称
-                  const nearbyText = [];
-                  let element = input;
-                  
-                  // 向上查找最多4层
-                  for (let i = 0; i < 4 && element; i++) {
-                    // 获取元素内的所有文本
-                    const walker = document.createTreeWalker(
-                      element,
-                      NodeFilter.SHOW_TEXT,
-                      null,
-                      false
-                    );
-                    
-                    let node;
-                    while (node = walker.nextNode()) {
-                      nearbyText.push(node.textContent.toLowerCase());
-                    }
-                    
-                    // 获取label文本
-                    if (element.tagName === 'INPUT' && element.id) {
-                      const label = document.querySelector(`label[for="${element.id}"]`);
-                      if (label) {
-                        nearbyText.push(label.textContent.toLowerCase());
-                      }
-                    }
-                    
-                    element = element.parentElement;
-                  }
-                  
-                  // 检查是否包含账户名称
-                  const accountNameLower = accountName.toLowerCase();
-                  return nearbyText.some(text => 
-                    text.includes(accountNameLower) || 
-                    accountNameLower.includes(text.trim())
-                  );
                 });
 
                 if (totpInput) {
@@ -203,7 +265,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 return false;
               },
-              args: [code, account.name]
+              args: [code]
             });
             showToast('验证码已自动填充');
           } catch (error) {
