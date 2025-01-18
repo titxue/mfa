@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (tab?.id) {
           try {
             // 注入内容脚本分析页面
-            const [result] = await chrome.scripting.executeScript({
+            const [pageResult] = await chrome.scripting.executeScript({
               target: { tabId: tab.id },
               func: async () => {
                 // 收集页面信息
@@ -173,63 +173,34 @@ document.addEventListener('DOMContentLoaded', async () => {
               }
             });
 
-            const pageInfo = result[0].result;
+            const pageInfo = pageResult.result;
             
-            // 使用 AI 分析页面内容和账户列表
-            const matchedAccount = await new Promise((resolve) => {
-              // 模拟 AI 分析过程
-              const scores = accounts.map(account => {
-                let score = 0;
-                const accountLower = account.name.toLowerCase();
-                const domain = pageInfo.domain.toLowerCase();
-                
-                // 域名匹配
-                if (domain.includes(accountLower) || accountLower.includes(domain)) {
-                  score += 5;
-                }
+            // 使用 Chrome AI API 分析页面内容和账户列表
+            const prompt = `
+              我正在浏览一个网页，需要你帮我从以下账户列表中选择最合适的账户来填写验证码。
+              
+              页面信息：
+              - 标题: ${pageInfo.title}
+              - 域名: ${pageInfo.domain}
+              - 页面文本: ${pageInfo.texts.join(' ')}
+              - 表单标签: ${pageInfo.labels.join(' ')}
+              
+              账户列表：
+              ${accounts.map(a => `- ${a.name}`).join('\n')}
+              
+              请分析页面内容和账户列表，选择最合适的账户。只需要返回账户名称，不需要其他解释。
+              如果没有合适的账户，返回空字符串。
+            `;
 
-                // 标题匹配
-                if (pageInfo.title.toLowerCase().includes(accountLower)) {
-                  score += 3;
-                }
-
-                // 文本内容匹配
-                pageInfo.texts.forEach(text => {
-                  const textLower = text.toLowerCase();
-                  if (textLower.includes(accountLower) || 
-                      textLower.includes('login') || 
-                      textLower.includes('sign in') ||
-                      textLower.includes('2fa') ||
-                      textLower.includes('verification')) {
-                    score += 1;
-                  }
-                });
-
-                // 标签匹配
-                pageInfo.labels.forEach(label => {
-                  const labelLower = label.toLowerCase();
-                  if (labelLower.includes('code') ||
-                      labelLower.includes('otp') ||
-                      labelLower.includes('2fa') ||
-                      labelLower.includes('verification')) {
-                    score += 2;
-                  }
-                });
-
-                return { account, score };
-              });
-
-              // 选择得分最高的账户
-              const bestMatch = scores.reduce((best, current) => 
-                current.score > best.score ? current : best
-              , { score: -1 });
-
-              resolve(bestMatch.score > 0 ? bestMatch.account : null);
-            });
-
-            if (matchedAccount) {
-              // 如果找到匹配的账户，使用它的验证码
-              if (matchedAccount.name !== account.name) {
+            // 调用 Chrome AI API
+            const model = await chrome.runtime.getGenerativeModel({ model: "gemini-pro" });
+            const aiResult = await model.generateContent(prompt);
+            const matchedAccountName = aiResult.text.trim();
+            
+            let matchedAccount = null;
+            if (matchedAccountName) {
+              matchedAccount = accounts.find(a => a.name === matchedAccountName);
+              if (matchedAccount && matchedAccount.name !== account.name) {
                 const matchedCode = await TOTP.generateTOTP(matchedAccount.secret);
                 code = matchedCode;
                 showToast(`已自动选择账户: ${matchedAccount.name}`);
@@ -269,7 +240,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             showToast('验证码已自动填充');
           } catch (error) {
-            // 如果注入失败，则复制到剪贴板
+            console.error('AI 分析失败:', error);
+            // 如果 AI 分析失败，使用原始验证码
             await navigator.clipboard.writeText(code);
             showToast('验证码已复制到剪贴板');
           }
