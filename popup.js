@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       throw new Error('请先设置 API Key');
     }
 
+    showToast('正在分析页面...', 1000);
+    console.log('发送到 AI 的提示词:', prompt);
+
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -63,10 +66,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (!response.ok) {
-      throw new Error('API 调用失败');
+      const error = await response.json();
+      console.error('API 错误:', error);
+      throw new Error(`API 调用失败: ${error.error?.message || '未知错误'}`);
     }
 
     const data = await response.json();
+    console.log('AI 响应:', data);
     return data.choices[0].message.content.trim();
   }
 
@@ -179,6 +185,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.id) {
           try {
+            showToast('正在收集页面信息...', 1000);
             // 注入内容脚本分析页面
             const [pageResult] = await chrome.scripting.executeScript({
               target: { tabId: tab.id },
@@ -220,6 +227,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             const pageInfo = pageResult.result;
+            console.log('收集到的页面信息:', pageInfo);
             
             // 使用 DeepSeek API 分析页面内容和账户列表
             const prompt = `
@@ -240,30 +248,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             try {
               const matchedAccountName = await callDeepSeekAPI(prompt);
+              console.log('AI 选择的账户:', matchedAccountName);
+              
               let matchedAccount = null;
               if (matchedAccountName) {
                 matchedAccount = accounts.find(a => a.name === matchedAccountName);
                 if (matchedAccount && matchedAccount.name !== account.name) {
+                  console.log('切换到账户:', matchedAccount.name);
                   const matchedCode = await TOTP.generateTOTP(matchedAccount.secret);
                   code = matchedCode;
                   showToast(`已自动选择账户: ${matchedAccount.name}`);
+                } else {
+                  console.log('使用当前账户:', account.name);
                 }
+              } else {
+                console.log('没有找到匹配的账户，使用当前账户:', account.name);
               }
             } catch (error) {
               console.error('AI 分析失败:', error);
               showToast(error.message);
             }
 
+            showToast('正在填充验证码...', 1000);
             // 注入填充脚本
-            await chrome.scripting.executeScript({
+            const fillResult = await chrome.scripting.executeScript({
               target: { tabId: tab.id },
               func: (code) => {
                 const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+                console.log('找到的输入框:', inputs.length);
                 
                 // 查找可能的 TOTP 输入框
                 const totpInput = Array.from(inputs).find(input => {
                   const attrs = input.getAttributeNames();
-                  return attrs.some(attr => {
+                  const matched = attrs.some(attr => {
                     const value = input.getAttribute(attr).toLowerCase();
                     return value.includes('otp') || 
                            value.includes('2fa') || 
@@ -273,6 +290,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                            value.includes('security') ||
                            value.includes('code');
                   });
+                  if (matched) {
+                    console.log('找到匹配的输入框:', input);
+                  }
+                  return matched;
                 });
 
                 if (totpInput) {
@@ -285,6 +306,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               },
               args: [code]
             });
+            console.log('填充结果:', fillResult);
             showToast('验证码已自动填充');
           } catch (error) {
             console.error('自动填充失败:', error);
