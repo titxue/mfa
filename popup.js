@@ -133,19 +133,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         if (tab?.id) {
           try {
-            const response = await chrome.tabs.sendMessage(tab.id, { 
-              action: 'fillCode', 
-              code 
+            // 注入内容脚本
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              func: (code) => {
+                const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+                
+                // 查找可能的 TOTP 输入框
+                const totpInput = Array.from(inputs).find(input => {
+                  const attrs = input.getAttributeNames();
+                  return attrs.some(attr => {
+                    const value = input.getAttribute(attr).toLowerCase();
+                    return value.includes('otp') || 
+                           value.includes('2fa') || 
+                           value.includes('totp') || 
+                           value.includes('authenticator') ||
+                           value.includes('verification') ||
+                           value.includes('security') ||
+                           value.includes('code');
+                  }) || input.placeholder?.toLowerCase().includes('code');
+                });
+
+                if (totpInput) {
+                  totpInput.value = code.replace(/\s/g, '');
+                  totpInput.dispatchEvent(new Event('input', { bubbles: true }));
+                  totpInput.dispatchEvent(new Event('change', { bubbles: true }));
+                  return true;
+                }
+                return false;
+              },
+              args: [code]
             });
-            if (response.success) {
-              showToast('验证码已自动填充');
-            } else {
-              // 如果没有找到输入框，则复制到剪贴板
-              await navigator.clipboard.writeText(code);
-              showToast('验证码已复制到剪贴板');
-            }
+            showToast('验证码已自动填充');
           } catch (error) {
-            // 如果内容脚本未注入，则复制到剪贴板
+            // 如果注入失败，则复制到剪贴板
             await navigator.clipboard.writeText(code);
             showToast('验证码已复制到剪贴板');
           }
