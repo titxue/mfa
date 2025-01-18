@@ -5,7 +5,7 @@
   <title>TOTP Generator</title>
   <style>
     body {
-      width: 300px;
+      width: 350px;
       padding: 15px;
       font-family: Arial, sans-serif;
     }
@@ -35,6 +35,12 @@
     button:hover {
       background-color: #45a049;
     }
+    button.delete {
+      background-color: #f44336;
+    }
+    button.delete:hover {
+      background-color: #da190b;
+    }
     .code-display {
       font-size: 24px;
       text-align: center;
@@ -55,20 +61,76 @@
       border-radius: 2px;
       transition: width 1s linear;
     }
+    .account-list {
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .account-item {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .account-item:last-child {
+      border-bottom: none;
+    }
+    .account-info {
+      flex-grow: 1;
+    }
+    .account-name {
+      font-weight: bold;
+    }
+    .account-code {
+      font-family: monospace;
+      font-size: 1.2em;
+      color: #4CAF50;
+    }
+    .button-group {
+      display: flex;
+      gap: 5px;
+    }
+    .add-new {
+      margin-top: 10px;
+    }
+    .form-container {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .form-container.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="input-group">
-      <label for="account">Account:</label>
-      <input type="text" id="account" placeholder="Enter account name">
+    <div class="account-list" id="accountList">
+      <!-- 账户列表将通过 JavaScript 动态填充 -->
     </div>
-    <div class="input-group">
-      <label for="secret">Secret Key:</label>
-      <input type="text" id="secret" placeholder="Enter Base32 secret key">
+
+    <button class="add-new" id="addNew">添加新账户</button>
+
+    <div class="form-container" id="formContainer">
+      <div class="input-group">
+        <label for="account">账户名称:</label>
+        <input type="text" id="account" placeholder="输入账户名称">
+      </div>
+      <div class="input-group">
+        <label for="secret">密钥:</label>
+        <input type="text" id="secret" placeholder="输入 Base32 密钥">
+      </div>
+      <div class="button-group">
+        <button id="save">保存</button>
+        <button id="cancel" class="delete">取消</button>
+      </div>
     </div>
-    <button id="save">Save</button>
-    <div class="code-display" id="totp">000000</div>
+
     <div class="timer">
       <div class="timer-bar" id="timer-bar"></div>
     </div>
