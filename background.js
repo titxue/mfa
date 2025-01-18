@@ -1,3 +1,63 @@
+// TOTP 实现
+const TOTP = {
+  dec2hex: (s) => (s < 15.5 ? '0' : '') + Math.round(s).toString(16),
+  hex2dec: (s) => parseInt(s, 16),
+  base32tohex: (base32) => {
+    const base32chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bits = '';
+    let hex = '';
+    for (let i = 0; i < base32.length; i++) {
+      const val = base32chars.indexOf(base32.charAt(i).toUpperCase());
+      bits += val.toString(2).padStart(5, '0');
+    }
+    for (let i = 0; i + 4 <= bits.length; i += 4) {
+      const chunk = bits.substr(i, 4);
+      hex = hex + parseInt(chunk, 2).toString(16);
+    }
+    return hex;
+  },
+  getRemainingSeconds: () => {
+    return 30 - Math.floor(Date.now() / 1000) % 30;
+  },
+  generateOTP: async (secret) => {
+    const key = TOTP.base32tohex(secret);
+    const epoch = Math.round(Date.now() / 1000.0);
+    const time = Math.floor(epoch / 30);
+    const timeHex = time.toString(16).padStart(16, '0');
+    
+    const shaObj = await crypto.subtle.importKey(
+      'raw',
+      new Uint8Array(key.match(/[\da-f]{2}/gi).map(h => parseInt(h, 16))),
+      { name: 'HMAC', hash: 'SHA-1' },
+      false,
+      ['sign']
+    );
+    
+    const hmac = await crypto.subtle.sign(
+      'HMAC',
+      shaObj,
+      new Uint8Array(timeHex.match(/[\da-f]{2}/gi).map(h => parseInt(h, 16)))
+    );
+    
+    const hmacResult = Array.from(new Uint8Array(hmac))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    const offset = TOTP.hex2dec(hmacResult.substring(hmacResult.length - 1));
+    let otp = (TOTP.hex2dec(hmacResult.substr(offset * 2, 8)) & TOTP.hex2dec('7fffffff')) + '';
+    otp = otp.substring(otp.length - 6, otp.length);
+    return otp;
+  },
+  generateTOTP: async (secret) => {
+    try {
+      return await TOTP.generateOTP(secret.replace(/\s/g, ''));
+    } catch (error) {
+      console.error('生成 TOTP 失败:', error);
+      throw error;
+    }
+  }
+};
+
 // 调用 DeepSeek API
 async function callDeepSeekAPI(prompt, apiKey) {
   if (!apiKey) {
@@ -155,7 +215,6 @@ async function analyzeAndFill(tab) {
     }
 
     // 生成验证码
-    const { default: TOTP } = await import(chrome.runtime.getURL('totp.js'));
     const code = await TOTP.generateTOTP(matchedAccount.secret);
 
     // 填充验证码
