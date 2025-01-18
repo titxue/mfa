@@ -48,8 +48,9 @@
       border-bottom: 1px solid #f1f3f4;
       position: relative;
       opacity: 0;
-      transform: translateY(10px);
-      animation: fadeIn 0.3s ease forwards;
+      transform: translateY(0);
+      animation: fadeIn 0.2s ease forwards;
+      will-change: opacity, transform;
     }
     .account-info {
       flex-grow: 1;
@@ -92,7 +93,7 @@
     .progress-ring-circle.progress {
       stroke: #1a73e8;
       stroke-dasharray: 100 100;
-      transition: stroke-dashoffset 0.3s linear;
+      transition: stroke-dashoffset 0.2s linear;
       will-change: stroke-dashoffset;
     }
     .progress-text {
@@ -223,6 +224,30 @@
         transform: rotate(360deg);
       }
     }
+    /* 骨架屏样式 */
+    .skeleton-item {
+      padding: 16px;
+      border-bottom: 1px solid #f1f3f4;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    .skeleton-name {
+      height: 14px;
+      width: 60%;
+      background: #f1f3f4;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+    .skeleton-code {
+      height: 32px;
+      width: 80%;
+      background: #f1f3f4;
+      border-radius: 4px;
+    }
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -233,9 +258,18 @@
 
   <div class="container">
     <div class="account-list" id="accountList">
-      <div class="loading">
-        <div class="loading-spinner"></div>
-        <span>加载中...</span>
+      <!-- 骨架屏 -->
+      <div class="skeleton-item">
+        <div class="skeleton-name"></div>
+        <div class="skeleton-code"></div>
+      </div>
+      <div class="skeleton-item">
+        <div class="skeleton-name"></div>
+        <div class="skeleton-code"></div>
+      </div>
+      <div class="skeleton-item">
+        <div class="skeleton-name"></div>
+        <div class="skeleton-code"></div>
       </div>
     </div>
   </div>
