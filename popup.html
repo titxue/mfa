@@ -5,136 +5,201 @@
   <title>TOTP Generator</title>
   <style>
     body {
-      width: 350px;
-      padding: 15px;
-      font-family: Arial, sans-serif;
+      width: 380px;
+      padding: 0;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+      background-color: #ffffff;
     }
-    .container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    input {
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    button {
-      padding: 8px;
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    button.delete {
-      background-color: #f44336;
-    }
-    button.delete:hover {
-      background-color: #da190b;
-    }
-    .code-display {
-      font-size: 24px;
-      text-align: center;
-      padding: 10px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
-      margin: 10px 0;
-    }
-    .timer {
-      width: 100%;
-      height: 4px;
-      background-color: #ddd;
-      border-radius: 2px;
-    }
-    .timer-bar {
-      height: 100%;
-      background-color: #4CAF50;
-      border-radius: 2px;
-      transition: width 1s linear;
-    }
-    .account-list {
-      max-height: 200px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      margin-top: 10px;
-    }
-    .account-item {
-      padding: 10px;
-      border-bottom: 1px solid #ddd;
+    .header {
+      padding: 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      border-bottom: 1px solid #e1e4e8;
     }
-    .account-item:last-child {
-      border-bottom: none;
+    .header-title {
+      font-size: 20px;
+      font-weight: 500;
+      color: #202124;
+    }
+    .header-add {
+      padding: 8px;
+      color: #1a73e8;
+      background: none;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .container {
+      height: calc(100vh - 53px);
+      overflow-y: auto;
+    }
+    .account-list {
+      padding: 8px 0;
+    }
+    .account-item {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #f1f3f4;
     }
     .account-info {
       flex-grow: 1;
     }
     .account-name {
-      font-weight: bold;
+      font-size: 14px;
+      color: #202124;
+      margin-bottom: 8px;
     }
     .account-code {
-      font-family: monospace;
-      font-size: 1.2em;
-      color: #4CAF50;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 32px;
+      color: #202124;
+      letter-spacing: 2px;
     }
-    .button-group {
-      display: flex;
-      gap: 5px;
+    .progress-container {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      margin-left: 16px;
     }
-    .add-new {
-      margin-top: 10px;
+    .progress-ring {
+      transform: rotate(-90deg);
+      width: 40px;
+      height: 40px;
+    }
+    .progress-ring-circle {
+      fill: transparent;
+      stroke: #e1e4e8;
+      stroke-width: 3;
+    }
+    .progress-ring-circle.progress {
+      stroke: #1a73e8;
+      stroke-dasharray: 100 100;
+      transition: stroke-dashoffset 1s linear;
+    }
+    .progress-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+      color: #5f6368;
     }
     .form-container {
       display: none;
-      margin-top: 10px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: white;
+      z-index: 100;
     }
     .form-container.show {
       display: block;
     }
+    .form-header {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e1e4e8;
+    }
+    .form-title {
+      font-size: 20px;
+      font-weight: 500;
+      color: #202124;
+    }
+    .form-content {
+      padding: 16px;
+    }
+    .input-group {
+      margin-bottom: 24px;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #202124;
+      font-size: 14px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 8px 0;
+      border: none;
+      border-bottom: 1px solid #e1e4e8;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus {
+      border-bottom-color: #1a73e8;
+    }
+    .form-actions {
+      position: absolute;
+      right: 16px;
+      top: 8px;
+    }
+    button.form-button {
+      padding: 8px 16px;
+      border: none;
+      background: none;
+      color: #1a73e8;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    button.form-button:hover {
+      background-color: #f6fafe;
+    }
   </style>
 </head>
 <body>
+  <div class="header">
+    <div class="header-title">TOTP 生成器</div>
+    <button class="header-add" id="addNew">添加账户</button>
+  </div>
+
   <div class="container">
     <div class="account-list" id="accountList">
       <!-- 账户列表将通过 JavaScript 动态填充 -->
     </div>
+  </div>
 
-    <button class="add-new" id="addNew">添加新账户</button>
-
-    <div class="form-container" id="formContainer">
-      <div class="input-group">
-        <label for="account">账户名称:</label>
-        <input type="text" id="account" placeholder="输入账户名称">
-      </div>
-      <div class="input-group">
-        <label for="secret">密钥:</label>
-        <input type="text" id="secret" placeholder="输入 Base32 密钥">
-      </div>
-      <div class="button-group">
-        <button id="save">保存</button>
-        <button id="cancel" class="delete">取消</button>
+  <div class="form-container" id="formContainer">
+    <div class="form-header">
+      <div class="form-title">添加账户</div>
+      <div class="form-actions">
+        <button class="form-button" id="cancel">取消</button>
+        <button class="form-button" id="save">保存</button>
       </div>
     </div>
-
-    <div class="timer">
-      <div class="timer-bar" id="timer-bar"></div>
+    <div class="form-content">
+      <div class="input-group">
+        <label for="account">账户名称</label>
+        <input type="text" id="account" placeholder="例如：GitHub">
+      </div>
+      <div class="input-group">
+        <label for="secret">密钥</label>
+        <input type="text" id="secret" placeholder="输入 Base32 格式的密钥">
+      </div>
     </div>
   </div>
+
+  <!-- 圆形进度条模板 -->
+  <template id="progressRingTemplate">
+    <div class="progress-container">
+      <svg class="progress-ring">
+        <circle class="progress-ring-circle" cx="20" cy="20" r="17"></circle>
+        <circle class="progress-ring-circle progress" cx="20" cy="20" r="17"></circle>
+      </svg>
+      <div class="progress-text"></div>
+    </div>
+  </template>
+
   <script src="totp.js"></script>
   <script src="popup.js"></script>
 </body>
