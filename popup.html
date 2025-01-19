@@ -222,6 +222,29 @@
     .settings-container.show {
       display: block;
     }
+    .ai-analyze-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border: 1px solid #e1e4e8;
+      border-radius: 4px;
+      background-color: #f6fafe;
+      color: #1a73e8;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .ai-analyze-button:hover {
+      background-color: #e8f1fe;
+    }
+    .ai-analyze-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
