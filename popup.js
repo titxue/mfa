@@ -304,6 +304,17 @@ const App = {
 
       this.setupEventListeners(elements);
       this.startUpdateTimer();
+
+      // 自动触发 AI 分析
+      if (this.apiKey && this.accounts.length > 0) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id && tab.url.startsWith('http')) {
+          const hasInput = await PageAnalyzer.findTOTPInput(tab);
+          if (hasInput[0].result) {
+            this.analyzeAndFill().catch(console.error);
+          }
+        }
+      }
     } catch (error) {
       console.error('初始化失败:', error);
       elements.accountList.innerHTML = `
