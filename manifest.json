@@ -6,11 +6,7 @@
   "permissions": [
     "storage",
     "activeTab",
-    "scripting",
-    "clipboardWrite"
-  ],
-  "host_permissions": [
-    "<all_urls>"
+    "scripting"
   ],
   "action": {
     "default_popup": "popup.html"
