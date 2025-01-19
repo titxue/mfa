@@ -35,8 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.storage.local.set({ apiKey: apiKeyInput.value });
     apiKey = apiKeyInput.value;
     settingsContainer.classList.remove('show');
-    // 通知 background 更新
-    chrome.runtime.sendMessage({ type: 'settingsUpdated' });
   }
 
   // 调用 DeepSeek API
@@ -119,8 +117,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function saveAccounts() {
     await chrome.storage.sync.set({ accounts });
     accountItems = await renderAccounts();
-    // 通知 background 更新
-    chrome.runtime.sendMessage({ type: 'accountsUpdated' });
   }
 
   // 显示 Toast 消息

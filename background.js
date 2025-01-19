@@ -58,21 +58,32 @@ const TOTP = {
   }
 };
 
-// 公共函数
-const Utils = {
+// 页面操作相关函数
+const PageUtils = {
   // 检查输入框是否是 TOTP 输入框
   isTOTPInput: (input) => {
+    const keywords = ['otp', '2fa', 'totp', 'authenticator', 'verification', 'security', 'code', 'security code', '安全码'];
     const attrs = input.getAttributeNames();
     return attrs.some(attr => {
       const value = input.getAttribute(attr).toLowerCase();
-      return value.includes('otp') || 
-             value.includes('2fa') || 
-             value.includes('totp') || 
-             value.includes('authenticator') ||
-             value.includes('verification') ||
-             value.includes('security') ||
-             value.includes('code');
+      return keywords.some(keyword => value.includes(keyword));
     });
+  },
+
+  // 查找 TOTP 输入框
+  findTOTPInput: () => {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
+    console.log('找到的输入框数量:', inputs.length);
+    
+    const totpInput = Array.from(inputs).find(input => {
+      const isTotp = PageUtils.isTOTPInput(input);
+      if (isTotp) {
+        console.log('找到 TOTP 输入框:', input);
+      }
+      return isTotp;
+    });
+
+    return totpInput;
   },
 
   // 收集页面信息
@@ -113,98 +124,104 @@ const Utils = {
 
   // 填充验证码
   fillTOTPCode: (code) => {
-    const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
-    const totpInput = Array.from(inputs).find(Utils.isTOTPInput);
-
+    const totpInput = PageUtils.findTOTPInput();
     if (totpInput) {
-      totpInput.value = code.replace(/\s/g, '');
+      const cleanCode = code.replace(/\s/g, '');
+      console.log('填充验证码:', cleanCode);
+      totpInput.value = cleanCode;
       totpInput.dispatchEvent(new Event('input', { bubbles: true }));
       totpInput.dispatchEvent(new Event('change', { bubbles: true }));
-      return true;
+      return { success: true, value: cleanCode };
     }
-    return false;
+    return { success: false };
   }
 };
 
-// 调用 DeepSeek API
-async function callDeepSeekAPI(prompt, apiKey) {
-  if (!apiKey) {
-    throw new Error('请先设置 API Key');
-  }
+// API 相关函数
+const APIUtils = {
+  // 调用 DeepSeek API
+  callDeepSeekAPI: async (prompt, apiKey) => {
+    if (!apiKey) {
+      throw new Error('请先设置 API Key');
+    }
 
-  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.1,
-      max_tokens: 100
-    })
-  });
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        max_tokens: 100
+      })
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    console.error('API 错误:', error);
-    throw new Error(`API 调用失败: ${error.error?.message || '未知错误'}`);
-  }
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('API 错误:', error);
+      throw new Error(`API 调用失败: ${error.error?.message || '未知错误'}`);
+    }
 
-  const data = await response.json();
-  return data.choices[0].message.content.trim();
-}
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
+  },
 
-// 分析页面并自动填充
-async function analyzeAndFill(tab) {
-  try {
-    // 获取 API key 和账户列表
+  // 生成 AI 提示词
+  generatePrompt: (pageInfo, accounts) => `
+    我正在浏览一个网页，需要你帮我从以下账户列表中选择最合适的账户来填写验证码。
+    
+    页面信息：
+    - 标题: ${pageInfo.title}
+    - 域名: ${pageInfo.domain}
+    - 页面文本: ${pageInfo.texts.join(' ')}
+    - 表单标签: ${pageInfo.labels.join(' ')}
+    
+    账户列表：
+    ${accounts.map(a => `- ${a.name}`).join('\n')}
+    
+    请分析页面内容和账户列表，选择最合适的账户。只需要返回账户名称，不需要其他解释。
+    如果没有合适的账户，返回空字符串。
+  `
+};
+
+// Chrome 扩展相关函数
+const ExtUtils = {
+  // 执行页面脚本
+  executeScript: async (tab, func, ...args) => {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func,
+      args
+    });
+    return result;
+  },
+
+  // 获取存储的数据
+  getStorageData: async () => {
     const [{ apiKey }, { accounts }] = await Promise.all([
       chrome.storage.local.get('apiKey'),
       chrome.storage.sync.get('accounts')
     ]);
+    return { apiKey, accounts: accounts || [] };
+  }
+};
 
-    if (!apiKey) {
-      console.log('未设置 API Key，跳过自动填充');
-      return;
-    }
-
-    if (!accounts?.length) {
-      console.log('无可用账户，跳过自动填充');
+// 分析页面并自动填充
+async function analyzeAndFill(tab) {
+  try {
+    // 获取存储的数据
+    const { apiKey, accounts } = await ExtUtils.getStorageData();
+    if (!apiKey || !accounts.length) {
+      console.log(!apiKey ? '未设置 API Key' : '无可用账户', '，跳过自动填充');
       return;
     }
 
     // 检查是否有 TOTP 输入框
-    const [hasInput] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => {
-        function isTOTPInput(input) {
-          const attrs = input.getAttributeNames();
-          return attrs.some(attr => {
-            const value = input.getAttribute(attr).toLowerCase();
-            return value.includes('otp') || 
-                   value.includes('2fa') || 
-                   value.includes('totp') || 
-                   value.includes('authenticator') ||
-                   value.includes('verification') ||
-                   value.includes('security') ||
-                   value.includes('code');
-          });
-        }
-
-        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
-        console.log('找到的输入框数量:', inputs.length);
-        const hasTotp = Array.from(inputs).some(input => {
-          const isTotp = isTOTPInput(input);
-          if (isTotp) {
-            console.log('找到 TOTP 输入框:', input);
-          }
-          return isTotp;
-        });
-        console.log('是否有 TOTP 输入框:', hasTotp);
-        return hasTotp;
-      }
+    const hasInput = await ExtUtils.executeScript(tab, () => {
+      return PageUtils.findTOTPInput() !== null;
     });
 
     if (!hasInput?.result) {
@@ -213,11 +230,7 @@ async function analyzeAndFill(tab) {
     }
 
     // 收集页面信息
-    const [pageResult] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: Utils.collectPageInfo
-    });
-
+    const pageResult = await ExtUtils.executeScript(tab, PageUtils.collectPageInfo);
     if (!pageResult?.result) {
       console.log('无法获取页面信息，跳过自动填充');
       return;
@@ -226,24 +239,9 @@ async function analyzeAndFill(tab) {
     const pageInfo = pageResult.result;
     console.log('收集到的页面信息:', pageInfo);
 
-    // 使用 AI 分析页面内容和账户列表
-    const prompt = `
-      我正在浏览一个网页，需要你帮我从以下账户列表中选择最合适的账户来填写验证码。
-      
-      页面信息：
-      - 标题: ${pageInfo.title}
-      - 域名: ${pageInfo.domain}
-      - 页面文本: ${pageInfo.texts.join(' ')}
-      - 表单标签: ${pageInfo.labels.join(' ')}
-      
-      账户列表：
-      ${accounts.map(a => `- ${a.name}`).join('\n')}
-      
-      请分析页面内容和账户列表，选择最合适的账户。只需要返回账户名称，不需要其他解释。
-      如果没有合适的账户，返回空字符串。
-    `;
-
-    const matchedAccountName = await callDeepSeekAPI(prompt, apiKey);
+    // 使用 AI 分析并选择账户
+    const prompt = APIUtils.generatePrompt(pageInfo, accounts);
+    const matchedAccountName = await APIUtils.callDeepSeekAPI(prompt, apiKey);
     console.log('AI 选择的账户:', matchedAccountName);
 
     if (!matchedAccountName) {
@@ -259,46 +257,7 @@ async function analyzeAndFill(tab) {
 
     // 生成并填充验证码
     const code = await TOTP.generateTOTP(matchedAccount.secret);
-    const [fillResult] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: (code) => {
-        function isTOTPInput(input) {
-          const attrs = input.getAttributeNames();
-          return attrs.some(attr => {
-            const value = input.getAttribute(attr).toLowerCase();
-            return value.includes('otp') || 
-                   value.includes('2fa') || 
-                   value.includes('totp') || 
-                   value.includes('authenticator') ||
-                   value.includes('verification') ||
-                   value.includes('security') ||
-                   value.includes('code');
-          });
-        }
-
-        const inputs = document.querySelectorAll('input[type="text"], input[type="number"], input:not([type])');
-        console.log('准备填充验证码，找到的输入框数量:', inputs.length);
-        
-        const totpInput = Array.from(inputs).find(input => {
-          const isTotp = isTOTPInput(input);
-          if (isTotp) {
-            console.log('找到要填充的 TOTP 输入框:', input);
-          }
-          return isTotp;
-        });
-
-        if (totpInput) {
-          const cleanCode = code.replace(/\s/g, '');
-          console.log('填充验证码:', cleanCode);
-          totpInput.value = cleanCode;
-          totpInput.dispatchEvent(new Event('input', { bubbles: true }));
-          totpInput.dispatchEvent(new Event('change', { bubbles: true }));
-          return { success: true, value: cleanCode };
-        }
-        return { success: false };
-      },
-      args: [code]
-    });
+    const fillResult = await ExtUtils.executeScript(tab, PageUtils.fillTOTPCode, code);
 
     if (fillResult?.result?.success) {
       console.log('自动填充成功，验证码:', fillResult.result.value);
