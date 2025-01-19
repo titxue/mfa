@@ -18,16 +18,17 @@ const StorageManager = {
   },
 
   async getApiKey() {
-    const { apiKey } = await chrome.storage.local.get('apiKey');
+    const { apiKey } = await chrome.storage.sync.get('apiKey');
+    console.log('apiKey', apiKey);
     return apiKey || '';
   },
 
   async saveApiKey(apiKey) {
-    await chrome.storage.local.set({ apiKey });
+    await chrome.storage.sync.set({ apiKey });
   },
 
   async saveState(state) {
-    await chrome.storage.local.set({ state });
+    await chrome.storage.sync.set({ state });
   }
 };
 
