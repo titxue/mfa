@@ -315,20 +315,27 @@ const App = {
   },
 
   startUpdateTimer() {
-    setInterval(async () => {
+    // 使用 requestAnimationFrame 实现更丝滑的动画
+    const animate = () => {
       if (this.accountItems.length > 0) {
-        const remainingSeconds = TOTP.getRemainingSeconds();
+        const now = Date.now() / 1000; // 转换为秒
+        const period = 30; // TOTP 周期为 30 秒
+        const remainingSeconds = period - (now % period);
+        const percentage = (remainingSeconds / period) * 100;
+
         this.accountItems.forEach(item => {
-          item.updateProgress();
-          if (remainingSeconds === 30) {
-            // 只在需要时更新所有验证码
+          item.updateProgress(percentage);
+          // 当剩余时间接近 30 秒时更新验证码
+          if (remainingSeconds > 29.9) {
             this.codeManager.updateCodes().then(() => {
               item.updateCode();
             });
           }
         });
       }
-    }, 1000);
+      requestAnimationFrame(animate);
+    };
+    animate();
   },
 
   async analyzeAndFill() {
@@ -587,9 +594,7 @@ const App = {
         const codeData = this.codeManager.getCode(account.name);
         accountInfo.querySelector('.account-code').textContent = codeData.formatted;
       },
-      updateProgress: () => {
-        const remainingSeconds = TOTP.getRemainingSeconds();
-        const percentage = (remainingSeconds / 30) * 100;
+      updateProgress: (percentage) => {
         UIManager.setProgress(progress.circle, progress.text, progress.circumference, percentage);
       }
     };
