@@ -31,6 +31,149 @@ const StorageManager = {
   }
 };
 
+// 导入导出管理模块
+const ImportExportManager = {
+  // 导出账户数据
+  async exportAccounts() {
+    try {
+      const accounts = await StorageManager.getAccounts();
+      if (accounts.length === 0) {
+        UIManager.showToast('没有账户数据可导出', 'warning');
+        return;
+      }
+
+      // 显示确认对话框
+      const confirmed = await UIManager.showConfirmDialog(
+        '确认导出',
+        `即将导出 ${accounts.length} 个账户的数据。导出的文件包含敏感信息，请妥善保管。`,
+        '导出',
+        '取消'
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+
+      const exportData = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        accounts: accounts.map(account => ({
+          name: account.name,
+          secret: account.secret
+        }))
+      };
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `totp-accounts-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      UIManager.showToast('账户数据导出成功', 'success');
+    } catch (error) {
+      console.error('导出失败:', error);
+      UIManager.showToast('导出失败，请重试', 'error');
+    }
+  },
+
+  // 导入账户数据
+  async importAccounts(file) {
+    try {
+      const text = await file.text();
+      const importData = JSON.parse(text);
+
+      // 验证数据格式
+      if (!this.validateImportData(importData)) {
+        UIManager.showToast('无效的文件格式');
+        return;
+      }
+
+      // 显示确认对话框
+      const confirmed = await UIManager.showConfirmDialog(
+        '确认导入',
+        `即将导入 ${importData.accounts.length} 个账户。导入操作将添加新账户，重复的账户将被跳过。`,
+        '导入',
+        '取消'
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+
+      const currentAccounts = await StorageManager.getAccounts();
+      const newAccounts = [];
+      let duplicateCount = 0;
+
+      // 检查重复账户并合并
+      for (const account of importData.accounts) {
+        const exists = currentAccounts.find(existing => existing.name === account.name);
+        if (exists) {
+          duplicateCount++;
+        } else {
+          // 验证密钥格式
+          try {
+            await TOTP.generateTOTP(account.secret);
+            newAccounts.push(account);
+          } catch (error) {
+            console.warn(`跳过无效密钥的账户: ${account.name}`);
+          }
+        }
+      }
+
+      if (newAccounts.length === 0) {
+        if (duplicateCount > 0) {
+          UIManager.showToast('所有账户都已存在');
+        } else {
+          UIManager.showToast('没有有效的账户数据');
+        }
+        return;
+      }
+
+      // 保存新账户
+      const allAccounts = [...currentAccounts, ...newAccounts];
+      await StorageManager.saveAccounts(allAccounts);
+      
+      // 更新UI
+      App.accounts = allAccounts;
+      await App.codeManager.updateCodes();
+      App.accountItems = await App.renderAccounts();
+
+      let message = `成功导入 ${newAccounts.length} 个账户`;
+      if (duplicateCount > 0) {
+        message += `，跳过 ${duplicateCount} 个重复账户`;
+      }
+      UIManager.showToast(message, 'success');
+    } catch (error) {
+      console.error('导入失败:', error);
+      if (error instanceof SyntaxError) {
+        UIManager.showToast('文件格式错误，请选择有效的JSON文件', 'error');
+      } else {
+        UIManager.showToast('导入失败，请重试', 'error');
+      }
+    }
+  },
+
+  // 验证导入数据格式
+  validateImportData(data) {
+    if (!data || typeof data !== 'object') return false;
+    if (!Array.isArray(data.accounts)) return false;
+    
+    return data.accounts.every(account => 
+      account && 
+      typeof account.name === 'string' && 
+      typeof account.secret === 'string' &&
+      account.name.trim() !== '' &&
+      account.secret.trim() !== ''
+    );
+  }
+};
+
 // UI 管理模块
 const UIManager = {
   elements: {},
@@ -52,9 +195,9 @@ const UIManager = {
     `;
   },
 
-  showToast(message, duration = CONFIG.TOAST_DURATION) {
+  showToast(message, type = 'info') {
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = `toast ${type}`;
     toast.textContent = message;
     this.elements.toastContainer.appendChild(toast);
 
@@ -67,7 +210,131 @@ const UIManager = {
             this.elements.toastContainer.removeChild(toast);
           }
         }, 300);
-      }, duration);
+      }, CONFIG.TOAST_DURATION);
+    });
+  },
+
+  showConfirmDialog(title, message, confirmText = '确认', cancelText = '取消') {
+    return new Promise((resolve) => {
+      // 创建确认对话框元素
+      const dialog = document.createElement('div');
+      dialog.className = 'confirm-dialog';
+      dialog.innerHTML = `
+        <div class="confirm-dialog-content">
+          <h3 class="confirm-dialog-title">${title}</h3>
+          <p class="confirm-dialog-message">${message}</p>
+          <div class="confirm-dialog-buttons">
+            <button class="confirm-dialog-cancel">${cancelText}</button>
+            <button class="confirm-dialog-confirm">${confirmText}</button>
+          </div>
+        </div>
+      `;
+      
+      // 添加样式
+      const style = document.createElement('style');
+      style.textContent = `
+        .confirm-dialog {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 10000;
+        }
+        .confirm-dialog-content {
+          background: white;
+          border-radius: 16px;
+          padding: 24px;
+          max-width: 320px;
+          width: 90%;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        .confirm-dialog-title {
+          margin: 0 0 12px 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: #1a1a1a;
+        }
+        .confirm-dialog-message {
+          margin: 0 0 20px 0;
+          font-size: 14px;
+          line-height: 1.5;
+          color: #666;
+        }
+        .confirm-dialog-buttons {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+        }
+        .confirm-dialog-cancel,
+        .confirm-dialog-confirm {
+          padding: 8px 16px;
+          border: none;
+          border-radius: 8px;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .confirm-dialog-cancel {
+          background: #f5f5f5;
+          color: #666;
+        }
+        .confirm-dialog-cancel:hover {
+          background: #e5e5e5;
+        }
+        .confirm-dialog-confirm {
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+        }
+        .confirm-dialog-confirm:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+      `;
+      
+      document.head.appendChild(style);
+      document.body.appendChild(dialog);
+      
+      // 事件处理
+      const handleConfirm = () => {
+        document.body.removeChild(dialog);
+        document.head.removeChild(style);
+        resolve(true);
+      };
+      
+      const handleCancel = () => {
+        document.body.removeChild(dialog);
+        document.head.removeChild(style);
+        resolve(false);
+      };
+      
+      dialog.querySelector('.confirm-dialog-confirm').addEventListener('click', handleConfirm);
+      dialog.querySelector('.confirm-dialog-cancel').addEventListener('click', handleCancel);
+      
+      // ESC键取消
+      const handleKeydown = (e) => {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', handleKeydown);
+          handleCancel();
+        }
+      };
+      document.addEventListener('keydown', handleKeydown);
+      
+      // 点击背景取消
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+          handleCancel();
+        }
+      });
+      
+      // 聚焦到确认按钮
+      setTimeout(() => {
+        dialog.querySelector('.confirm-dialog-confirm').focus();
+      }, 100);
     });
   },
 
@@ -330,6 +597,57 @@ const App = {
     elements.container.addEventListener('scroll', () => {
       StorageManager.saveCurrentState(elements);
     });
+    
+    // 设置页面功能
+    elements.settingsBtn = document.getElementById('settingsBtn');
+    elements.settingsClose = document.getElementById('settingsClose');
+    
+    elements.settingsBtn.addEventListener('click', () => UIManager.showSettings());
+    elements.settingsClose.addEventListener('click', () => UIManager.hideSettings());
+    
+    // 设置页面中的导入导出功能
+    elements.importAccountsBtn = document.getElementById('importAccountsBtn');
+    elements.exportAccountsBtn = document.getElementById('exportAccountsBtn');
+    elements.importFile = document.getElementById('importFile');
+    
+    elements.exportAccountsBtn.addEventListener('click', () => ImportExportManager.exportAccounts());
+    elements.importAccountsBtn.addEventListener('click', () => elements.importFile.click());
+    elements.importFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        ImportExportManager.importAccounts(file);
+        e.target.value = ''; // 清空文件选择，允许重复选择同一文件
+      }
+    });
+
+    // 添加设置相关的UI管理方法
+      UIManager.showSettings = () => {
+        const settingsContainer = document.getElementById('settingsContainer');
+        settingsContainer.classList.add('show');
+        settingsContainer.setAttribute('aria-hidden', 'false');
+        // 聚焦到关闭按钮以便键盘导航
+        setTimeout(() => {
+          document.getElementById('settingsClose').focus();
+        }, 100);
+      };
+      
+      UIManager.hideSettings = () => {
+        const settingsContainer = document.getElementById('settingsContainer');
+        settingsContainer.classList.remove('show');
+        settingsContainer.setAttribute('aria-hidden', 'true');
+        // 返回焦点到设置按钮
+        document.getElementById('settingsBtn').focus();
+      };
+      
+      // 添加键盘导航支持
+      document.addEventListener('keydown', (e) => {
+        const settingsContainer = document.getElementById('settingsContainer');
+        if (settingsContainer.classList.contains('show')) {
+          if (e.key === 'Escape') {
+            UIManager.hideSettings();
+          }
+        }
+      });
 
 
   },

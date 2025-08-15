@@ -25,10 +25,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+      backdrop-filter: blur(15px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 2px 20px rgba(102, 126, 234, 0.1);
       position: static;
       z-index: 1;
       margin-bottom: 0;
@@ -36,10 +36,9 @@
     .header-title {
       font-size: 22px;
       font-weight: 600;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: rgba(255, 255, 255, 0.95);
+      text-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
     }
     .header-add {
       padding: 12px 20px;
@@ -316,6 +315,190 @@
       opacity: 0.9;
     }
     
+    /* 设置页面样式 */
+    .settings-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .settings-container.show {
+      display: flex;
+    }
+
+    .settings-modal {
+      width: 380px;
+      max-width: calc(100vw - 40px);
+      max-height: calc(100vh - 40px);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: slideInUp 0.3s ease-out;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 24px 24px 0 0;
+      flex-shrink: 0;
+    }
+
+    .settings-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .settings-content {
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 0 0 24px 24px;
+      backdrop-filter: blur(10px);
+    }
+
+    .settings-section {
+      margin-bottom: 24px;
+    }
+
+    .settings-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .settings-section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px 10px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .settings-section-title svg {
+      color: #667eea;
+    }
+
+    .settings-section-content {
+      padding: 0 24px 12px;
+    }
+
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .settings-item:last-child {
+      border-bottom: none;
+      padding-bottom: 16px;
+    }
+
+    .settings-item-info {
+      flex: 1;
+    }
+
+    .settings-item-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #333;
+      margin-bottom: 4px;
+    }
+
+    .settings-item-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .settings-button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 60px;
+    }
+
+    .settings-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .settings-button:active {
+      transform: translateY(0);
+    }
+
+    /* 响应式设计 */
+    @media (max-width: 480px) {
+      .settings-container {
+        padding: 10px;
+      }
+      
+      .settings-modal {
+        width: calc(100vw - 20px);
+        margin: 0 10px;
+      }
+      
+      .settings-header {
+        padding: 16px 20px;
+      }
+      
+      .settings-section-title {
+        padding: 14px 20px 8px;
+        font-size: 14px;
+      }
+      
+      .settings-section-content {
+        padding: 0 20px 10px;
+      }
+      
+      .settings-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 0;
+      }
+      
+      .settings-button {
+        align-self: flex-end;
+      }
+    }
+    
     /* 全局动画效果 */
     * {
       transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -349,6 +532,11 @@
   <div class="header">
     <div class="header-title">TOTP 生成器</div>
     <div style="display: flex; gap: 8px;">
+      <button class="header-add" id="settingsBtn" title="设置">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+        </svg>
+      </button>
       <button class="header-add" id="addNew">添加账户</button>
     </div>
   </div>
@@ -357,6 +545,7 @@
     <div class="account-list" id="accountList"></div>
   </div>
 
+  <!-- 添加账户表单 -->
   <div class="form-container" id="formContainer">
     <div class="form-header">
       <div class="form-title">添加账户</div>
@@ -377,7 +566,67 @@
     </div>
   </div>
 
+  <!-- 设置页面 -->
+  <div class="settings-container" id="settingsContainer" role="dialog" aria-labelledby="settingsTitle" aria-hidden="true">
+    <div class="settings-modal">
+      <div class="settings-header">
+        <div class="settings-title" id="settingsTitle">设置</div>
+        <div class="settings-actions">
+          <button class="form-button" id="settingsClose" aria-label="关闭设置页面">关闭</button>
+        </div>
+      </div>
+      <div class="settings-content">
+      <!-- 账户管理分类 -->
+      <div class="settings-section">
+        <div class="settings-section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+          </svg>
+          账户管理
+        </div>
+        <div class="settings-section-content">
+          <div class="settings-item">
+             <div class="settings-item-info">
+               <div class="settings-item-title">导出账户数据</div>
+               <div class="settings-item-desc">将所有账户数据导出为JSON文件进行备份</div>
+             </div>
+             <button class="settings-button" id="exportAccountsBtn" aria-describedby="exportDesc">导出</button>
+           </div>
+           <div class="settings-item">
+             <div class="settings-item-info">
+               <div class="settings-item-title">导入账户数据</div>
+               <div class="settings-item-desc" id="importDesc">从JSON文件导入账户数据，支持数据合并</div>
+             </div>
+             <button class="settings-button" id="importAccountsBtn" aria-describedby="importDesc">导入</button>
+           </div>
+        </div>
+      </div>
 
+      <!-- 应用信息分类 -->
+      <div class="settings-section">
+        <div class="settings-section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"/>
+          </svg>
+          关于应用
+        </div>
+        <div class="settings-section-content">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-title">TOTP 生成器</div>
+              <div class="settings-item-desc">版本 1.0.0 - 安全的两步验证码生成工具</div>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-title">使用说明</div>
+              <div class="settings-item-desc">点击账户可复制验证码，长按可删除账户</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <template id="progressRingTemplate">
     <div class="progress-container">
@@ -396,6 +645,9 @@
   </template>
 
   <div class="toast-container" id="toastContainer"></div>
+
+  <!-- 隐藏的文件输入用于导入功能 -->
+  <input type="file" id="importFile" accept=".json" style="display: none;">
 
   <script src="totp.js"></script>
   <script src="popup.js"></script>
