@@ -15,10 +15,19 @@ const StorageManager = {
     await chrome.storage.sync.set({ accounts });
   },
 
-
-
   async saveState(state) {
     await chrome.storage.sync.set({ state });
+  },
+
+  // 统一的状态保存函数
+  async saveCurrentState(elements) {
+    const state = {
+      formVisible: elements.formContainer.classList.contains('show'),
+      accountValue: elements.accountInput.value,
+      secretValue: elements.secretInput.value,
+      scrollTop: elements.container.scrollTop
+    };
+    await this.saveState(state);
   }
 };
 
@@ -33,17 +42,15 @@ const UIManager = {
 
   setupEmptyState() {
     this.elements.accountList.innerHTML = `
-    <div class="empty-state">
-      <svg class="empty-state-icon" viewBox="0 0 24 24">
-        <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
-      </svg>
-      <div>暂无账户</div>
-      <div style="margin-top: 8px; font-size: 12px; opacity: 0.7">点击右上角添加账户开始使用</div>
-    </div>
-  `;
+      <div class="empty-state">
+        <svg class="empty-state-icon" viewBox="0 0 24 24">
+          <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+        </svg>
+        <div>暂无账户</div>
+        <div style="margin-top: 8px; font-size: 12px; opacity: 0.7">点击右上角添加账户开始使用</div>
+      </div>
+    `;
   },
-
-
 
   showToast(message, duration = CONFIG.TOAST_DURATION) {
     const toast = document.createElement('div');
@@ -51,34 +58,36 @@ const UIManager = {
     toast.textContent = message;
     this.elements.toastContainer.appendChild(toast);
 
-    toast.offsetHeight;
-    toast.classList.add('show');
-
-    setTimeout(() => {
-      toast.classList.remove('show');
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
       setTimeout(() => {
-        this.elements.toastContainer.removeChild(toast);
-      }, 300);
-    }, duration);
+        toast.classList.remove('show');
+        setTimeout(() => {
+          if (toast.parentNode) {
+            this.elements.toastContainer.removeChild(toast);
+          }
+        }, 300);
+      }, duration);
+    });
   },
 
+  // 简化的进度环创建
   createProgressRing() {
     const progressRing = this.elements.progressTemplate.content.cloneNode(true);
     const circle = progressRing.querySelector('.progress');
     const text = progressRing.querySelector('.progress-text');
-    const radius = circle.r.baseVal.value;
-    const circumference = radius * 2 * Math.PI;
+    const circumference = 2 * Math.PI * 16; // 固定半径16
     
-    circle.style.strokeDasharray = `${circumference} ${circumference}`;
+    circle.style.strokeDasharray = circumference;
     circle.style.strokeDashoffset = circumference;
 
     return { container: progressRing, circle, text, circumference };
   },
 
-  setProgress(circle, text, circumference, percent) {
+  updateProgress(circle, text, circumference, percent) {
     const offset = circumference - (percent / 100 * circumference);
     circle.style.strokeDashoffset = offset;
-    text.textContent = Math.ceil(percent / (100/30));
+    text.textContent = Math.ceil(30 * percent / 100);
   }
 };
 
@@ -188,7 +197,15 @@ const App = {
   },
 
   async init() {
-    const elements = {
+    const elements = this.getUIElements();
+    await this.initializeData();
+    await this.restoreState(elements);
+    this.setupEventListeners(elements);
+    this.startUpdateTimer();
+  },
+
+  getUIElements() {
+    return {
       accountInput: document.getElementById('account'),
       secretInput: document.getElementById('secret'),
       saveButton: document.getElementById('save'),
@@ -198,47 +215,45 @@ const App = {
       accountList: document.getElementById('accountList'),
       container: document.querySelector('.container'),
       progressTemplate: document.getElementById('progressRingTemplate'),
-      toastContainer: document.getElementById('toastContainer'),
-
+      toastContainer: document.getElementById('toastContainer')
     };
+  },
 
-    UIManager.init(elements);
-    
+  async initializeData() {
     try {
-      const [stateResult, accountsResult] = await Promise.all([
-        chrome.storage.local.get('state'),
-        StorageManager.getAccounts()
-      ]);
-
-      this.accounts = accountsResult;
-      
-      // 初始生成所有验证码
+      UIManager.init(this.getUIElements());
+      this.accounts = await StorageManager.getAccounts();
+      // codeManager is already defined as a property of App
       await this.codeManager.updateCodes();
       this.accountItems = await this.renderAccounts();
-
-      if (stateResult.state) {
-        const { state } = stateResult;
-        if (state.formVisible) {
-          elements.formContainer.classList.add('show');
-        }
-        elements.accountInput.value = state.accountValue || '';
-        elements.secretInput.value = state.secretValue || '';
-        if (state.scrollTop) {
-          elements.container.scrollTop = state.scrollTop;
-        }
-      }
-
-      this.setupEventListeners(elements);
-      this.startUpdateTimer();
-
-
     } catch (error) {
-      console.error('初始化失败:', error);
-      elements.accountList.innerHTML = `
-        <div class="empty-state" style="color: #d93025;">
-          <span>加载失败，请重试</span>
-        </div>
-      `;
+      this.handleInitError(error);
+    }
+  },
+
+  handleInitError(error) {
+    console.error('初始化失败:', error);
+    const elements = this.getUIElements();
+    elements.accountList.innerHTML = `
+      <div class="empty-state" style="color: #d93025;">
+        <p>初始化失败，请刷新页面重试</p>
+      </div>
+    `;
+   },
+
+   async restoreState(elements) {
+    const stateResult = await chrome.storage.local.get('state');
+    
+    if (stateResult.state) {
+      const { state } = stateResult;
+      if (state.formVisible) {
+        elements.formContainer.classList.add('show');
+      }
+      elements.accountInput.value = state.accountValue || '';
+      elements.secretInput.value = state.secretValue || '';
+      if (state.scrollTop) {
+        elements.container.scrollTop = state.scrollTop;
+      }
     }
   },
 
@@ -266,18 +281,17 @@ const App = {
     animate();
   },
 
-
+  hideForm(elements) {
+    elements.formContainer.classList.remove('show');
+    elements.accountInput.value = '';
+    elements.secretInput.value = '';
+    StorageManager.saveCurrentState(elements);
+  },
 
   setupEventListeners(elements) {
-
     elements.addNewButton.addEventListener('click', () => {
       elements.formContainer.classList.add('show');
-      StorageManager.saveState({
-        formVisible: true,
-        accountValue: elements.accountInput.value,
-        secretValue: elements.secretInput.value,
-        scrollTop: elements.container.scrollTop
-      });
+      StorageManager.saveCurrentState(elements);
     });
 
     elements.saveButton.addEventListener('click', async () => {
@@ -295,52 +309,27 @@ const App = {
         await StorageManager.saveAccounts(this.accounts);
         await this.codeManager.updateCodes();
         this.accountItems = await this.renderAccounts();
-        elements.formContainer.classList.remove('show');
-        elements.accountInput.value = '';
-        elements.secretInput.value = '';
-        StorageManager.saveState({
-          formVisible: false,
-          accountValue: '',
-          secretValue: '',
-          scrollTop: elements.container.scrollTop
-        });
+        this.hideForm(elements);
       } catch (error) {
         alert('无效的密钥格式');
       }
     });
 
     elements.cancelButton.addEventListener('click', () => {
-      elements.formContainer.classList.remove('show');
-      elements.accountInput.value = '';
-      elements.secretInput.value = '';
-      StorageManager.saveState({
-        formVisible: false,
-        accountValue: '',
-        secretValue: '',
-        scrollTop: elements.container.scrollTop
-      });
+      this.hideForm(elements);
     });
 
-    elements.accountInput.addEventListener('input', () => StorageManager.saveState({
-      formVisible: elements.formContainer.classList.contains('show'),
-      accountValue: elements.accountInput.value,
-      secretValue: elements.secretInput.value,
-      scrollTop: elements.container.scrollTop
-    }));
+    elements.accountInput.addEventListener('input', () => {
+      StorageManager.saveCurrentState(elements);
+    });
 
-    elements.secretInput.addEventListener('input', () => StorageManager.saveState({
-      formVisible: elements.formContainer.classList.contains('show'),
-      accountValue: elements.accountInput.value,
-      secretValue: elements.secretInput.value,
-      scrollTop: elements.container.scrollTop
-    }));
+    elements.secretInput.addEventListener('input', () => {
+      StorageManager.saveCurrentState(elements);
+    });
 
-    elements.container.addEventListener('scroll', () => StorageManager.saveState({
-      formVisible: elements.formContainer.classList.contains('show'),
-      accountValue: elements.accountInput.value,
-      secretValue: elements.secretInput.value,
-      scrollTop: elements.container.scrollTop
-    }));
+    elements.container.addEventListener('scroll', () => {
+      StorageManager.saveCurrentState(elements);
+    });
 
 
   },
@@ -380,7 +369,7 @@ const App = {
     const progress = UIManager.createProgressRing();
     const remainingSeconds = TOTP.getRemainingSeconds();
     const percentage = (remainingSeconds / 30) * 100;
-    UIManager.setProgress(progress.circle, progress.text, progress.circumference, percentage);
+    UIManager.updateProgress(progress.circle, progress.text, progress.circumference, percentage);
 
     accountItem.appendChild(accountInfo);
     accountItem.appendChild(progress.container);
@@ -450,7 +439,7 @@ const App = {
         accountInfo.querySelector('.account-code').textContent = codeData.formatted;
       },
       updateProgress: (percentage) => {
-        UIManager.setProgress(progress.circle, progress.text, progress.circumference, percentage);
+        UIManager.updateProgress(progress.circle, progress.text, progress.circumference, percentage);
       }
     };
   }
