@@ -38,16 +38,16 @@ const ImportExportManager = {
     try {
       const accounts = await StorageManager.getAccounts();
       if (accounts.length === 0) {
-        UIManager.showToast('没有账户数据可导出', 'warning');
+        UIManager.showToast(I18n.t('toast.no_accounts_to_export'), 'warning');
         return;
       }
 
       // 显示确认对话框
       const confirmed = await UIManager.showConfirmDialog(
-        '确认导出',
-        `即将导出 ${accounts.length} 个账户的数据。导出的文件包含敏感信息，请妥善保管。`,
-        '导出',
-        '取消'
+        I18n.t('dialog.export_title'),
+        I18n.t('dialog.export_message', { count: accounts.length }),
+        I18n.t('button.export'),
+        I18n.t('button.cancel')
       );
       
       if (!confirmed) {
@@ -75,10 +75,10 @@ const ImportExportManager = {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      UIManager.showToast('账户数据导出成功', 'success');
+      UIManager.showToast(I18n.t('toast.export_success'), 'success');
     } catch (error) {
-      console.error('导出失败:', error);
-      UIManager.showToast('导出失败，请重试', 'error');
+      console.error('Export failed:', error);
+      UIManager.showToast(I18n.t('toast.export_failed'), 'error');
     }
   },
 
@@ -90,16 +90,16 @@ const ImportExportManager = {
 
       // 验证数据格式
       if (!this.validateImportData(importData)) {
-        UIManager.showToast('无效的文件格式');
+        UIManager.showToast(I18n.t('toast.invalid_file_format'));
         return;
       }
 
       // 显示确认对话框
       const confirmed = await UIManager.showConfirmDialog(
-        '确认导入',
-        `即将导入 ${importData.accounts.length} 个账户。导入操作将添加新账户，重复的账户将被跳过。`,
-        '导入',
-        '取消'
+        I18n.t('dialog.import_title'),
+        I18n.t('dialog.import_message', { count: importData.accounts.length }),
+        I18n.t('button.import'),
+        I18n.t('button.cancel')
       );
       
       if (!confirmed) {
@@ -121,16 +121,16 @@ const ImportExportManager = {
             await TOTP.generateTOTP(account.secret);
             newAccounts.push(account);
           } catch (error) {
-            console.warn(`跳过无效密钥的账户: ${account.name}`);
+            console.warn(`Skipping account with invalid key: ${account.name}`);
           }
         }
       }
 
       if (newAccounts.length === 0) {
         if (duplicateCount > 0) {
-          UIManager.showToast('所有账户都已存在');
+          UIManager.showToast(I18n.t('import.all_exist'));
         } else {
-          UIManager.showToast('没有有效的账户数据');
+          UIManager.showToast(I18n.t('import.no_valid_data'));
         }
         return;
       }
@@ -144,17 +144,13 @@ const ImportExportManager = {
       await App.codeManager.updateCodes();
       App.accountItems = await App.renderAccounts();
 
-      let message = `成功导入 ${newAccounts.length} 个账户`;
-      if (duplicateCount > 0) {
-        message += `，跳过 ${duplicateCount} 个重复账户`;
-      }
-      UIManager.showToast(message, 'success');
+      UIManager.showToast(I18n.t('toast.import_success', { imported: newAccounts.length, skipped: duplicateCount }), 'success');
     } catch (error) {
-      console.error('导入失败:', error);
+      console.error('Import failed:', error);
       if (error instanceof SyntaxError) {
-        UIManager.showToast('文件格式错误，请选择有效的JSON文件', 'error');
+        UIManager.showToast(I18n.t('toast.invalid_file_format'), 'error');
       } else {
-        UIManager.showToast('导入失败，请重试', 'error');
+        UIManager.showToast(I18n.t('toast.import_failed'), 'error');
       }
     }
   },
@@ -189,15 +185,15 @@ const UIManager = {
         <svg class="empty-state-icon" viewBox="0 0 24 24">
           <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
         </svg>
-        <div>暂无账户</div>
-        <div style="margin-top: 8px; font-size: 12px; opacity: 0.7">点击右上角添加账户开始使用</div>
+        <div data-i18n="empty.no_accounts">暂无账户</div>
+        <div style="margin-top: 8px; font-size: 12px; opacity: 0.7" data-i18n="empty.add_account_tip">点击右上角添加账户开始使用</div>
       </div>
     `;
   },
 
-  showToast(message, type = 'info') {
+  showToast(message, type = 'info', duration = 3000) {
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    toast.className = `toast toast-${type}`;
     toast.textContent = message;
     this.elements.toastContainer.appendChild(toast);
 
@@ -214,7 +210,7 @@ const UIManager = {
     });
   },
 
-  showConfirmDialog(title, message, confirmText = '确认', cancelText = '取消') {
+  showConfirmDialog(title, message, confirmText = I18n.t('button.confirm'), cancelText = I18n.t('button.cancel')) {
     return new Promise((resolve) => {
       // 创建确认对话框元素
       const dialog = document.createElement('div');
@@ -469,7 +465,17 @@ const App = {
     await this.restoreState(elements);
     this.setupEventListeners(elements);
     this.startUpdateTimer();
+    this.initLanguageSelector();
   },
+
+  // 初始化语言选择器
+    async initLanguageSelector() {
+      const languageSelector = document.getElementById('languageSelector');
+      if (languageSelector) {
+        const storedLanguage = await I18n.getStoredLanguage();
+        languageSelector.value = storedLanguage;
+      }
+    },
 
   getUIElements() {
     return {
@@ -499,11 +505,11 @@ const App = {
   },
 
   handleInitError(error) {
-    console.error('初始化失败:', error);
+    console.error('Initialization failed:', error);
     const elements = this.getUIElements();
     elements.accountList.innerHTML = `
       <div class="empty-state" style="color: #d93025;">
-        <p>初始化失败，请刷新页面重试</p>
+        <p data-i18n="error.init_failed">初始化失败，请刷新页面重试</p>
       </div>
     `;
    },
@@ -529,7 +535,7 @@ const App = {
     const animate = () => {
       if (this.accountItems.length > 0) {
         const now = Date.now() / 1000; // 转换为秒
-        const period = 30; // TOTP 周期为 30 秒
+        const period = 30; // TOTP period is 30 seconds
         const remainingSeconds = period - (now % period);
         const percentage = (remainingSeconds / period) * 100;
 
@@ -566,7 +572,13 @@ const App = {
       const secret = elements.secretInput.value.trim().replace(/\s/g, '');
 
       if (!name || !secret) {
-        alert('请填写所有字段');
+        UIManager.showToast(I18n.t('toast.incomplete_account_info'), 'warning');
+        return;
+      }
+
+      // 检查账户名是否已存在
+      if (this.accounts.some(account => account.name === name)) {
+        UIManager.showToast(I18n.t('toast.account_exists'), 'warning');
         return;
       }
 
@@ -578,7 +590,7 @@ const App = {
         this.accountItems = await this.renderAccounts();
         this.hideForm(elements);
       } catch (error) {
-        alert('无效的密钥格式');
+        UIManager.showToast(I18n.t('toast.invalid_secret_format'), 'error');
       }
     });
 
@@ -619,6 +631,16 @@ const App = {
         e.target.value = ''; // 清空文件选择，允许重复选择同一文件
       }
     });
+    
+    // 语言选择器事件监听
+    const languageSelector = document.getElementById('languageSelector');
+    if (languageSelector) {
+      languageSelector.addEventListener('change', async (e) => {
+        const selectedLanguage = e.target.value;
+        await I18n.setLanguage(selectedLanguage);
+        UIManager.showToast(I18n.t('toast.language_changed'), 'success');
+      });
+    }
 
     // 添加设置相关的UI管理方法
       UIManager.showSettings = () => {
@@ -699,7 +721,12 @@ const App = {
       pressTimer = setTimeout(() => {
         isLongPress = true;
         accountItem.style.backgroundColor = '#ffebee';
-        const confirmDelete = confirm(`确定要删除账户 "${account.name}" 吗？`);
+        const confirmDelete = UIManager.showConfirmDialog(
+          I18n.t('dialog.delete_title'),
+          I18n.t('dialog.delete_message', { name: account.name }),
+          I18n.t('button.delete'),
+          I18n.t('button.cancel')
+        );
         if (confirmDelete) {
           this.accounts = this.accounts.filter(a => a.name !== account.name);
           StorageManager.saveAccounts(this.accounts);
@@ -718,19 +745,19 @@ const App = {
           try {
             const fillResult = await PageAnalyzer.fillCode(tab, codeData.code);
             if (fillResult[0].result?.success) {
-              UIManager.showToast('验证码已自动填充');
+              UIManager.showToast(I18n.t('toast.code_filled'));
             } else {
               await navigator.clipboard.writeText(codeData.code);
-              UIManager.showToast('验证码已复制到剪贴板');
+              UIManager.showToast(I18n.t('toast.code_copied'));
             }
           } catch (error) {
-            console.error('自动填充失败:', error);
+            console.error('Auto-fill failed:', error);
             await navigator.clipboard.writeText(codeData.code);
-            UIManager.showToast('验证码已复制到剪贴板');
+            UIManager.showToast(I18n.t('toast.code_copied'));
           }
         } else {
           await navigator.clipboard.writeText(codeData.code);
-          UIManager.showToast('验证码已复制到剪贴板');
+          UIManager.showToast(I18n.t('toast.code_copied'));
         }
       }
       isLongPress = false;
@@ -764,4 +791,13 @@ const App = {
 };
 
 // 初始化应用
-document.addEventListener('DOMContentLoaded', () => App.init());
+document.addEventListener('DOMContentLoaded', async () => {
+  // 初始化国际化系统
+  await I18n.init();
+  // 更新UI文本
+  I18n.updateUI();
+  // 初始化应用
+  await App.init();
+  // 初始化语言选择器
+  await App.initLanguageSelector();
+});
