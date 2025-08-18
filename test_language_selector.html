@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语言选择框样式测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            margin: 0;
+        }
+        
+        .test-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 400px;
+            margin: 0 auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(203, 213, 225, 0.3);
+        }
+        
+        .settings-item-info {
+            flex: 1;
+        }
+        
+        .settings-item-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 4px;
+        }
+        
+        .settings-item-desc {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        
+        .language-selector {
+            position: relative;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(203, 213, 225, 0.6);
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #2d3748;
+            cursor: pointer;
+            min-width: 120px;
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+        
+        .language-selector::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border-radius: 13px;
+            background: linear-gradient(135deg, 
+                rgba(102, 126, 234, 0.4) 0%, 
+                rgba(118, 75, 162, 0.4) 50%, 
+                rgba(79, 172, 254, 0.4) 100%);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .language-selector:hover {
+            border-color: rgba(102, 126, 234, 0.3);
+            box-shadow: 
+                0 4px 16px rgba(102, 126, 234, 0.08),
+                0 2px 8px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            background: linear-gradient(135deg, 
+                rgba(255, 255, 255, 1) 0%, 
+                rgba(248, 250, 252, 0.98) 50%, 
+                rgba(241, 245, 249, 0.95) 100%);
+        }
+        
+        .language-selector:hover::before {
+            opacity: 1;
+        }
+        
+        .language-selector:focus {
+            outline: none;
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 
+                0 0 0 3px rgba(102, 126, 234, 0.15),
+                0 4px 16px rgba(102, 126, 234, 0.1),
+                0 2px 8px rgba(0, 0, 0, 0.04),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+        }
+        
+        .language-selector:focus::before {
+            opacity: 1;
+        }
+        
+        .language-selector option {
+            background: #ffffff;
+            color: #2d3748;
+            padding: 12px 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            margin: 2px 0;
+        }
+        
+        .language-selector option:hover {
+            background: linear-gradient(135deg, 
+                rgba(102, 126, 234, 0.08) 0%, 
+                rgba(118, 75, 162, 0.06) 100%);
+            color: #1a202c;
+        }
+        
+        .language-selector option:checked {
+            background: linear-gradient(135deg, 
+                rgba(102, 126, 234, 0.15) 0%, 
+                rgba(118, 75, 162, 0.12) 100%);
+            color: #1a202c;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+        }
+        
+        .note {
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            font-size: 13px;
+            color: #4c51bf;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-title">语言选择框样式测试</div>
+        
+        <div class="settings-item">
+            <div class="settings-item-info">
+                <div class="settings-item-title">界面语言</div>
+                <div class="settings-item-desc">选择应用程序的显示语言</div>
+            </div>
+            <select class="language-selector">
+                <option value="auto">自动检测</option>
+                <option value="zh-CN" selected>中文</option>
+                <option value="en-US">English</option>
+            </select>
+        </div>
+        
+        <div class="note">
+            <strong>优化效果：</strong><br>
+            ✓ 隐藏了默认的下拉箭头图标<br>
+            ✓ 优化了下拉选项的视觉效果<br>
+            ✓ 增强了悬停和聚焦状态的视觉反馈<br>
+            ✓ 保持了与
