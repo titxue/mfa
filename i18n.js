@@ -71,7 +71,7 @@ const I18n = {
       'about.app_name': 'TOTP 生成器',
       'about.version': '版本 1.0.0 - 安全的两步验证码生成工具',
       'about.usage_title': '使用说明',
-      'about.usage_desc': '点击账户可复制验证码，长按可删除账户',
+      'about.usage_desc': '点击账户可复制验证码，右键可删除账户',
       
       // 语言选项
       'language.chinese': '中文',
@@ -113,6 +113,9 @@ const I18n = {
       'dialog.import_message': '即将导入 {count} 个账户。导入操作将添加新账户，重复的账户将被跳过。',
       'dialog.delete_title': '确认删除',
       'dialog.delete_message': '确定要删除账户 "{name}" 吗？',
+      
+      // 右键菜单
+      'contextmenu.delete': '删除账户',
       
       // 空状态
       'empty.no_accounts': '暂无账户',
@@ -176,7 +179,7 @@ const I18n = {
       'settings.appName': 'TOTP Generator',
       'settings.appVersion': 'Version 1.0.0 - Secure two-factor authentication tool',
       'settings.usage': 'Usage Instructions',
-      'settings.usageDesc': 'Click account to copy code, long press to delete account',
+      'settings.usageDesc': 'Click account to copy code, right-click to delete account',
       
       // 导入导出
       'export.title': 'Export Account Data',
@@ -188,7 +191,7 @@ const I18n = {
       'about.app_name': 'TOTP Generator',
       'about.version': 'Version 1.0.0 - Secure two-factor authentication tool',
       'about.usage_title': 'Usage Instructions',
-      'about.usage_desc': 'Click account to copy code, long press to delete account',
+      'about.usage_desc': 'Click account to copy code, right-click to delete account',
       
       // 语言选项
       'language.chinese': '中文',
@@ -230,6 +233,9 @@ const I18n = {
       'dialog.import_message': 'About to import {count} accounts. Import operation will add new accounts, duplicate accounts will be skipped.',
       'dialog.delete_title': 'Confirm Delete',
       'dialog.delete_message': 'Are you sure you want to delete account "{name}"?',
+      
+      // 右键菜单
+      'contextmenu.delete': 'Delete Account',
       
       // 空状态
       'empty.no_accounts': 'No Accounts',

@@ -957,56 +957,30 @@ const App = {
   },
 
   setupAccountItemInteraction(accountItem, account) {
-    let pressTimer;
-    let isLongPress = false;
-
-    const handlePress = () => {
-      pressTimer = setTimeout(() => {
-        isLongPress = true;
-        accountItem.style.backgroundColor = '#ffebee';
-        const confirmDelete = UIManager.showConfirmDialog(
-          I18n.t('dialog.delete_title'),
-          I18n.t('dialog.delete_message', { name: account.name }),
-          I18n.t('button.delete'),
-          I18n.t('button.cancel')
-        );
-        if (confirmDelete) {
-          this.accounts = this.accounts.filter(a => a.name !== account.name);
-          StorageManager.saveAccounts(this.accounts);
-          this.renderAccounts();
-        }
-        accountItem.style.backgroundColor = 'white';
-      }, 800);
-    };
-
-    const handleRelease = async () => {
-      clearTimeout(pressTimer);
-      if (!isLongPress) {
+    // Left click to copy/fill code
+    accountItem.addEventListener('click', async (e) => {
+      if (e.button === 0) { // Left click
         await this.handleCodeAction(account.name);
       }
-      isLongPress = false;
-    };
+    });
 
-    const handleCancel = () => {
-      clearTimeout(pressTimer);
-      accountItem.style.backgroundColor = 'white';
-      isLongPress = false;
-    };
-
-    // 添加鼠标和触摸事件
-    const events = [
-      { type: 'mousedown', handler: handlePress },
-      { type: 'mouseup', handler: handleRelease },
-      { type: 'mouseleave', handler: handleCancel },
-      { type: 'touchstart', handler: handlePress },
-      { type: 'touchend', handler: handleRelease },
-      { type: 'touchcancel', handler: handleCancel }
-    ];
-
-    events.forEach(({ type, handler }) => {
-      accountItem.addEventListener(type, handler);
+    // Right click to delete
+    accountItem.addEventListener('contextmenu', async (e) => {
+      e.preventDefault();
+      const confirmed = await UIManager.showConfirmDialog(
+        I18n.t('dialog.delete_title'),
+        I18n.t('dialog.delete_message', { name: account.name })
+      );
+      if (confirmed) {
+        this.accounts = this.accounts.filter(acc => acc.name !== account.name);
+        await StorageManager.saveAccounts(this.accounts);
+        await this.codeManager.updateCodes();
+        this.accountItems = await this.renderAccounts();
+      }
     });
   },
+
+
 
   async handleCodeAction(accountName) {
     const codeData = this.codeManager.getCode(accountName);
