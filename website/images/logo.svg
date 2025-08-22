@@ -1,0 +1,30 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="url(#logoGradient)" stroke="#fff" stroke-width="4"/>
+  
+  <!-- Lock body -->
+  <rect x="70" y="110" width="60" height="50" rx="8" fill="#fff" opacity="0.9"/>
+  
+  <!-- Lock shackle -->
+  <path d="M 85 110 Q 85 85 100 85 Q 115 85 115 110" stroke="#fff" stroke-width="6" fill="none" opacity="0.9"/>
+  
+  <!-- Clock face -->
+  <circle cx="100" cy="135" r="15" fill="#667eea" opacity="0.8"/>
+  
+  <!-- Clock hands -->
+  <line x1="100" y1="135" x2="100" y2="125" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+  <line x1="100" y1="135" x2="108" y2="135" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Center dot -->
+  <circle cx="100" cy="135" r="2" fill="#fff"/>
+  
+  <!-- TOTP text -->
+  <text x="100" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#fff">TOTP</text>
+</svg>

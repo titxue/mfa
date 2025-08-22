@@ -1,0 +1,33 @@
+# TOTP Generator 官网 robots.txt
+# 允许所有搜索引擎爬虫访问
+
+User-agent: *
+Allow: /
+
+# 禁止访问的目录（如果有）
+Disallow: /admin/
+Disallow: /private/
+Disallow: /*.json$
+Disallow: /*.xml$
+
+# 网站地图位置
+Sitemap: https://totp-generator.pages.dev/sitemap.xml
+
+# 爬取延迟（礼貌性设置）
+Crawl-delay: 1
+
+# 特定搜索引擎优化
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# 禁止某些不需要的爬虫
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
