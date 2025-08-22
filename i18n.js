@@ -30,6 +30,13 @@ const I18n = {
       'form.secret_key': '密钥',
       'form.placeholder.account': '例如：GitHub',
       'form.placeholder.secret': '输入 Base32 格式的密钥',
+      'form.accountInfo': '账户信息',
+      'form.accountNameDesc': '为此账户设置一个易于识别的名称',
+      'form.secretKeyDesc': '输入从服务提供商获取的TOTP密钥',
+      'form.saveAccount': '保存账户',
+      'form.saveAccountDesc': '确认信息无误后保存此账户',
+      'form.accountNamePlaceholder': '例如：GitHub',
+      'form.secretKeyPlaceholder': '输入 Base32 格式的密钥',
       
       // 设置页面
       'settings.title': '设置',
@@ -157,6 +164,13 @@ const I18n = {
       'form.secret_key': 'Secret Key',
       'form.placeholder.account': 'e.g., GitHub',
       'form.placeholder.secret': 'Enter Base32 format secret key',
+      'form.accountInfo': 'Account Information',
+      'form.accountNameDesc': 'Set an easily recognizable name for this account',
+      'form.secretKeyDesc': 'Enter the TOTP secret key obtained from the service provider',
+      'form.saveAccount': 'Save Account',
+      'form.saveAccountDesc': 'Confirm the information is correct and save this account',
+      'form.accountNamePlaceholder': 'e.g., GitHub',
+      'form.secretKeyPlaceholder': 'Enter Base32 format secret key',
       
       // 设置页面
       'settings.title': 'Settings',
