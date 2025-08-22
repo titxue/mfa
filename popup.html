@@ -5,13 +5,13 @@
   <title>TOTP Generator</title>
   <style>
     html, body {
-      width: 380px;
+      min-width: 380px;
       padding: 0;
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       height: auto;
-      overflow: hidden;
+      overflow: visible;
       /* 隐藏滚动条但保持滚动功能 */
       scrollbar-width: none; /* Firefox */
       -ms-overflow-style: none; /* IE and Edge */
@@ -263,11 +263,17 @@
     }
     .toast-container {
       position: fixed;
-      bottom: 16px;
+      bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 1000;
+      z-index: 99999;
       pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: auto;
+      max-width: calc(100vw - 40px);
     }
     .toast {
       background: linear-gradient(135deg, #667eea, #764ba2);
@@ -276,16 +282,20 @@
       border-radius: 32px;
       font-size: 14px;
       font-weight: 500;
-      margin-bottom: 8px;
       opacity: 0;
-      transform: translateY(100%);
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transform: translateY(50px) scale(0.9);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
       backdrop-filter: blur(10px);
+      pointer-events: auto;
+      max-width: 300px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
     }
     .toast.show {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
     .empty-state {
       display: flex;
@@ -711,6 +721,12 @@
 
   <div class="container">
     <div class="account-list" id="accountList"></div>
+    <div class="empty-state" id="emptyState" style="display: none;">
+      <div class="empty-icon">🔐</div>
+      <div class="empty-title" data-i18n="no_accounts">No accounts added</div>
+      <div class="empty-subtitle" data-i18n="add_account_hint">Click the + button to add your first account</div>
+    </div>
+
   </div>
 
   <!-- 添加账户表单 -->
@@ -833,8 +849,6 @@
       <div class="progress-text"></div>
     </div>
   </template>
-
-  <div class="toast-container" id="toastContainer"></div>
 
   <!-- 隐藏的文件输入用于导入功能 -->
   <input type="file" id="importFile" accept=".json" style="display: none;">

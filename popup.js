@@ -1,22 +1,51 @@
 // 核心配置
 const CONFIG = {
   TOTP_KEYWORDS: ['otp', '2fa', 'totp', 'authenticator', 'verification', 'security', 'code', 'security code', '安全码'],
-  TOAST_DURATION: 2000
+  TOAST_DURATION: 3000
 };
 
 // 存储管理模块
 const StorageManager = {
   async getAccounts() {
-    const { accounts } = await chrome.storage.sync.get('accounts');
-    return accounts || [];
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+        const { accounts } = await chrome.storage.sync.get('accounts');
+        return accounts || [];
+      } else {
+        // 在非扩展环境中使用localStorage作为fallback
+        const accounts = localStorage.getItem('accounts');
+        return accounts ? JSON.parse(accounts) : [];
+      }
+    } catch (error) {
+      console.error('Failed to get accounts:', error);
+      return [];
+    }
   },
 
   async saveAccounts(accounts) {
-    await chrome.storage.sync.set({ accounts });
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+        await chrome.storage.sync.set({ accounts });
+      } else {
+        // 在非扩展环境中使用localStorage作为fallback
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+      }
+    } catch (error) {
+      console.error('Failed to save accounts:', error);
+    }
   },
 
   async saveState(state) {
-    await chrome.storage.sync.set({ state });
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+        await chrome.storage.sync.set({ state });
+      } else {
+        // 在非扩展环境中使用localStorage作为fallback
+        localStorage.setItem('state', JSON.stringify(state));
+      }
+    } catch (error) {
+      console.error('Failed to save state:', error);
+    }
   },
 
   // 统一的状态保存函数
@@ -177,6 +206,57 @@ const UIManager = {
   init(elements) {
     this.elements = elements;
     this.setupEmptyState();
+    // 确保toast容器在初始化时就准备好
+    this.ensureToastContainer();
+  },
+
+  // 在页面加载早期就创建toast容器
+  createToastContainerEarly() {
+    // 移除HTML中可能存在的toast容器（它在设置页面内部，会受到限制）
+    const existingContainer = document.getElementById('toastContainer');
+    if (existingContainer) {
+      existingContainer.remove();
+    }
+    
+    // 创建新的toast容器，直接添加到body中
+    const toastContainer = document.createElement('div');
+    toastContainer.id = 'toastContainer';
+    toastContainer.className = 'toast-container';
+    
+    // 设置内联样式确保正确定位，不受其他元素影响
+    toastContainer.style.cssText = `
+      position: fixed !important;
+      bottom: 20px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      z-index: 99999 !important;
+      pointer-events: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 8px !important;
+      width: auto !important;
+      max-width: calc(100vw - 40px) !important;
+    `;
+    
+    document.body.appendChild(toastContainer);
+    
+    // 立即设置到elements中，以便后续使用
+    this.elements.toastContainer = toastContainer;
+  },
+
+  ensureToastContainer() {
+    if (!this.elements.toastContainer) {
+      let toastContainer = document.getElementById('toastContainer');
+      if (!toastContainer) {
+        // 如果HTML中没有toast容器，动态创建一个
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container';
+        document.body.appendChild(toastContainer);
+      }
+      this.elements.toastContainer = toastContainer;
+    }
   },
 
   setupEmptyState() {
@@ -192,22 +272,32 @@ const UIManager = {
   },
 
   showToast(message, type = 'info', duration = 3000) {
+    // 确保toast容器存在
+    this.ensureToastContainer();
+    
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
+    
+    // 确保toast元素本身可以接收pointer事件
+    toast.style.pointerEvents = 'auto';
+    
     this.elements.toastContainer.appendChild(toast);
 
+    // 强制重绘以确保动画正常工作
     requestAnimationFrame(() => {
       toast.classList.add('show');
-      setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-          if (toast.parentNode) {
-            this.elements.toastContainer.removeChild(toast);
-          }
-        }, 300);
-      }, CONFIG.TOAST_DURATION);
-    });
+       
+       setTimeout(() => {
+         toast.classList.remove('show');
+         
+         setTimeout(() => {
+           if (toast.parentNode) {
+             toast.parentNode.removeChild(toast);
+           }
+         }, 300);
+       }, duration);
+     });
   },
 
   showConfirmDialog(title, message, confirmText = I18n.t('button.confirm'), cancelText = I18n.t('button.cancel')) {
@@ -515,18 +605,32 @@ const App = {
    },
 
    async restoreState(elements) {
-    const stateResult = await chrome.storage.local.get('state');
-    
-    if (stateResult.state) {
-      const { state } = stateResult;
-      if (state.formVisible) {
-        elements.formContainer.classList.add('show');
+    try {
+      let state = null;
+      
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        const stateResult = await chrome.storage.local.get('state');
+        state = stateResult.state;
+      } else {
+        // 在非扩展环境中使用localStorage作为fallback
+        const storedState = localStorage.getItem('state');
+        if (storedState) {
+          state = JSON.parse(storedState);
+        }
       }
-      elements.accountInput.value = state.accountValue || '';
-      elements.secretInput.value = state.secretValue || '';
-      if (state.scrollTop) {
-        elements.container.scrollTop = state.scrollTop;
+      
+      if (state) {
+        if (state.formVisible) {
+          elements.formContainer.classList.add('show');
+        }
+        elements.accountInput.value = state.accountValue || '';
+        elements.secretInput.value = state.secretValue || '';
+        if (state.scrollTop) {
+          elements.container.scrollTop = state.scrollTop;
+        }
       }
+    } catch (error) {
+      console.error('Failed to restore state:', error);
     }
   },
 
@@ -597,6 +701,8 @@ const App = {
     elements.cancelButton.addEventListener('click', () => {
       this.hideForm(elements);
     });
+
+
 
     elements.accountInput.addEventListener('input', () => {
       StorageManager.saveCurrentState(elements);
@@ -740,22 +846,37 @@ const App = {
       clearTimeout(pressTimer);
       if (!isLongPress) {
         const codeData = this.codeManager.getCode(account.name);
-        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab?.id) {
+        
+        // 检查Chrome扩展API是否可用
+        if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
           try {
-            const fillResult = await PageAnalyzer.fillCode(tab, codeData.code);
-            if (fillResult[0].result?.success) {
-              UIManager.showToast(I18n.t('toast.code_filled'));
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (tab?.id) {
+              try {
+                const fillResult = await PageAnalyzer.fillCode(tab, codeData.code);
+                if (fillResult[0].result?.success) {
+                  UIManager.showToast(I18n.t('toast.code_filled'));
+                } else {
+                  await navigator.clipboard.writeText(codeData.code);
+                  UIManager.showToast(I18n.t('toast.code_copied'));
+                }
+              } catch (error) {
+                console.error('Auto-fill failed:', error);
+                await navigator.clipboard.writeText(codeData.code);
+                UIManager.showToast(I18n.t('toast.code_copied'));
+              }
             } else {
               await navigator.clipboard.writeText(codeData.code);
               UIManager.showToast(I18n.t('toast.code_copied'));
             }
           } catch (error) {
-            console.error('Auto-fill failed:', error);
+            console.error('Chrome tabs API error:', error);
+            // 如果Chrome API调用失败，回退到复制到剪贴板
             await navigator.clipboard.writeText(codeData.code);
             UIManager.showToast(I18n.t('toast.code_copied'));
           }
         } else {
+          // 非扩展环境，直接复制到剪贴板
           await navigator.clipboard.writeText(codeData.code);
           UIManager.showToast(I18n.t('toast.code_copied'));
         }
@@ -792,6 +913,9 @@ const App = {
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', async () => {
+  // 预先创建toast容器，确保它在页面加载时就立即可用
+  UIManager.createToastContainerEarly();
+  
   // 初始化国际化系统
   await I18n.init();
   // 更新UI文本

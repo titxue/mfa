@@ -236,15 +236,29 @@ const I18n = {
   // 初始化
   async init() {
     try {
-      // 从存储中获取用户语言偏好
-      const result = await chrome.storage.local.get(['userLanguage']);
-      if (result.userLanguage) {
-        this.currentLanguage = result.userLanguage;
+      // 检查chrome.storage是否可用
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        // 从存储中获取用户语言偏好
+        const result = await chrome.storage.local.get(['userLanguage']);
+        if (result.userLanguage) {
+          this.currentLanguage = result.userLanguage;
+        } else {
+          // 自动检测系统语言
+          this.currentLanguage = this.detectSystemLanguage();
+          // 保存检测到的语言
+          await this.setLanguage(this.currentLanguage);
+        }
       } else {
-        // 自动检测系统语言
-        this.currentLanguage = this.detectSystemLanguage();
-        // 保存检测到的语言
-        await this.setLanguage(this.currentLanguage);
+        // 在非扩展环境中使用localStorage作为fallback
+        const storedLanguage = localStorage.getItem('userLanguage');
+        if (storedLanguage) {
+          this.currentLanguage = storedLanguage;
+        } else {
+          // 自动检测系统语言
+          this.currentLanguage = this.detectSystemLanguage();
+          // 保存检测到的语言
+          localStorage.setItem('userLanguage', this.currentLanguage);
+        }
       }
     } catch (error) {
       console.error('I18n initialization failed:', error);
@@ -285,8 +299,18 @@ const I18n = {
   
   // 设置语言
   async setLanguage(language) {
-    // 保存语言偏好到存储
-    await chrome.storage.local.set({ userLanguage: language });
+    try {
+      // 保存语言偏好到存储
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+        await chrome.storage.local.set({ userLanguage: language });
+      } else {
+        // 在非扩展环境中使用localStorage作为fallback
+        localStorage.setItem('userLanguage', language);
+      }
+    } catch (error) {
+      console.error('Failed to save language preference:', error);
+      // 即使保存失败也继续设置语言
+    }
     
     let actualLanguage = language;
     if (language === 'auto') {
@@ -370,10 +394,19 @@ const I18n = {
     },
     
     // 获取存储的语言偏好或自动检测
-    getStoredLanguage() {
-      return chrome.storage.local.get(['userLanguage']).then(result => {
-        return result.userLanguage || 'auto';
-      });
+    async getStoredLanguage() {
+      try {
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          const result = await chrome.storage.local.get(['userLanguage']);
+          return result.userLanguage || 'auto';
+        } else {
+          // 在非扩展环境中使用localStorage作为fallback
+          return localStorage.getItem('userLanguage') || 'auto';
+        }
+      } catch (error) {
+        console.error('Failed to get stored language:', error);
+        return 'auto';
+      }
     },
   
   // 获取支持的语言列表
