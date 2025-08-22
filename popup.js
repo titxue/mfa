@@ -4,48 +4,147 @@ const CONFIG = {
   TOAST_DURATION: 3000
 };
 
+// 工具函数模块
+const Utils = {
+  // DOM操作工具
+  dom: {
+    // 安全获取DOM元素
+    getElementById(id) {
+      const element = document.getElementById(id);
+      if (!element) {
+        console.warn(`Element with id '${id}' not found`);
+      }
+      return element;
+    },
+
+    // 批量添加事件监听器
+    addEventListeners(element, events) {
+      if (!element) return;
+      events.forEach(({ type, handler, options }) => {
+        element.addEventListener(type, handler, options);
+      });
+    },
+
+    // 设置元素属性
+    setAttributes(element, attributes) {
+      if (!element) return;
+      Object.entries(attributes).forEach(([key, value]) => {
+        element.setAttribute(key, value);
+      });
+    }
+  },
+
+  // 键盘事件工具
+  keyboard: {
+    // 创建ESC键处理器
+    createEscapeHandler(callback) {
+      const handler = (e) => {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', handler);
+          callback();
+        }
+      };
+      document.addEventListener('keydown', handler);
+      return handler;
+    }
+  },
+
+  // Chrome API工具
+  chrome: {
+    // 检查Chrome扩展API是否可用
+    isExtensionApiAvailable() {
+      return typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query;
+    },
+
+    // 获取当前活动标签页
+    async getCurrentTab() {
+      if (!this.isExtensionApiAvailable()) return null;
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        return tab;
+      } catch (error) {
+        console.error('Chrome tabs API error:', error);
+        return null;
+      }
+    }
+  },
+
+  // 数据验证工具
+  validation: {
+    // 验证账户数据格式
+    isValidAccount(account) {
+      return account && 
+             typeof account.name === 'string' && 
+             typeof account.secret === 'string' && 
+             account.name.trim() && 
+             account.secret.trim();
+    },
+
+    // 验证导入数据格式
+    isValidImportData(data) {
+      if (!data || typeof data !== 'object') return false;
+      if (!Array.isArray(data.accounts)) return false;
+      return data.accounts.every(this.isValidAccount);
+    }
+  },
+
+  // 异步工具
+  async: {
+    // 安全的异步操作包装器
+    async safeAsync(asyncFn, fallback = null) {
+      try {
+        return await asyncFn();
+      } catch (error) {
+        console.error('Async operation failed:', error);
+        return fallback;
+      }
+    }
+  }
+};
+
 // 存储管理模块
 const StorageManager = {
-  async getAccounts() {
+  // 通用存储访问方法
+  async _getFromStorage(key, storageType = 'sync') {
     try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
-        const { accounts } = await chrome.storage.sync.get('accounts');
-        return accounts || [];
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage[storageType]) {
+        const result = await chrome.storage[storageType].get(key);
+        return result[key];
       } else {
         // 在非扩展环境中使用localStorage作为fallback
-        const accounts = localStorage.getItem('accounts');
-        return accounts ? JSON.parse(accounts) : [];
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : undefined;
       }
     } catch (error) {
-      console.error('Failed to get accounts:', error);
-      return [];
+      console.error(`Failed to get ${key}:`, error);
+      return undefined;
     }
+  },
+
+  async _saveToStorage(key, value, storageType = 'sync') {
+    try {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage[storageType]) {
+        await chrome.storage[storageType].set({ [key]: value });
+      } else {
+        // 在非扩展环境中使用localStorage作为fallback
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+    } catch (error) {
+      console.error(`Failed to save ${key}:`, error);
+    }
+  },
+
+  async getAccounts() {
+    const accounts = await this._getFromStorage('accounts');
+    return accounts || [];
   },
 
   async saveAccounts(accounts) {
-    try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
-        await chrome.storage.sync.set({ accounts });
-      } else {
-        // 在非扩展环境中使用localStorage作为fallback
-        localStorage.setItem('accounts', JSON.stringify(accounts));
-      }
-    } catch (error) {
-      console.error('Failed to save accounts:', error);
-    }
+    await this._saveToStorage('accounts', accounts);
   },
 
   async saveState(state) {
-    try {
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
-        await chrome.storage.sync.set({ state });
-      } else {
-        // 在非扩展环境中使用localStorage作为fallback
-        localStorage.setItem('state', JSON.stringify(state));
-      }
-    } catch (error) {
-      console.error('Failed to save state:', error);
-    }
+    await this._saveToStorage('state', state);
   },
 
   // 统一的状态保存函数
@@ -116,10 +215,11 @@ const ImportExportManager = {
     try {
       const text = await file.text();
       const importData = JSON.parse(text);
+      const fileName = file.name;
 
       // 验证数据格式
       if (!this.validateImportData(importData)) {
-        UIManager.showToast(I18n.t('toast.invalid_file_format'));
+        UIManager.showToast(I18n.t('toast.invalid_file_format'), 'error');
         return;
       }
 
@@ -138,6 +238,7 @@ const ImportExportManager = {
       const currentAccounts = await StorageManager.getAccounts();
       const newAccounts = [];
       let duplicateCount = 0;
+      let invalidCount = 0;
 
       // 检查重复账户并合并
       for (const account of importData.accounts) {
@@ -151,15 +252,22 @@ const ImportExportManager = {
             newAccounts.push(account);
           } catch (error) {
             console.warn(`Skipping account with invalid key: ${account.name}`);
+            invalidCount++;
           }
         }
       }
 
+      // 根据不同情况显示相应的提示信息
       if (newAccounts.length === 0) {
-        if (duplicateCount > 0) {
-          UIManager.showToast(I18n.t('import.all_exist'));
+        if (duplicateCount > 0 && invalidCount === 0) {
+          // 全部重复
+          UIManager.showToast(I18n.t('toast.import_all_duplicates'), 'warning', 4000);
+        } else if (invalidCount > 0 && duplicateCount === 0) {
+          // 全部无效
+          UIManager.showToast(I18n.t('toast.import_no_valid'), 'error', 4000);
         } else {
-          UIManager.showToast(I18n.t('import.no_valid_data'));
+          // 混合情况：既有重复又有无效
+          UIManager.showToast(I18n.t('import.no_valid_data'), 'error', 4000);
         }
         return;
       }
@@ -173,29 +281,57 @@ const ImportExportManager = {
       await App.codeManager.updateCodes();
       App.accountItems = await App.renderAccounts();
 
-      UIManager.showToast(I18n.t('toast.import_success', { imported: newAccounts.length, skipped: duplicateCount }), 'success');
+      // 显示成功提示信息
+      let successMessage;
+      if (fileName && fileName !== 'blob') {
+        // 有文件名的情况
+        if (duplicateCount > 0) {
+          successMessage = I18n.t('toast.import_success_with_file_and_skip', { 
+            filename: fileName, 
+            imported: newAccounts.length, 
+            skipped: duplicateCount 
+          });
+        } else {
+          successMessage = I18n.t('toast.import_success_with_file', { 
+            filename: fileName, 
+            imported: newAccounts.length 
+          });
+        }
+      } else {
+        // 没有文件名的情况
+        if (duplicateCount > 0) {
+          successMessage = I18n.t('toast.import_success_with_skip', { 
+            imported: newAccounts.length, 
+            skipped: duplicateCount 
+          });
+        } else {
+          successMessage = I18n.t('toast.import_success', { 
+            imported: newAccounts.length 
+          });
+        }
+      }
+      
+      // 成功导入时显示时间稍长，并添加操作建议
+      UIManager.showToast(successMessage, 'success', 5000);
+      
+      // 延迟显示操作建议
+      setTimeout(() => {
+        UIManager.showToast(I18n.t('toast.import_suggestion'), 'info', 3000);
+      }, 1500);
+      
     } catch (error) {
       console.error('Import failed:', error);
       if (error instanceof SyntaxError) {
-        UIManager.showToast(I18n.t('toast.invalid_file_format'), 'error');
+        UIManager.showToast(I18n.t('toast.invalid_file_format'), 'error', 4000);
       } else {
-        UIManager.showToast(I18n.t('toast.import_failed'), 'error');
+        UIManager.showToast(I18n.t('toast.import_failed'), 'error', 4000);
       }
     }
   },
 
   // 验证导入数据格式
   validateImportData(data) {
-    if (!data || typeof data !== 'object') return false;
-    if (!Array.isArray(data.accounts)) return false;
-    
-    return data.accounts.every(account => 
-      account && 
-      typeof account.name === 'string' && 
-      typeof account.secret === 'string' &&
-      account.name.trim() !== '' &&
-      account.secret.trim() !== ''
-    );
+    return Utils.validation.isValidImportData(data);
   }
 };
 
@@ -210,51 +346,37 @@ const UIManager = {
     this.ensureToastContainer();
   },
 
-  // 在页面加载早期就创建toast容器
-  createToastContainerEarly() {
-    // 移除HTML中可能存在的toast容器（它在设置页面内部，会受到限制）
-    const existingContainer = document.getElementById('toastContainer');
-    if (existingContainer) {
-      existingContainer.remove();
-    }
-    
-    // 创建新的toast容器，直接添加到body中
-    const toastContainer = document.createElement('div');
-    toastContainer.id = 'toastContainer';
-    toastContainer.className = 'toast-container';
-    
-    // 设置内联样式确保正确定位，不受其他元素影响
-    toastContainer.style.cssText = `
-      position: fixed !important;
-      bottom: 20px !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      z-index: 99999 !important;
-      pointer-events: none !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      gap: 8px !important;
-      width: auto !important;
-      max-width: calc(100vw - 40px) !important;
-    `;
-    
-    document.body.appendChild(toastContainer);
-    
-    // 立即设置到elements中，以便后续使用
-    this.elements.toastContainer = toastContainer;
-  },
-
+  // 统一的toast容器管理方法
   ensureToastContainer() {
     if (!this.elements.toastContainer) {
-      let toastContainer = document.getElementById('toastContainer');
-      if (!toastContainer) {
-        // 如果HTML中没有toast容器，动态创建一个
-        toastContainer = document.createElement('div');
-        toastContainer.id = 'toastContainer';
-        toastContainer.className = 'toast-container';
-        document.body.appendChild(toastContainer);
+      // 移除HTML中可能存在的toast容器（它在设置页面内部，会受到限制）
+      const existingContainer = document.getElementById('toastContainer');
+      if (existingContainer) {
+        existingContainer.remove();
       }
+      
+      // 创建新的toast容器，直接添加到body中
+      const toastContainer = document.createElement('div');
+      toastContainer.id = 'toastContainer';
+      toastContainer.className = 'toast-container';
+      
+      // 设置内联样式确保正确定位，不受其他元素影响
+      toastContainer.style.cssText = `
+        position: fixed !important;
+        bottom: 20px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 99999 !important;
+        pointer-events: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: auto !important;
+        max-width: calc(100vw - 40px) !important;
+      `;
+      
+      document.body.appendChild(toastContainer);
       this.elements.toastContainer = toastContainer;
     }
   },
@@ -300,6 +422,75 @@ const UIManager = {
      });
   },
 
+  // 创建确认对话框样式
+  _createDialogStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .confirm-dialog {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+      }
+      .confirm-dialog-content {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 320px;
+        width: 90%;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+      }
+      .confirm-dialog-title {
+        margin: 0 0 12px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+      .confirm-dialog-message {
+        margin: 0 0 20px 0;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #666;
+      }
+      .confirm-dialog-buttons {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      }
+      .confirm-dialog-cancel,
+      .confirm-dialog-confirm {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .confirm-dialog-cancel {
+        background: #f5f5f5;
+        color: #666;
+      }
+      .confirm-dialog-cancel:hover {
+        background: #e5e5e5;
+      }
+      .confirm-dialog-confirm {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .confirm-dialog-confirm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+    `;
+    return style;
+  },
+
   showConfirmDialog(title, message, confirmText = I18n.t('button.confirm'), cancelText = I18n.t('button.cancel')) {
     return new Promise((resolve) => {
       // 创建确认对话框元素
@@ -317,71 +508,7 @@ const UIManager = {
       `;
       
       // 添加样式
-      const style = document.createElement('style');
-      style.textContent = `
-        .confirm-dialog {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 10000;
-        }
-        .confirm-dialog-content {
-          background: white;
-          border-radius: 16px;
-          padding: 24px;
-          max-width: 320px;
-          width: 90%;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        }
-        .confirm-dialog-title {
-          margin: 0 0 12px 0;
-          font-size: 18px;
-          font-weight: 600;
-          color: #1a1a1a;
-        }
-        .confirm-dialog-message {
-          margin: 0 0 20px 0;
-          font-size: 14px;
-          line-height: 1.5;
-          color: #666;
-        }
-        .confirm-dialog-buttons {
-          display: flex;
-          gap: 12px;
-          justify-content: flex-end;
-        }
-        .confirm-dialog-cancel,
-        .confirm-dialog-confirm {
-          padding: 8px 16px;
-          border: none;
-          border-radius: 8px;
-          font-size: 14px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        .confirm-dialog-cancel {
-          background: #f5f5f5;
-          color: #666;
-        }
-        .confirm-dialog-cancel:hover {
-          background: #e5e5e5;
-        }
-        .confirm-dialog-confirm {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-        .confirm-dialog-confirm:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-      `;
-      
+      const style = this._createDialogStyles();
       document.head.appendChild(style);
       document.body.appendChild(dialog);
       
@@ -402,13 +529,7 @@ const UIManager = {
       dialog.querySelector('.confirm-dialog-cancel').addEventListener('click', handleCancel);
       
       // ESC键取消
-      const handleKeydown = (e) => {
-        if (e.key === 'Escape') {
-          document.removeEventListener('keydown', handleKeydown);
-          handleCancel();
-        }
-      };
-      document.addEventListener('keydown', handleKeydown);
+      Utils.keyboard.createEscapeHandler(handleCancel);
       
       // 点击背景取消
       dialog.addEventListener('click', (e) => {
@@ -424,8 +545,8 @@ const UIManager = {
     });
   },
 
-  // 简化的进度环创建
-  createProgressRing() {
+  // 统一的进度环管理器
+  createProgressManager() {
     const progressRing = this.elements.progressTemplate.content.cloneNode(true);
     const circle = progressRing.querySelector('.progress');
     const text = progressRing.querySelector('.progress-text');
@@ -434,13 +555,44 @@ const UIManager = {
     circle.style.strokeDasharray = circumference;
     circle.style.strokeDashoffset = circumference;
 
-    return { container: progressRing, circle, text, circumference };
+    return {
+      container: progressRing,
+      update: (percent) => {
+        const offset = circumference - (percent / 100 * circumference);
+        circle.style.strokeDashoffset = offset;
+        text.textContent = Math.ceil(30 * percent / 100);
+      }
+    };
   },
 
-  updateProgress(circle, text, circumference, percent) {
-    const offset = circumference - (percent / 100 * circumference);
-    circle.style.strokeDashoffset = offset;
-    text.textContent = Math.ceil(30 * percent / 100);
+  showSettings() {
+    const settingsContainer = document.getElementById('settingsContainer');
+    settingsContainer.classList.add('show');
+    settingsContainer.setAttribute('aria-hidden', 'false');
+    // 聚焦到关闭按钮以便键盘导航
+    setTimeout(() => {
+      document.getElementById('settingsClose').focus();
+    }, 100);
+  },
+  
+  hideSettings() {
+    const settingsContainer = document.getElementById('settingsContainer');
+    settingsContainer.classList.remove('show');
+    settingsContainer.setAttribute('aria-hidden', 'true');
+    // 返回焦点到设置按钮
+    document.getElementById('settingsBtn').focus();
+  },
+
+  initKeyboardNavigation() {
+    // 添加键盘导航支持
+    document.addEventListener('keydown', (e) => {
+      const settingsContainer = document.getElementById('settingsContainer');
+      if (settingsContainer.classList.contains('show')) {
+        if (e.key === 'Escape') {
+          this.hideSettings();
+        }
+      }
+    });
   }
 };
 
@@ -606,18 +758,7 @@ const App = {
 
    async restoreState(elements) {
     try {
-      let state = null;
-      
-      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-        const stateResult = await chrome.storage.local.get('state');
-        state = stateResult.state;
-      } else {
-        // 在非扩展环境中使用localStorage作为fallback
-        const storedState = localStorage.getItem('state');
-        if (storedState) {
-          state = JSON.parse(storedState);
-        }
-      }
+      const state = await StorageManager._getFromStorage('state', 'local');
       
       if (state) {
         if (state.formVisible) {
@@ -704,18 +845,29 @@ const App = {
 
 
 
-    elements.accountInput.addEventListener('input', () => {
-      StorageManager.saveCurrentState(elements);
-    });
-
-    elements.secretInput.addEventListener('input', () => {
-      StorageManager.saveCurrentState(elements);
-    });
-
-    elements.container.addEventListener('scroll', () => {
-      StorageManager.saveCurrentState(elements);
+    // 为需要保存状态的元素添加事件监听器
+    const saveStateElements = [
+      { element: elements.accountInput, event: 'input' },
+      { element: elements.secretInput, event: 'input' },
+      { element: elements.container, event: 'scroll' }
+    ];
+    
+    saveStateElements.forEach(({ element, event }) => {
+      element.addEventListener(event, () => StorageManager.saveCurrentState(elements));
     });
     
+    // 设置页面相关的事件监听器
+    this.setupSettingsListeners(elements);
+    
+    // 初始化键盘导航
+    UIManager.initKeyboardNavigation();
+
+
+
+
+  },
+
+  setupSettingsListeners(elements) {
     // 设置页面功能
     elements.settingsBtn = document.getElementById('settingsBtn');
     elements.settingsClose = document.getElementById('settingsClose');
@@ -747,37 +899,6 @@ const App = {
         UIManager.showToast(I18n.t('toast.language_changed'), 'success');
       });
     }
-
-    // 添加设置相关的UI管理方法
-      UIManager.showSettings = () => {
-        const settingsContainer = document.getElementById('settingsContainer');
-        settingsContainer.classList.add('show');
-        settingsContainer.setAttribute('aria-hidden', 'false');
-        // 聚焦到关闭按钮以便键盘导航
-        setTimeout(() => {
-          document.getElementById('settingsClose').focus();
-        }, 100);
-      };
-      
-      UIManager.hideSettings = () => {
-        const settingsContainer = document.getElementById('settingsContainer');
-        settingsContainer.classList.remove('show');
-        settingsContainer.setAttribute('aria-hidden', 'true');
-        // 返回焦点到设置按钮
-        document.getElementById('settingsBtn').focus();
-      };
-      
-      // 添加键盘导航支持
-      document.addEventListener('keydown', (e) => {
-        const settingsContainer = document.getElementById('settingsContainer');
-        if (settingsContainer.classList.contains('show')) {
-          if (e.key === 'Escape') {
-            UIManager.hideSettings();
-          }
-        }
-      });
-
-
   },
 
   async renderAccounts() {
@@ -812,14 +933,30 @@ const App = {
       <div class="account-code">${codeData.formatted}</div>
     `;
 
-    const progress = UIManager.createProgressRing();
+    const progress = UIManager.createProgressManager();
     const remainingSeconds = TOTP.getRemainingSeconds();
     const percentage = (remainingSeconds / 30) * 100;
-    UIManager.updateProgress(progress.circle, progress.text, progress.circumference, percentage);
+    progress.update(percentage);
 
     accountItem.appendChild(accountInfo);
     accountItem.appendChild(progress.container);
 
+    // 设置账户项的交互行为
+    this.setupAccountItemInteraction(accountItem, account);
+
+    return {
+      element: accountItem,
+      updateCode: () => {
+        const codeData = this.codeManager.getCode(account.name);
+        accountInfo.querySelector('.account-code').textContent = codeData.formatted;
+      },
+      updateProgress: (percentage) => {
+        progress.update(percentage);
+      }
+    };
+  },
+
+  setupAccountItemInteraction(accountItem, account) {
     let pressTimer;
     let isLongPress = false;
 
@@ -845,41 +982,7 @@ const App = {
     const handleRelease = async () => {
       clearTimeout(pressTimer);
       if (!isLongPress) {
-        const codeData = this.codeManager.getCode(account.name);
-        
-        // 检查Chrome扩展API是否可用
-        if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
-          try {
-            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            if (tab?.id) {
-              try {
-                const fillResult = await PageAnalyzer.fillCode(tab, codeData.code);
-                if (fillResult[0].result?.success) {
-                  UIManager.showToast(I18n.t('toast.code_filled'));
-                } else {
-                  await navigator.clipboard.writeText(codeData.code);
-                  UIManager.showToast(I18n.t('toast.code_copied'));
-                }
-              } catch (error) {
-                console.error('Auto-fill failed:', error);
-                await navigator.clipboard.writeText(codeData.code);
-                UIManager.showToast(I18n.t('toast.code_copied'));
-              }
-            } else {
-              await navigator.clipboard.writeText(codeData.code);
-              UIManager.showToast(I18n.t('toast.code_copied'));
-            }
-          } catch (error) {
-            console.error('Chrome tabs API error:', error);
-            // 如果Chrome API调用失败，回退到复制到剪贴板
-            await navigator.clipboard.writeText(codeData.code);
-            UIManager.showToast(I18n.t('toast.code_copied'));
-          }
-        } else {
-          // 非扩展环境，直接复制到剪贴板
-          await navigator.clipboard.writeText(codeData.code);
-          UIManager.showToast(I18n.t('toast.code_copied'));
-        }
+        await this.handleCodeAction(account.name);
       }
       isLongPress = false;
     };
@@ -890,31 +993,54 @@ const App = {
       isLongPress = false;
     };
 
-    accountItem.addEventListener('mousedown', handlePress);
-    accountItem.addEventListener('mouseup', handleRelease);
-    accountItem.addEventListener('mouseleave', handleCancel);
+    // 添加鼠标和触摸事件
+    const events = [
+      { type: 'mousedown', handler: handlePress },
+      { type: 'mouseup', handler: handleRelease },
+      { type: 'mouseleave', handler: handleCancel },
+      { type: 'touchstart', handler: handlePress },
+      { type: 'touchend', handler: handleRelease },
+      { type: 'touchcancel', handler: handleCancel }
+    ];
 
-    accountItem.addEventListener('touchstart', handlePress);
-    accountItem.addEventListener('touchend', handleRelease);
-    accountItem.addEventListener('touchcancel', handleCancel);
+    events.forEach(({ type, handler }) => {
+      accountItem.addEventListener(type, handler);
+    });
+  },
 
-    return {
-      element: accountItem,
-      updateCode: () => {
-        const codeData = this.codeManager.getCode(account.name);
-        accountInfo.querySelector('.account-code').textContent = codeData.formatted;
-      },
-      updateProgress: (percentage) => {
-        UIManager.updateProgress(progress.circle, progress.text, progress.circumference, percentage);
+  async handleCodeAction(accountName) {
+    const codeData = this.codeManager.getCode(accountName);
+    
+    // 检查Chrome扩展API是否可用
+    if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.query) {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          try {
+            const fillResult = await PageAnalyzer.fillCode(tab, codeData.code);
+            if (fillResult[0].result?.success) {
+              UIManager.showToast(I18n.t('toast.code_filled'));
+              return;
+            }
+          } catch (error) {
+            console.error('Auto-fill failed:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Chrome tabs API error:', error);
       }
-    };
+    }
+    
+    // 回退到复制到剪贴板
+    await navigator.clipboard.writeText(codeData.code);
+    UIManager.showToast(I18n.t('toast.code_copied'));
   }
 };
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', async () => {
   // 预先创建toast容器，确保它在页面加载时就立即可用
-  UIManager.createToastContainerEarly();
+  UIManager.ensureToastContainer();
   
   // 初始化国际化系统
   await I18n.init();

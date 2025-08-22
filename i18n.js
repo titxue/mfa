@@ -98,7 +98,13 @@ const I18n = {
       'toast.incomplete_account_info': '请填写完整的账户信息',
       'toast.account_exists': '账户名已存在',
       'toast.invalid_secret_format': '无效的密钥格式',
-      'toast.import_success': '成功导入 {imported} 个账户{skipped, select, 0 {} other {，跳过 {skipped} 个重复账户}}',
+      'toast.import_success': '✅ 成功导入 {imported} 个账户',
+      'toast.import_success_with_skip': '✅ 成功导入 {imported} 个账户，跳过 {skipped} 个重复账户',
+      'toast.import_success_with_file': '✅ 从 "{filename}" 成功导入 {imported} 个账户',
+      'toast.import_success_with_file_and_skip': '✅ 从 "{filename}" 成功导入 {imported} 个账户，跳过 {skipped} 个重复账户',
+      'toast.import_all_duplicates': '⚠️ 所有账户都已存在，未导入任何新账户',
+      'toast.import_no_valid': '❌ 文件中没有有效的账户数据',
+      'toast.import_suggestion': '💡 您可以在账户列表中查看新导入的账户',
       
       // 确认对话框
       'dialog.export_title': '确认导出',
@@ -116,10 +122,11 @@ const I18n = {
       'error.init_failed': '初始化失败，请刷新页面重试',
       
       // 导入结果
-      'import.success_message': '成功导入 {count} 个账户',
-    'import.success_with_skip': '成功导入 {count} 个账户，跳过 {skip} 个重复账户',
-    'import.all_exist': '所有账户都已存在',
-    'import.no_valid_data': '没有有效的账户数据'
+      'import.success_message': '✅ 成功导入 {count} 个账户',
+      'import.success_with_skip': '✅ 成功导入 {count} 个账户，跳过 {skip} 个重复账户',
+      'import.all_exist': '⚠️ 所有账户都已存在',
+      'import.no_valid_data': '❌ 没有有效的账户数据',
+      'import.partial_success': '⚠️ 部分导入成功：{imported} 个账户已添加，{invalid} 个账户格式无效'
     },
     
     'en-US': {
@@ -208,7 +215,13 @@ const I18n = {
       'toast.incomplete_account_info': 'Please fill in complete account information',
       'toast.account_exists': 'Account name already exists',
       'toast.invalid_secret_format': 'Invalid secret key format',
-      'toast.import_success': 'Successfully imported {imported} accounts{skipped, select, 0 {} other {, skipped {skipped} duplicate accounts}}',
+      'toast.import_success': '✅ Successfully imported {imported} accounts',
+      'toast.import_success_with_skip': '✅ Successfully imported {imported} accounts, skipped {skipped} duplicate accounts',
+      'toast.import_success_with_file': '✅ Successfully imported {imported} accounts from "{filename}"',
+      'toast.import_success_with_file_and_skip': '✅ Successfully imported {imported} accounts from "{filename}", skipped {skipped} duplicate accounts',
+      'toast.import_all_duplicates': '⚠️ All accounts already exist, no new accounts imported',
+      'toast.import_no_valid': '❌ No valid account data found in file',
+      'toast.import_suggestion': '💡 You can view newly imported accounts in the account list',
       
       // 确认对话框
       'dialog.export_title': 'Confirm Export',
@@ -225,11 +238,12 @@ const I18n = {
       // 错误信息
       'error.init_failed': 'Initialization failed, please refresh the page and try again',
       
-      // 导入结果
-      'import.success_message': 'Successfully imported {count} accounts',
-    'import.success_with_skip': 'Successfully imported {count} accounts, skipped {skip} duplicate accounts',
-    'import.all_exist': 'All accounts already exist',
-    'import.no_valid_data': 'No valid account data'
+      // Import results
+      'import.success_message': '✅ Successfully imported {count} accounts',
+      'import.success_with_skip': '✅ Successfully imported {count} accounts, skipped {skip} duplicate accounts',
+      'import.all_exist': '⚠️ All accounts already exist',
+      'import.no_valid_data': '❌ No valid account data',
+      'import.partial_success': '⚠️ Partial import success: {imported} accounts added, {invalid} accounts have invalid format'
     }
   },
   
