@@ -115,9 +115,9 @@
       font-weight: 600;
       color: #667eea;
       margin-bottom: 12px;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      word-break: break-word;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
     }
     .account-code {
@@ -129,8 +129,6 @@
       text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
       line-height: 1.2;
       transition: all 0.3s ease;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
     }
     .account-item:hover .account-code {
       transform: scale(1.02);
@@ -273,8 +271,6 @@
     .form-item-info {
       flex: 1;
       min-width: 0;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
     }
 
     .form-item-title {
@@ -282,16 +278,12 @@
       font-weight: 500;
       color: #374151;
       margin-bottom: 4px;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
     }
 
     .form-item-desc {
       font-size: 12px;
       color: #6b7280;
       line-height: 1.4;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
     }
 
     .form-input {
@@ -303,9 +295,6 @@
       background: white;
       transition: all 0.2s ease;
       flex-shrink: 0;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
-      word-break: break-all;
     }
 
     .form-input:focus {
@@ -581,9 +570,6 @@
 
     .settings-item-info {
       flex: 1;
-      min-width: 0;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
     }
 
     .settings-item-title {
@@ -591,16 +577,12 @@
       font-weight: 500;
       color: #333;
       margin-bottom: 4px;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
     }
 
     .settings-item-desc {
       font-size: 12px;
       color: #666;
       line-height: 1.4;
-      word-wrap: break-word;
-      overflow-wrap: break-word;
     }
 
     .settings-button {
