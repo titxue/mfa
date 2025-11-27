@@ -3,6 +3,7 @@
   "name": "TOTP Generator",
   "version": "1.6",
   "description": "A simple TOTP code generator",
+  "key": "cGpnY3BtaG1sb2plbW5paWxlZmJnbWhiaWhwcGVvZ24=",
   "permissions": [
     "storage",
     "activeTab",

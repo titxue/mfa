@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>TOTP Generator</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     html, body {
       min-width: 380px;
@@ -11,7 +12,7 @@
       padding: 0;
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #f8f9fa;
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -28,10 +29,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-      backdrop-filter: blur(15px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 2px 20px rgba(102, 126, 234, 0.1);
+      background: #ffffff;
+      border-bottom: 1px solid #dadce0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       position: static;
       z-index: 1;
       margin-bottom: 0;
@@ -42,26 +42,32 @@
     .header-title {
       font-size: 22px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.95);
-      text-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
-      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
+      color: #1a73e8;
     }
     .header-add {
-      padding: 12px 20px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      padding: 8px 16px;
+      background: #1a73e8;
       color: white;
       border: none;
-      border-radius: 30px;
+      border-radius: 4px;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     .header-add:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-      background: linear-gradient(135deg, #5a6fd8, #6a42a0);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+      background: #1557b0;
+    }
+    .header-add:active {
+      background: #0d47a1;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transform: translateY(0);
     }
     .container {
       overflow-y: auto;
@@ -92,18 +98,17 @@
       display: flex;
       align-items: center;
       position: relative;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 24px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      border: 1px solid #dadce0;
       transition: all 0.3s ease;
       cursor: pointer;
     }
     .account-item:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-      background: rgba(255, 255, 255, 0.98);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.24);
+      border-color: #1a73e8;
     }
     .account-info {
       flex-grow: 1;
@@ -113,26 +118,24 @@
     .account-name {
       font-size: 15px;
       font-weight: 600;
-      color: #667eea;
+      color: #1a73e8;
       margin-bottom: 12px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
     }
     .account-code {
       font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
       font-size: 28px;
       font-weight: 700;
-      color: #2d3748;
+      color: #202124;
       letter-spacing: 3px;
-      text-shadow: 0 1px 3px rgba(255, 255, 255, 0.9);
       line-height: 1.2;
       transition: all 0.3s ease;
     }
     .account-item:hover .account-code {
       transform: scale(1.02);
-      color: #667eea;
+      color: #1a73e8;
     }
     .progress-container {
       position: absolute;
@@ -157,10 +160,9 @@
       transition: stroke-dasharray 0.3s ease;
     }
     .progress-ring-circle.progress {
-      stroke: url(#progressGradient);
+      stroke: #34a853;
       stroke-dasharray: 100 100;
-      transition: stroke-dashoffset 0.1s linear;
-      filter: drop-shadow(0 0 6px rgba(102, 126, 234, 0.5));
+      transition: stroke 0.3s ease, stroke-dashoffset 0.1s linear;
     }
     .progress-text {
       position: absolute;
@@ -169,9 +171,7 @@
       transform: translate(-50%, -50%);
       font-size: 12px;
       font-weight: 600;
-      color: #667eea;
-      transition: opacity 0.2s ease;
-      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+      transition: color 0.3s ease, opacity 0.2s ease;
     }
     /* 表单容器 - 采用与设置页面相同的模态框设计 */
     .form-container {
@@ -185,7 +185,6 @@
       justify-content: center;
       align-items: center;
       z-index: 1000;
-      backdrop-filter: blur(4px);
     }
 
     .form-container.show {
@@ -195,8 +194,8 @@
 
     .form-modal {
       background: white;
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      box-shadow: 0 24px 38px rgba(0,0,0,0.14), 0 9px 46px rgba(0,0,0,0.12), 0 11px 15px rgba(0,0,0,0.20);
       max-width: 480px;
       width: 90%;
       max-height: 80vh;
@@ -209,7 +208,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 24px 24px 20px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #1a73e8;
       color: white;
     }
 
@@ -299,8 +298,8 @@
 
     .form-input:focus {
       outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
     }
 
     .form-input:hover {
@@ -314,15 +313,14 @@
 
     .form-button {
       padding: 8px 16px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.2);
       color: white;
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
       transition: all 0.2s ease;
-      backdrop-filter: blur(10px);
     }
 
     .form-button:hover {
@@ -332,20 +330,22 @@
 
     .form-save-button {
       padding: 8px 24px;
-      border: 1px solid #667eea;
-      border-radius: 8px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 4px;
+      background: #1a73e8;
       color: white;
       cursor: pointer;
       font-size: 14px;
       font-weight: 500;
       transition: all 0.2s ease;
       flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .form-save-button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+      background: #1557b0;
     }
 
     .form-save-button:active {
@@ -386,26 +386,37 @@
       max-width: calc(100vw - 40px);
     }
     .toast {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: #202124;
       color: white;
       padding: 12px 20px;
-      border-radius: 32px;
+      border-radius: 4px;
       font-size: 14px;
       font-weight: 500;
       opacity: 0;
       transform: translateY(50px) scale(0.9);
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
-      backdrop-filter: blur(10px);
+      box-shadow: 0 6px 10px rgba(0,0,0,0.14), 0 1px 18px rgba(0,0,0,0.12);
       pointer-events: auto;
       max-width: 300px;
       text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.2);
       cursor: pointer;
     }
     .toast.show {
       opacity: 1;
       transform: translateY(0) scale(1);
+    }
+    .toast-success {
+      background: #34a853;
+    }
+    .toast-warning {
+      background: #fbbc04;
+      color: #202124;
+    }
+    .toast-error {
+      background: #d93025;
+    }
+    .toast-info {
+      background: #1a73e8;
     }
     
 
@@ -415,14 +426,13 @@
       align-items: center;
       justify-content: center;
       padding: 40px 20px;
-      color: rgba(255, 255, 255, 0.8);
+      color: #5f6368;
       font-size: 16px;
       text-align: center;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-      border-radius: 24px;
+      background: transparent;
+      border-radius: 8px;
       margin: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 2px dashed #dadce0;
       height: calc(100% - 32px); /* 适应容器高度 */
       box-sizing: border-box;
     }
@@ -443,9 +453,8 @@
       width: 48px;
       height: 48px;
       margin-bottom: 16px;
-      opacity: 0.7;
+      color: #5f6368;
       transition: all 0.3s ease;
-      filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.3));
     }
     .empty-state:hover .empty-state-icon {
       transform: scale(1.1);
@@ -460,7 +469,6 @@
       right: 0;
       bottom: 0;
       background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(5px);
       display: none;
       align-items: center;
       justify-content: center;
@@ -476,9 +484,9 @@
       width: 380px;
       max-width: calc(100vw - 40px);
       max-height: calc(100vh - 40px);
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 24px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 24px 38px rgba(0,0,0,0.14), 0 9px 46px rgba(0,0,0,0.12), 0 11px 15px rgba(0,0,0,0.20);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -502,8 +510,8 @@
       align-items: center;
       padding: 20px 24px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 24px 24px 0 0;
+      background: #1a73e8;
+      border-radius: 8px 8px 0 0;
       flex-shrink: 0;
     }
 
@@ -516,9 +524,8 @@
     .settings-content {
       max-height: calc(100vh - 140px);
       overflow-y: auto;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 0 0 24px 24px;
-      backdrop-filter: blur(10px);
+      background: #ffffff;
+      border-radius: 0 0 8px 8px;
       /* 隐藏滚动条但保持滚动功能 */
       scrollbar-width: none; /* Firefox */
       -ms-overflow-style: none; /* IE and Edge */
@@ -548,7 +555,7 @@
     }
 
     .settings-section-title svg {
-      color: #667eea;
+      color: #1a73e8;
     }
 
     .settings-section-content {
@@ -581,26 +588,28 @@
 
     .settings-item-desc {
       font-size: 12px;
-      color: #666;
+      color: #5f6368;
       line-height: 1.4;
     }
 
     .settings-button {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #1a73e8;
       color: white;
       border: none;
       padding: 8px 16px;
-      border-radius: 20px;
+      border-radius: 4px;
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
       min-width: 60px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .settings-button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+      background: #1557b0;
     }
 
     .settings-button:active {
@@ -608,151 +617,36 @@
     }
     
     .language-selector {
-      background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.98) 0%, 
-        rgba(248, 250, 252, 0.96) 50%, 
-        rgba(241, 245, 249, 0.94) 100%);
-      color: #2d3748;
-      border: 1px solid rgba(102, 126, 234, 0.15);
-      position: relative;
-      padding: 14px 18px;
-      border-radius: 14px;
+      background: #ffffff;
+      color: #202124;
+      border: 1px solid #dadce0;
+      padding: 12px 16px;
+      border-radius: 4px;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s ease;
       min-width: 130px;
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 
-        0 4px 16px rgba(102, 126, 234, 0.08),
-        0 2px 8px rgba(0, 0, 0, 0.04),
-        0 1px 3px rgba(0, 0, 0, 0.02),
-        inset 0 1px 0 rgba(255, 255, 255, 0.95),
-        inset 0 0 0 1px rgba(102, 126, 234, 0.05);
     }
-    
-    .language-selector::before {
-      content: '';
-      position: absolute;
-      top: -1px;
-      left: -1px;
-      right: -1px;
-      bottom: -1px;
-      border-radius: 13px;
-      background: linear-gradient(135deg, 
-        rgba(102, 126, 234, 0.4) 0%, 
-        rgba(118, 75, 162, 0.4) 50%, 
-        rgba(79, 172, 254, 0.4) 100%);
-      z-index: -1;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-    
+
     .language-selector:hover {
-      border-color: rgba(102, 126, 234, 0.25);
-      transform: translateY(-1px);
-      box-shadow: 
-        0 6px 20px rgba(102, 126, 234, 0.12),
-        0 4px 12px rgba(0, 0, 0, 0.06),
-        0 2px 6px rgba(0, 0, 0, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.98),
-        inset 0 0 0 1px rgba(102, 126, 234, 0.08);
-      background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 1) 0%, 
-        rgba(248, 250, 252, 0.99) 50%, 
-        rgba(241, 245, 249, 0.97) 100%);
+      border-color: #1a73e8;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
     }
-    
-    .language-selector:hover::before {
-      opacity: 1;
-    }
-    
-    .language-selector:active {
-      transform: translateY(0);
-      box-shadow: 
-        0 3px 12px rgba(102, 126, 234, 0.18),
-        0 2px 6px rgba(0, 0, 0, 0.08),
-        0 1px 3px rgba(0, 0, 0, 0.06),
-        inset 0 1px 0 rgba(255, 255, 255, 0.95),
-        inset 0 0 0 1px rgba(102, 126, 234, 0.1);
-      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
+
     .language-selector:focus {
       outline: none;
-      border-color: rgba(102, 126, 234, 0.4);
-      box-shadow: 
-        0 0 0 4px rgba(102, 126, 234, 0.12),
-        0 6px 20px rgba(102, 126, 234, 0.15),
-        0 4px 12px rgba(0, 0, 0, 0.06),
-        0 2px 6px rgba(0, 0, 0, 0.04),
-        inset 0 1px 0 rgba(255, 255, 255, 0.98),
-        inset 0 0 0 1px rgba(102, 126, 234, 0.08);
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
     }
-    
-    .language-selector:focus::before {
-      opacity: 1;
-    }
-    
+
     .language-selector option {
-      background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.98) 0%, 
-        rgba(248, 250, 252, 0.95) 100%);
-      color: #2d3748;
-      padding: 14px 18px;
-      font-weight: 500;
-      border: none;
-      border-radius: 10px;
-      margin: 3px 4px;
-      font-size: 14px;
-      line-height: 1.4;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      box-shadow: 
-        0 1px 3px rgba(0, 0, 0, 0.05),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    }
-    
-    .language-selector option:hover {
-      background: linear-gradient(135deg, 
-        rgba(102, 126, 234, 0.12) 0%, 
-        rgba(118, 75, 162, 0.08) 50%,
-        rgba(79, 172, 254, 0.06) 100%);
-      color: #1a202c;
-      transform: translateY(-1px);
-      box-shadow: 
-        0 3px 8px rgba(102, 126, 234, 0.15),
-        0 1px 3px rgba(0, 0, 0, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    }
-    
-    .language-selector option:checked,
-    .language-selector option:selected {
-      background: linear-gradient(135deg, 
-        rgba(102, 126, 234, 0.2) 0%, 
-        rgba(118, 75, 162, 0.15) 50%,
-        rgba(79, 172, 254, 0.1) 100%);
-      color: #1a202c;
-      font-weight: 600;
-      border: 1px solid rgba(102, 126, 234, 0.3);
-      box-shadow: 
-        0 4px 12px rgba(102, 126, 234, 0.2),
-        0 2px 6px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9),
-        inset 0 0 0 1px rgba(102, 126, 234, 0.1);
-    }
-    
-    .language-selector option:active {
-      transform: translateY(0);
-      box-shadow: 
-        0 2px 4px rgba(102, 126, 234, 0.2),
-        0 1px 2px rgba(0, 0, 0, 0.1),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      background: white;
+      color: #202124;
+      padding: 12px;
     }
 
     /* 响应式设计 */
@@ -818,6 +712,31 @@
     .account-item:nth-child(4) { animation-delay: 0.4s; }
     .account-item:nth-child(5) { animation-delay: 0.5s; }
 
+    /* Material Icons全局样式 */
+    .material-icons {
+      font-family: 'Material Icons';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      vertical-align: middle;
+    }
+
+    .header-add .material-icons {
+      font-size: 16px;
+      margin-right: 4px;
+    }
+
+    .empty-icon .material-icons {
+      font-size: 48px;
+    }
+
   </style>
 </head>
 <body>
@@ -825,18 +744,21 @@
     <div class="header-title" data-i18n="title">TOTP 生成器</div>
     <div style="display: flex; gap: 8px;">
       <button class="header-add" id="settingsBtn" data-i18n-title="settings.title">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11.03L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11.03C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
-        </svg>
+        <span class="material-icons">settings</span>
       </button>
-      <button class="header-add" id="addNew" data-i18n="addAccount">添加账户</button>
+      <button class="header-add" id="addNew" data-i18n="addAccount">
+        <span class="material-icons">add</span>
+        <span>添加账户</span>
+      </button>
     </div>
   </div>
 
   <div class="container">
     <div class="account-list" id="accountList"></div>
     <div class="empty-state" id="emptyState" style="display: none;">
-      <div class="empty-icon">🔐</div>
+      <div class="empty-icon">
+        <span class="material-icons" style="font-size: 48px; color: #5f6368;">lock</span>
+      </div>
       <div class="empty-title" data-i18n="no_accounts">No accounts added</div>
       <div class="empty-subtitle" data-i18n="add_account_hint">Click the + button to add your first account</div>
     </div>
@@ -856,9 +778,7 @@
         <!-- 账户信息分类 -->
         <div class="form-section">
           <div class="form-section-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
-            </svg>
+            <span class="material-icons">person</span>
             <span data-i18n="form.accountInfo">账户信息</span>
           </div>
           <div class="form-section-content">
@@ -902,9 +822,7 @@
       <!-- 账户管理分类 -->
       <div class="settings-section">
           <div class="settings-section-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12.87,15.07L10.33,12.56L10.36,12.53C12.1,10.59 13.34,8.36 14.07,6H17V4H10V2H8V4H1V6H12.17C11.5,7.92 10.44,9.75 9,11.35C8.07,10.32 7.3,9.19 6.69,8H4.69C5.42,9.63 6.42,11.17 7.67,12.56L2.58,17.58L4,19L9,14L12.11,17.11L12.87,15.07M18.5,10H16.5L12,22H14L15.12,19H19.87L21,22H23L18.5,10M15.88,17L17.5,12.67L19.12,17H15.88Z"/>
-            </svg>
+            <span class="material-icons">language</span>
             <span data-i18n="settings.language">语言设置</span>
           </div>
           <div class="settings-section-content">
@@ -924,9 +842,7 @@
         
         <div class="settings-section">
           <div class="settings-section-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
-            </svg>
+            <span class="material-icons">manage_accounts</span>
             <span data-i18n="settings.accountManagement">账户管理</span>
           </div>
         <div class="settings-section-content">
@@ -950,9 +866,7 @@
       <!-- 应用信息分类 -->
       <div class="settings-section">
         <div class="settings-section-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"/>
-          </svg>
+          <span class="material-icons">info</span>
           <span data-i18n="settings.about">关于应用</span>
         </div>
         <div class="settings-section-content">
@@ -976,12 +890,6 @@
   <template id="progressRingTemplate">
     <div class="progress-container">
       <svg class="progress-ring">
-        <defs>
-          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
-          </linearGradient>
-        </defs>
         <circle class="progress-ring-circle" cx="20" cy="20" r="17"></circle>
         <circle class="progress-ring-circle progress" cx="20" cy="20" r="17"></circle>
       </svg>

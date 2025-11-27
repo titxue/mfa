@@ -440,11 +440,11 @@ const UIManager = {
       }
       .confirm-dialog-content {
         background: white;
-        border-radius: 16px;
+        border-radius: 8px;
         padding: 24px;
         max-width: 320px;
         width: 90%;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 24px 38px rgba(0,0,0,0.14), 0 9px 46px rgba(0,0,0,0.12), 0 11px 15px rgba(0,0,0,0.20);
       }
       .confirm-dialog-title {
         margin: 0 0 12px 0;
@@ -467,25 +467,27 @@ const UIManager = {
       .confirm-dialog-confirm {
         padding: 8px 16px;
         border: none;
-        border-radius: 8px;
+        border-radius: 4px;
         font-size: 14px;
         cursor: pointer;
         transition: all 0.2s ease;
       }
       .confirm-dialog-cancel {
         background: #f5f5f5;
-        color: #666;
+        color: #5f6368;
       }
       .confirm-dialog-cancel:hover {
         background: #e5e5e5;
       }
       .confirm-dialog-confirm {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #d93025;
         color: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
       .confirm-dialog-confirm:hover {
+        background: #c5221f;
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.12);
       }
     `;
     return style;
@@ -551,16 +553,35 @@ const UIManager = {
     const circle = progressRing.querySelector('.progress');
     const text = progressRing.querySelector('.progress-text');
     const circumference = 2 * Math.PI * 16; // 固定半径16
-    
+
     circle.style.strokeDasharray = circumference;
     circle.style.strokeDashoffset = circumference;
 
     return {
       container: progressRing,
       update: (percent) => {
+        const remainingSeconds = Math.ceil(30 * percent / 100);
+
+        // 动态颜色逻辑 (Material Design)
+        let strokeColor;
+        if (remainingSeconds > 20) {
+          strokeColor = '#34a853'; // Google Green
+        } else if (remainingSeconds > 10) {
+          strokeColor = '#fbbc04'; // Google Yellow
+        } else {
+          strokeColor = '#d93025'; // Google Red
+        }
+
+        // 更新进度环颜色
+        circle.style.stroke = strokeColor;
+
+        // 更新进度
         const offset = circumference - (percent / 100 * circumference);
         circle.style.strokeDashoffset = offset;
-        text.textContent = Math.ceil(30 * percent / 100);
+
+        // 更新文字和文字颜色
+        text.textContent = remainingSeconds;
+        text.style.color = strokeColor;
       }
     };
   },
