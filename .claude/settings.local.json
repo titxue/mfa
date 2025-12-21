@@ -14,7 +14,13 @@
       "Bash(bun add -d tailwindcss@^3.4.0)",
       "WebSearch",
       "Bash(bun add jsqr)",
-      "Bash(bun add -d @types/jsqr)"
+      "Bash(bun add -d @types/jsqr)",
+      "Bash(test -d /Users/xuejinyu/work/mfa/website)",
+      "Bash(test -f /Users/xuejinyu/work/mfa/.gitignore)",
+      "Bash(cat /Users/xuejinyu/work/mfa/.gitignore)",
+      "Bash(bun install)",
+      "Bash(test -d /Users/xuejinyu/work/mfa/icons)",
+      "Bash(test -d /Users/xuejinyu/work/mfa/img)"
     ],
     "deny": [],
     "ask": []
