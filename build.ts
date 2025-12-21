@@ -1,0 +1,90 @@
+import { $ } from 'bun'
+import { copyFile, mkdir } from 'fs/promises'
+import { existsSync } from 'fs'
+
+const isDev = Bun.argv.includes('--watch')
+
+console.log(`🚀 Building TOTP Generator (${isDev ? 'development' : 'production'})...`)
+
+// 清理 dist 目录
+if (existsSync('./dist')) {
+  await $`rm -rf ./dist`
+}
+
+await mkdir('./dist', { recursive: true })
+await mkdir('./dist/icons', { recursive: true })
+
+// 构建 popup
+const popupBuild = await Bun.build({
+  entrypoints: ['./src/popup/index.tsx'],
+  outdir: './dist',
+  target: 'browser',
+  minify: !isDev,
+  format: 'esm',
+})
+
+if (!popupBuild.success) {
+  console.error('❌ Popup build failed:')
+  for (const log of popupBuild.logs) {
+    console.error(log)
+  }
+  process.exit(1)
+}
+
+console.log('✅ Popup built successfully')
+
+// 构建 content-script
+const contentBuild = await Bun.build({
+  entrypoints: ['./src/content-script.ts'],
+  outdir: './dist',
+  target: 'browser',
+  minify: !isDev,
+  format: 'iife',
+})
+
+if (!contentBuild.success) {
+  console.error('❌ Content script build failed:')
+  for (const log of contentBuild.logs) {
+    console.error(log)
+  }
+  process.exit(1)
+}
+
+console.log('✅ Content script built successfully')
+
+// 编译 Tailwind CSS
+console.log('🎨 Compiling Tailwind CSS...')
+await $`./node_modules/.bin/tailwindcss -i ./src/styles/globals.css -o ./dist/styles.css ${isDev ? '' : '--minify'}`
+
+console.log('✅ Tailwind CSS compiled')
+
+// 复制 HTML 文件
+await copyFile('./src/popup/index.html', './dist/popup.html')
+
+// 更新 HTML 文件引用
+const html = await Bun.file('./dist/popup.html').text()
+const updatedHtml = html
+  .replace('<script type="module" src="./index.tsx"></script>', '<script type="module" src="./index.js"></script>')
+  .replace('</head>', '<link rel="stylesheet" href="./styles.css"></head>')
+
+await Bun.write('./dist/popup.html', updatedHtml)
+
+console.log('✅ HTML files processed')
+
+// 复制 manifest.json
+await copyFile('./public/manifest.json', './dist/manifest.json')
+
+// 复制图标
+if (existsSync('./icons')) {
+  await $`cp -r ./icons/* ./dist/icons/`
+  console.log('✅ Icons copied')
+}
+
+console.log('✅ Build completed successfully!')
+console.log('📦 Output directory: ./dist')
+
+if (isDev) {
+  console.log('👀 Watching for changes...')
+  // 注意：这里只是示意，实际的 watch 模式需要更复杂的实现
+  // 可以使用 chokidar 或其他 file watcher
+}

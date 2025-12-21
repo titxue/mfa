@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(bun init -y)",
+      "Bash(bun add react react-dom)",
+      "Bash(bun add -d @types/react @types/react-dom @types/chrome typescript)",
+      "Bash(bun add class-variance-authority clsx tailwind-merge lucide-react)",
+      "Bash(bun add -d tailwindcss postcss autoprefixer)",
+      "Bash(bun add -d tailwindcss-animate)",
+      "Bash(bun add @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-alert-dialog @radix-ui/react-scroll-area @radix-ui/react-label @radix-ui/react-slot sonner)",
+      "Bash(bun run build)",
+      "Bash(bun remove tailwindcss)",
+      "Bash(bun add -d tailwindcss@^3.4.0)"
     ],
     "deny": [],
     "ask": []

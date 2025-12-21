@@ -1,0 +1,78 @@
+export const zhCN = {
+  // 页面标题和按钮
+  'title': 'TOTP 生成器',
+  'addAccount': '添加账户',
+  'button.add': '保存',
+  'button.cancel': '取消',
+  'button.close': '关闭',
+  'button.export': '导出',
+  'button.import': '导入',
+  'button.delete': '删除',
+
+  // 表单
+  'form.title': '添加账户',
+  'form.accountName': '账户名称',
+  'form.secretKey': '密钥',
+  'form.accountInfo': '账户信息',
+  'form.accountNameDesc': '为此账户设置一个易于识别的名称',
+  'form.secretKeyDesc': '输入从服务提供商获取的TOTP密钥',
+  'form.saveAccount': '保存账户',
+  'form.saveAccountDesc': '确认信息无误后保存此账户',
+  'form.accountNamePlaceholder': '例如：GitHub',
+  'form.secretKeyPlaceholder': '输入 Base32 格式的密钥',
+
+  // 设置页面
+  'settings.title': '设置',
+  'settings.accountManagement': '账户管理',
+  'settings.language': '语言设置',
+  'settings.about': '关于应用',
+  'settings.languageTitle': '界面语言',
+  'settings.languageDesc': '选择应用程序的显示语言',
+  'settings.languageChinese': '中文',
+  'settings.languageEnglish': 'English',
+  'settings.exportData': '导出账户数据',
+  'settings.exportDesc': '将所有账户数据导出为JSON文件进行备份',
+  'settings.importData': '导入账户数据',
+  'settings.importDesc': '从JSON文件导入账户数据，支持数据合并',
+  'settings.export': '导出',
+  'settings.import': '导入',
+  'settings.appName': 'TOTP 生成器',
+  'settings.appVersion': '版本 1.0.0 - 安全的两步验证码生成工具',
+  'settings.usage': '使用说明',
+  'settings.usageDesc': '点击账户可复制验证码，右键可删除账户',
+
+  // Toast 提示
+  'toast.no_accounts_to_export': '没有账户数据可导出',
+  'toast.export_success': '账户数据导出成功',
+  'toast.export_failed': '导出失败，请重试',
+  'toast.invalid_file_format': '无效的文件格式',
+  'toast.import_failed': '导入失败，请重试',
+  'toast.language_changed': '语言设置已更新',
+  'toast.code_copied': '验证码已复制到剪贴板',
+  'toast.code_filled': '验证码已自动填充',
+  'toast.fill_failed': '自动填充失败',
+  'toast.fill_all_fields': '请填写所有字段',
+  'toast.invalid_secret': '无效的密钥格式',
+  'toast.account_exists': '账户名已存在',
+  'toast.import_success': '✅ 成功导入 {imported} 个账户',
+  'toast.import_success_with_skip': '✅ 成功导入 {imported} 个账户，跳过 {skipped} 个重复账户',
+  'toast.import_all_duplicates': '⚠️ 所有账户都已存在，未导入任何新账户',
+  'toast.import_no_valid': '❌ 文件中没有有效的账户数据',
+
+  // 确认对话框
+  'dialog.export_title': '确认导出',
+  'dialog.export_message': '即将导出 {count} 个账户的数据。导出的文件包含敏感信息，请妥善保管。',
+  'dialog.import_title': '确认导入',
+  'dialog.import_message': '即将导入 {count} 个账户。导入操作将添加新账户，重复的账户将被跳过。',
+  'dialog.delete_title': '确认删除',
+  'dialog.delete_message': '确定要删除账户 "{name}" 吗？此操作无法撤销。',
+
+  // 空状态
+  'empty.no_accounts': '暂无账户',
+  'empty.add_account_tip': '点击右上角添加账户开始使用',
+
+  // 错误信息
+  'error.init_failed': '初始化失败，请刷新页面重试',
+}
+
+export type Translations = typeof zhCN
