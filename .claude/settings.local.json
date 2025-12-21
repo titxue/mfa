@@ -20,7 +20,9 @@
       "Bash(cat /Users/xuejinyu/work/mfa/.gitignore)",
       "Bash(bun install)",
       "Bash(test -d /Users/xuejinyu/work/mfa/icons)",
-      "Bash(test -d /Users/xuejinyu/work/mfa/img)"
+      "Bash(test -d /Users/xuejinyu/work/mfa/img)",
+      "Bash(cat dist/manifest.json)",
+      "Bash(cat src/version.ts)"
     ],
     "deny": [],
     "ask": []

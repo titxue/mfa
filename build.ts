@@ -1,10 +1,21 @@
 import { $ } from 'bun'
-import { copyFile, mkdir } from 'fs/promises'
+import { copyFile, mkdir, readFile, writeFile } from 'fs/promises'
 import { existsSync } from 'fs'
 
 const isDev = Bun.argv.includes('--watch')
 
 console.log(`🚀 Building TOTP Generator (${isDev ? 'development' : 'production'})...`)
+
+// 读取 package.json 获取版本号
+const packageJson = JSON.parse(await readFile('./package.json', 'utf-8'))
+const version = packageJson.version
+
+// 生成 version.ts 文件
+const versionTs = `// 此文件由 build.ts 自动生成，请勿手动修改
+export const VERSION = '${version}'
+`
+await writeFile('./src/version.ts', versionTs)
+console.log(`📝 Generated version.ts with version ${version}`)
 
 // 清理 dist 目录
 if (existsSync('./dist')) {
@@ -71,8 +82,11 @@ await Bun.write('./dist/popup.html', updatedHtml)
 
 console.log('✅ HTML files processed')
 
-// 复制 manifest.json
-await copyFile('./public/manifest.json', './dist/manifest.json')
+// 复制并更新 manifest.json
+const manifestJson = JSON.parse(await readFile('./public/manifest.json', 'utf-8'))
+manifestJson.version = version
+await writeFile('./dist/manifest.json', JSON.stringify(manifestJson, null, 2))
+console.log(`✅ Manifest updated with version ${version}`)
 
 // 复制图标
 if (existsSync('./icons')) {

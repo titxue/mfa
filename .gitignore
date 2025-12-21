@@ -10,6 +10,9 @@ bun.lockb
 # Build output
 dist/
 
+# Generated files
+src/version.ts
+
 # IDE
 .idea/
 .vscode/

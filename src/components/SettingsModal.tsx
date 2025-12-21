@@ -15,8 +15,11 @@ import {
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
+import { Github, Tag, ExternalLink } from 'lucide-react'
 import { useI18n } from '@/contexts/I18nContext'
 import { ImportExportManager } from '@/utils/import-export'
+import { VERSION } from '@/version'
 import type { Account, Language } from '@/types'
 import { toast } from 'sonner'
 import {
@@ -181,14 +184,42 @@ export function SettingsModal({
             </div>
 
             {/* 关于 */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h3 className="text-sm font-semibold">{t('settings.about')}</h3>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">{t('settings.appName')}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t('settings.appVersion')}
-                </p>
-              </div>
+              <Card className="bg-muted/30">
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Tag className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{t('settings.appName')}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        v{VERSION} - {t('settings.appDescription')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-between"
+                    asChild
+                  >
+                    <a
+                      href={t('settings.appGithubUrl')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Github className="w-4 h-4" />
+                        {t('settings.appGithub')}
+                      </span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </DialogContent>

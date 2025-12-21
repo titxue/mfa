@@ -1,5 +1,14 @@
 # TOTP 生成器 Chrome 扩展
 
+<div align="center">
+
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
+[![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/dhipejmoajhjflafhbibojfoeogbmjgf)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
+[![GitHub stars](https://img.shields.io/github/stars/titxue/mfa?style=social)](https://github.com/titxue/mfa)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+</div>
+
 基于时间的一次性密码 (TOTP) 生成器 Chrome 扩展，用于双因素认证。采用现代化 React + TypeScript + Bun 技术栈，支持二维码扫描、自动填充验证码、多语言界面、数据导入导出等功能。
 
 ## 核心功能特点
@@ -202,12 +211,15 @@ interface I18nContextType {
 ## 安装方法
 
 ### 从 Chrome Web Store 安装（推荐）
-访问 [Chrome Web Store](https://chromewebstore.google.com/detail/totp-generator/dhipejmoajhjflafhbibojfoeogbmjgf) 直接安装
+
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?label=Chrome%20Web%20Store&style=for-the-badge&logo=googlechrome)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
+
+访问 [Chrome Web Store - TOTP Authenticator](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf) 直接安装
 
 ### 开发者模式安装
 1. 克隆此仓库到本地
 ```bash
-git clone https://github.com/yourusername/mfa.git
+git clone https://github.com/titxue/mfa.git
 cd mfa
 ```
 
@@ -334,7 +346,14 @@ MIT License
 
 ## 更新日志
 
-### v2.0.0 (2024-12)
+### v2.0.1 (2025-12)
+- 🐛 修复二维码解析逻辑错误
+- ✨ 优化"关于"部分 UI 设计
+- 🔗 添加 GitHub 仓库链接
+- 🎨 使用卡片和图标美化设置页面
+- 🧹 清理遗留的 V1 代码文件
+
+### v2.0.0 (2025-12)
 - ✨ 全新架构：迁移到 React + TypeScript + Bun
 - ✨ 新增二维码扫描功能（jsQR）
 - ✨ 采用 shadcn/ui 设计系统

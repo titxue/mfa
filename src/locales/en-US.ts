@@ -41,7 +41,9 @@ export const enUS: Translations = {
   'settings.export': 'Export',
   'settings.import': 'Import',
   'settings.appName': 'TOTP Generator',
-  'settings.appVersion': 'Version 1.0.0 - Secure two-factor authentication tool',
+  'settings.appDescription': 'Secure two-factor authentication tool',
+  'settings.appGithub': 'GitHub',
+  'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Usage Instructions',
   'settings.usageDesc': 'Click account to copy code, right-click to delete account',
 

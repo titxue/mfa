@@ -39,7 +39,9 @@ export const zhCN = {
   'settings.export': '导出',
   'settings.import': '导入',
   'settings.appName': 'TOTP 生成器',
-  'settings.appVersion': '版本 1.0.0 - 安全的两步验证码生成工具',
+  'settings.appDescription': '安全的两步验证码生成工具',
+  'settings.appGithub': 'GitHub',
+  'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': '使用说明',
   'settings.usageDesc': '点击账户可复制验证码，右键可删除账户',
 

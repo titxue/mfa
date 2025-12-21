@@ -1,16 +1,32 @@
 {
   "name": "mfa",
-  "version": "2.0.0",
+  "version": "2.0.1",
+  "description": "TOTP 生成器 Chrome 扩展 - 基于 React + TypeScript + Bun",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/titxue/mfa.git"
+  },
+  "bugs": {
+    "url": "https://github.com/titxue/mfa/issues"
+  },
+  "homepage": "https://github.com/titxue/mfa#readme",
   "scripts": {
     "dev": "bun run build.ts --watch",
     "build": "bun run build.ts",
     "type-check": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "TOTP 生成器 Chrome 扩展 - 基于 React + TypeScript + Bun",
+  "keywords": [
+    "totp",
+    "2fa",
+    "authenticator",
+    "chrome-extension",
+    "react",
+    "typescript",
+    "bun"
+  ],
+  "author": "titxue",
+  "license": "MIT",
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",

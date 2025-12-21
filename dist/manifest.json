@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
   "name": "TOTP Authenticator - 2FA OTP Code Generator",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Secure and fast TOTP authenticator for 2FA login. Generate OTP codes offline and manage multiple accounts easily.",
+  "homepage_url": "https://github.com/titxue/mfa",
   "permissions": [
     "storage",
     "activeTab",
