@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "TOTP Generator",
-  "version": "1.6",
-  "description": "A simple TOTP code generator",
+  "name": "TOTP Authenticator - 2FA OTP Code Generator",
+  "version": "1.8",
+  "description": "Secure and fast TOTP authenticator for 2FA login. Generate OTP codes offline and manage multiple accounts easily.",
   "key": "cGpnY3BtaG1sb2plbW5paWxlZmJnbWhiaWhwcGVvZ24=",
   "permissions": [
     "storage",
