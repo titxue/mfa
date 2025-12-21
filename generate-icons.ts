@@ -33,8 +33,8 @@ for (const size of sizes) {
 
   // 背景渐变
   const gradient = ctx.createLinearGradient(0, 0, size, size)
-  gradient.addColorStop(0, '#4f46e5') // indigo-600
-  gradient.addColorStop(1, '#7c3aed') // violet-600
+  gradient.addColorStop(0, '#334155') // slate-700
+  gradient.addColorStop(1, '#1e293b') // slate-800
   ctx.fillStyle = gradient
   ctx.fillRect(0, 0, size, size)
 
