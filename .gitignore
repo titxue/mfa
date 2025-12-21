@@ -13,6 +13,9 @@ dist/
 # Generated files
 src/version.ts
 
+# Claude Code
+.claude/
+
 # IDE
 .idea/
 .vscode/
