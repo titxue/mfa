@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import {
   Select,
@@ -133,6 +134,9 @@ export function SettingsModal({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('settings.title')}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {t('settings.language')}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">

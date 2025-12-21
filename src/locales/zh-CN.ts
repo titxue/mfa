@@ -20,6 +20,8 @@ export const zhCN = {
   'form.saveAccountDesc': '确认信息无误后保存此账户',
   'form.accountNamePlaceholder': '例如：GitHub',
   'form.secretKeyPlaceholder': '输入 Base32 格式的密钥',
+  'form.scanQRCode': '扫描二维码',
+  'form.scanQRCodeDesc': '上传包含 TOTP 二维码的图片',
 
   // 设置页面
   'settings.title': '设置',
@@ -54,10 +56,15 @@ export const zhCN = {
   'toast.fill_all_fields': '请填写所有字段',
   'toast.invalid_secret': '无效的密钥格式',
   'toast.account_exists': '账户名已存在',
-  'toast.import_success': '✅ 成功导入 {imported} 个账户',
-  'toast.import_success_with_skip': '✅ 成功导入 {imported} 个账户，跳过 {skipped} 个重复账户',
-  'toast.import_all_duplicates': '⚠️ 所有账户都已存在，未导入任何新账户',
-  'toast.import_no_valid': '❌ 文件中没有有效的账户数据',
+  'toast.import_success': '成功导入 {imported} 个账户',
+  'toast.import_success_with_skip': '成功导入 {imported} 个账户，跳过 {skipped} 个重复账户',
+  'toast.import_all_duplicates': '所有账户都已存在，未导入任何新账户',
+  'toast.import_no_valid': '文件中没有有效的账户数据',
+  'toast.qr_scanning': '正在扫描二维码...',
+  'toast.qr_success': '二维码识别成功',
+  'toast.qr_no_code': '未找到二维码，请重试',
+  'toast.qr_invalid_format': '二维码格式不正确',
+  'toast.qr_parse_failed': '二维码解析失败',
 
   // 确认对话框
   'dialog.export_title': '确认导出',

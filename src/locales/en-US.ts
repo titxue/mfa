@@ -22,6 +22,8 @@ export const enUS: Translations = {
   'form.saveAccountDesc': 'Confirm the information is correct and save this account',
   'form.accountNamePlaceholder': 'e.g., GitHub',
   'form.secretKeyPlaceholder': 'Enter Base32 format secret key',
+  'form.scanQRCode': 'Scan QR Code',
+  'form.scanQRCodeDesc': 'Upload an image containing TOTP QR code',
 
   // Settings
   'settings.title': 'Settings',
@@ -56,10 +58,15 @@ export const enUS: Translations = {
   'toast.fill_all_fields': 'Please fill in all fields',
   'toast.invalid_secret': 'Invalid secret key format',
   'toast.account_exists': 'Account name already exists',
-  'toast.import_success': '✅ Successfully imported {imported} accounts',
-  'toast.import_success_with_skip': '✅ Successfully imported {imported} accounts, skipped {skipped} duplicate accounts',
-  'toast.import_all_duplicates': '⚠️ All accounts already exist, no new accounts imported',
-  'toast.import_no_valid': '❌ No valid account data found in file',
+  'toast.import_success': 'Successfully imported {imported} accounts',
+  'toast.import_success_with_skip': 'Successfully imported {imported} accounts, skipped {skipped} duplicate accounts',
+  'toast.import_all_duplicates': 'All accounts already exist, no new accounts imported',
+  'toast.import_no_valid': 'No valid account data found in file',
+  'toast.qr_scanning': 'Scanning QR code...',
+  'toast.qr_success': 'QR code recognized successfully',
+  'toast.qr_no_code': 'No QR code found, please try again',
+  'toast.qr_invalid_format': 'Invalid QR code format',
+  'toast.qr_parse_failed': 'Failed to parse QR code',
 
   // Confirmation dialogs
   'dialog.export_title': 'Confirm Export',

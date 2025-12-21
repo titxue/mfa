@@ -11,7 +11,10 @@
       "Bash(bun add @radix-ui/react-dialog @radix-ui/react-select @radix-ui/react-alert-dialog @radix-ui/react-scroll-area @radix-ui/react-label @radix-ui/react-slot sonner)",
       "Bash(bun run build)",
       "Bash(bun remove tailwindcss)",
-      "Bash(bun add -d tailwindcss@^3.4.0)"
+      "Bash(bun add -d tailwindcss@^3.4.0)",
+      "WebSearch",
+      "Bash(bun add jsqr)",
+      "Bash(bun add -d @types/jsqr)"
     ],
     "deny": [],
     "ask": []
