@@ -64,8 +64,8 @@ export function AccountItem({ name, code, remaining, onDelete }: AccountItemProp
         onClick={handleClick}
         onContextMenu={handleContextMenu}
       >
-        <CardContent className="p-6 flex items-center">
-          <div className="flex-1 min-w-0 pr-4">
+        <CardContent className="p-6 flex items-center gap-4">
+          <div className="flex-1 min-w-0 max-w-[220px]">
             <p className="text-sm font-medium text-primary mb-2 truncate">
               {name}
             </p>
@@ -73,7 +73,9 @@ export function AccountItem({ name, code, remaining, onDelete }: AccountItemProp
               {TOTP.formatCode(code)}
             </p>
           </div>
-          <ProgressRing value={remaining} max={30} />
+          <div className="flex-shrink-0">
+            <ProgressRing value={remaining} max={30} size={48} />
+          </div>
         </CardContent>
       </Card>
 

@@ -25,7 +25,7 @@ export function ProgressRing({
   const strokeColor = value <= 5 ? '#ef4444' : value <= 10 ? '#f59e0b' : '#10b981'
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
       <svg
         className="-rotate-90"
         width={size}

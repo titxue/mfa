@@ -2,6 +2,7 @@ import React from 'react'
 import type { Account } from '@/types'
 import { AccountItem } from './AccountItem'
 import { EmptyState } from './EmptyState'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 interface AccountListProps {
   accounts: Account[]
@@ -28,16 +29,18 @@ export function AccountList({
   }
 
   return (
-    <div className="p-4 space-y-3 overflow-y-auto">
-      {accounts.map((account) => (
-        <AccountItem
-          key={account.name}
-          name={account.name}
-          code={codes[account.name] || '------'}
-          remaining={remaining}
-          onDelete={onDeleteAccount}
-        />
-      ))}
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-4 space-y-3">
+        {accounts.map((account) => (
+          <AccountItem
+            key={account.name}
+            name={account.name}
+            code={codes[account.name] || '------'}
+            remaining={remaining}
+            onDelete={onDeleteAccount}
+          />
+        ))}
+      </div>
+    </ScrollArea>
   )
 }

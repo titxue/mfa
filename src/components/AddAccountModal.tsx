@@ -44,7 +44,7 @@ export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalPr
       })
 
       if (result.success) {
-        toast.success(`✅ ${name}`)
+        toast.success(`${name}`)
         setName('')
         setSecret('')
         onOpenChange(false)
@@ -60,7 +60,7 @@ export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('form.title')}</DialogTitle>
         </DialogHeader>

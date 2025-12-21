@@ -31,7 +31,7 @@ export function App() {
         onOpenSettings={() => setShowSettings(true)}
       />
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1">
         <AccountList
           accounts={accounts}
           codes={codes}
