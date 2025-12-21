@@ -23,7 +23,6 @@ export function useTOTP(accounts: Account[]) {
         const code = await TOTP.generateTOTP(account.secret)
         newCodes[account.name] = code
       } catch (error) {
-        console.error(`Failed to generate TOTP for ${account.name}:`, error)
         newCodes[account.name] = '------'
       }
     }

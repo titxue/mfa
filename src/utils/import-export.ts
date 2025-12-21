@@ -98,7 +98,6 @@ export class ImportExportManager {
           await TOTP.generateTOTP(account.secret)
           newAccounts.push(account)
         } catch (error) {
-          console.warn(`Skipping account with invalid key: ${account.name}`)
           invalidCount++
         }
       }

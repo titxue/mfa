@@ -108,7 +108,6 @@ export async function copyToClipboard(text: string): Promise<boolean> {
       return success
     }
   } catch (error) {
-    console.error('Failed to copy to clipboard:', error)
     return false
   }
 }
@@ -136,7 +135,6 @@ export async function getCurrentTab(): Promise<chrome.tabs.Tab | null> {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
     return tab || null
   } catch (error) {
-    console.error('Chrome tabs API error:', error)
     return null
   }
 }
@@ -180,8 +178,6 @@ export async function autoFillCode(code: string): Promise<{
       }
     }
   } catch (error) {
-    console.error('Auto fill error:', error)
-
     // 尝试复制到剪贴板
     const copied = await copyToClipboard(code)
     return {

@@ -17,7 +17,7 @@ export function useAccounts() {
         const savedAccounts = await StorageManager.getAccounts()
         setAccounts(savedAccounts)
       } catch (error) {
-        console.error('Failed to load accounts:', error)
+        // Failed to load accounts
       } finally {
         setLoading(false)
       }
@@ -53,7 +53,6 @@ export function useAccounts() {
 
       return { success: true }
     } catch (error) {
-      console.error('Failed to add account:', error)
       return {
         success: false,
         message: 'error.init_failed'
@@ -69,7 +68,6 @@ export function useAccounts() {
       setAccounts(newAccounts)
       return true
     } catch (error) {
-      console.error('Failed to delete account:', error)
       return false
     }
   }
@@ -81,7 +79,6 @@ export function useAccounts() {
       setAccounts(newAccounts)
       return true
     } catch (error) {
-      console.error('Failed to update accounts:', error)
       return false
     }
   }

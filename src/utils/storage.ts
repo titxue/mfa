@@ -31,7 +31,6 @@ export class StorageManager {
         return data ? JSON.parse(data) : undefined
       }
     } catch (error) {
-      console.error(`Failed to get ${key}:`, error)
       return undefined
     }
   }
@@ -52,7 +51,7 @@ export class StorageManager {
         localStorage.setItem(key, JSON.stringify(value))
       }
     } catch (error) {
-      console.error(`Failed to save ${key}:`, error)
+      // Failed to save
     }
   }
 
@@ -111,7 +110,7 @@ export class StorageManager {
         localStorage.clear()
       }
     } catch (error) {
-      console.error('Failed to clear storage:', error)
+      // Failed to clear storage
     }
   }
 }
