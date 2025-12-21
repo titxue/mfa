@@ -89,9 +89,11 @@ await writeFile('./dist/manifest.json', JSON.stringify(manifestJson, null, 2))
 console.log(`✅ Manifest updated with version ${version}`)
 
 // 复制图标
-if (existsSync('./icons')) {
-  await $`cp -r ./icons/* ./dist/icons/`
+if (existsSync('./public/icons')) {
+  await $`cp -r ./public/icons/* ./dist/icons/`
   console.log('✅ Icons copied')
+} else {
+  console.warn('⚠️  No icons found in ./public/icons/')
 }
 
 console.log('✅ Build completed successfully!')

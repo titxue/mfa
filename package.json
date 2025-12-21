@@ -14,6 +14,7 @@
     "dev": "bun run build.ts --watch",
     "build": "bun run build.ts",
     "type-check": "tsc --noEmit",
+    "generate-icons": "bun run generate-icons.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -50,6 +51,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.23",
+    "canvas": "^3.2.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.0",
     "tailwindcss-animate": "^1.0.7"
