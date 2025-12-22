@@ -78,13 +78,13 @@ bun run build
 
 ## 💡 为什么选择
 
-| 特性 | 本扩展 | 其他扩展 |
-|------|--------|----------|
-| 🎨 UI | shadcn/ui + Radix UI | 传统样式 |
-| 📷 二维码 | 图片上传 | 需要摄像头权限 |
-| 🚀 构建 | Bun < 200ms | Webpack 1-5s |
-| 📦 技术 | React 19 + TS | 旧框架 |
-| 📝 类型 | 100% TypeScript | 部分或无 |
+| 特性 | 本扩展 | 
+|------|--------|
+| 🎨 UI | shadcn/ui + Radix UI |
+| 📷 二维码 | 图片上传 |
+| 🚀 构建 | Bun < 200ms | 
+| 📦 技术 | React 19 + TS |
+| 📝 类型 | 100% TypeScript | 
 
 ---
 
@@ -95,8 +95,6 @@ bun run build
 - **构建**：Bun（< 200ms）
 - **核心**：jsQR、lucide-react、sonner
 - **标准**：Chrome Extension Manifest V3
-
-> 📚 详细技术文档：[.claude/CLAUDE.md](.claude/CLAUDE.md)
 
 ---
 
