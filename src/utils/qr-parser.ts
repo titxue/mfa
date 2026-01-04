@@ -84,7 +84,7 @@ async function decodeQRFromImageData(dataURL: string): Promise<ParsedQRData> {
  * 解析 otpauth:// URI
  * 格式: otpauth://totp/Issuer:Account?secret=BASE32SECRET&issuer=Issuer
  */
-function parseOtpauthURI(uri: string): ParsedQRData {
+export function parseOtpauthURI(uri: string): ParsedQRData {
   // 验证 URI 格式
   if (!uri.startsWith('otpauth://totp/')) {
     throw new Error('Invalid otpauth URI format')

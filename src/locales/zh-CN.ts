@@ -22,6 +22,9 @@ export const zhCN = {
   'form.secretKeyPlaceholder': '输入 Base32 格式的密钥',
   'form.scanQRCode': '扫描二维码',
   'form.scanQRCodeDesc': '上传包含 TOTP 二维码的图片',
+  'form.pasteQRCodeHint': '或按 Ctrl+V 粘贴图片/令牌',
+  'form.dropImageHere': '释放以上传图片',
+  'form.dropImageDesc': '将包含二维码的图片拖放到此处',
 
   // 设置页面
   'settings.title': '设置',
@@ -67,6 +70,8 @@ export const zhCN = {
   'toast.qr_no_code': '未找到二维码，请重试',
   'toast.qr_invalid_format': '二维码格式不正确',
   'toast.qr_parse_failed': '二维码解析失败',
+  'toast.qr_invalid_file_type': '不支持的文件类型，请上传图片文件',
+  'toast.token_parse_success': '令牌解析成功',
 
   // 确认对话框
   'dialog.export_title': '确认导出',

@@ -90,7 +90,14 @@ console.log(`✅ Manifest updated with version ${version}`)
 
 // 复制图标
 if (existsSync('./public/icons')) {
-  await $`cp -r ./public/icons/* ./dist/icons/`
+  const iconFiles = ['icon16.png', 'icon48.png', 'icon128.png']
+  for (const icon of iconFiles) {
+    const sourcePath = `./public/icons/${icon}`
+    const destPath = `./dist/icons/${icon}`
+    if (existsSync(sourcePath)) {
+      await copyFile(sourcePath, destPath)
+    }
+  }
   console.log('✅ Icons copied')
 } else {
   console.warn('⚠️  No icons found in ./public/icons/')

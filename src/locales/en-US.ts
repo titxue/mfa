@@ -24,6 +24,9 @@ export const enUS: Translations = {
   'form.secretKeyPlaceholder': 'Enter Base32 format secret key',
   'form.scanQRCode': 'Scan QR Code',
   'form.scanQRCodeDesc': 'Upload an image containing TOTP QR code',
+  'form.pasteQRCodeHint': 'or press Ctrl+V to paste image/token',
+  'form.dropImageHere': 'Drop to upload image',
+  'form.dropImageDesc': 'Drop an image containing QR code here',
 
   // Settings
   'settings.title': 'Settings',
@@ -69,6 +72,8 @@ export const enUS: Translations = {
   'toast.qr_no_code': 'No QR code found, please try again',
   'toast.qr_invalid_format': 'Invalid QR code format',
   'toast.qr_parse_failed': 'Failed to parse QR code',
+  'toast.qr_invalid_file_type': 'Unsupported file type, please upload an image file',
+  'toast.token_parse_success': 'Token parsed successfully',
 
   // Confirmation dialogs
   'dialog.export_title': 'Confirm Export',
