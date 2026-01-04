@@ -74,6 +74,8 @@ export const enUS: Translations = {
   'toast.qr_parse_failed': 'Failed to parse QR code',
   'toast.qr_invalid_file_type': 'Unsupported file type, please upload an image file',
   'toast.token_parse_success': 'Token parsed successfully',
+  'toast.language_reset': 'Language settings have been reset to system default',
+  'toast.language_reset_failed': 'Failed to reset language settings, please try again',
 
   // Confirmation dialogs
   'dialog.export_title': 'Confirm Export',

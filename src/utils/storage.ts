@@ -100,6 +100,21 @@ export class StorageManager {
   }
 
   /**
+   * 移除语言设置（清除持久化）
+   */
+  static async removeLanguage(): Promise<void> {
+    try {
+      if (this.isStorageAvailable()) {
+        await chrome.storage.sync.remove('language')
+      } else {
+        localStorage.removeItem('language')
+      }
+    } catch (error) {
+      // Failed to remove language
+    }
+  }
+
+  /**
    * 清空所有数据
    */
   static async clear(): Promise<void> {

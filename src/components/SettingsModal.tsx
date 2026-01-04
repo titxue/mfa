@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -49,8 +49,11 @@ export function SettingsModal({
   accounts,
   onImport
 }: SettingsModalProps) {
-  const { t, locale, setLocale } = useI18n()
+  const { t, locale, setLocale, resetLanguage } = useI18n()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const clickCountRef = useRef(0)
+  const lastClickTimeRef = useRef(0)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>()
   const [exportDialog, setExportDialog] = React.useState(false)
   const [importDialog, setImportDialog] = React.useState(false)
   const [importFile, setImportFile] = React.useState<File | null>(null)
@@ -131,6 +134,45 @@ export function SettingsModal({
     toast.success(t('toast.language_changed'))
   }
 
+  // 连续点击重置语言（隐藏功能）
+  const handleLanguageTitleClick = () => {
+    const now = Date.now()
+    const timeSinceLastClick = now - lastClickTimeRef.current
+
+    if (timeSinceLastClick > 500) {
+      clickCountRef.current = 1
+    } else {
+      clickCountRef.current++
+    }
+
+    lastClickTimeRef.current = now
+
+    if (clickCountRef.current === 3) {
+      resetLanguage()
+      toast.success(t('toast.language_reset'))
+      clickCountRef.current = 0
+      lastClickTimeRef.current = 0
+    }
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+    }
+
+    timerRef.current = setTimeout(() => {
+      clickCountRef.current = 0
+      lastClickTimeRef.current = 0
+    }, 500)
+  }
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+      }
+    }
+  }, [])
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -145,7 +187,12 @@ export function SettingsModal({
           <div className="space-y-6">
             {/* 语言设置 */}
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold">{t('settings.language')}</h3>
+              <h3
+                className="text-sm font-semibold cursor-pointer select-none hover:text-primary transition-colors"
+                onClick={handleLanguageTitleClick}
+              >
+                {t('settings.language')}
+              </h3>
               <div className="space-y-2">
                 <Label htmlFor="language">{t('settings.languageTitle')}</Label>
                 <Select value={locale} onValueChange={handleLanguageChange}>

@@ -9,6 +9,7 @@ interface I18nContextValue {
   locale: Language
   t: (key: keyof Translations, params?: Record<string, string | number>) => string
   setLocale: (locale: Language) => Promise<void>
+  resetLanguage: () => Promise<void>
 }
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined)
@@ -99,8 +100,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     await StorageManager.saveLanguage(newLocale)
   }
 
+  const resetLanguage = async () => {
+    await StorageManager.removeLanguage()
+    const detected = detectSystemLanguage()
+    setLocaleState(detected)
+  }
+
   return (
-    <I18nContext.Provider value={{ locale, t, setLocale }}>
+    <I18nContext.Provider value={{ locale, t, setLocale, resetLanguage }}>
       {children}
     </I18nContext.Provider>
   )

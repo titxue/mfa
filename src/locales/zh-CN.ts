@@ -72,6 +72,8 @@ export const zhCN = {
   'toast.qr_parse_failed': '二维码解析失败',
   'toast.qr_invalid_file_type': '不支持的文件类型，请上传图片文件',
   'toast.token_parse_success': '令牌解析成功',
+  'toast.language_reset': '语言设置已重置，已切换到系统默认语言',
+  'toast.language_reset_failed': '重置语言设置失败，请重试',
 
   // 确认对话框
   'dialog.export_title': '确认导出',
