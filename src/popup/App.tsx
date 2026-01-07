@@ -16,18 +16,6 @@ export function App() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
-  const handleDeleteAccount = async (name: string) => {
-    await deleteAccount(name)
-  }
-
-  const handleReorder = async (newAccounts: Account[]) => {
-    await updateAccounts(newAccounts)
-  }
-
-  const handleImport = async (newAccounts: Account[]) => {
-    await updateAccounts(newAccounts)
-  }
-
   return (
     <div className="flex flex-col h-[600px] w-[380px] bg-background">
       <Header
@@ -40,8 +28,8 @@ export function App() {
           accounts={accounts}
           codes={codes}
           remaining={remaining}
-          onDeleteAccount={handleDeleteAccount}
-          onReorder={handleReorder}
+          onDeleteAccount={deleteAccount}
+          onReorder={updateAccounts}
         />
       </div>
 
@@ -55,7 +43,7 @@ export function App() {
         open={showSettings}
         onOpenChange={setShowSettings}
         accounts={accounts}
-        onImport={handleImport}
+        onImport={updateAccounts}
       />
     </div>
   )

@@ -202,3 +202,66 @@ App
 - Tailwind CSS 3.4+
 - Chrome Extension Manifest V3
 - 目标浏览器：Chrome 88+
+
+## 常见问题与解决方案
+
+### 拖拽排序跳动问题（dnd-kit）
+
+**问题现象**：
+使用 dnd-kit 实现拖拽排序时，拖拽结束后卡片会跳动（从拖拽位置跳回原位，再跳到新位置）。
+
+**根本原因**：
+`useAccounts.ts` 中的 `updateAccounts`、`addAccount`、`deleteAccount` 函数使用了错误的顺序：
+```typescript
+// ❌ 错误：先 await 存储，后更新状态
+await StorageManager.saveAccounts(newAccounts)  // 需要 10-50ms
+setAccounts(newAccounts)  // 状态更新被延迟
+```
+
+**时序问题**：
+```
+T0:  onReorder(newAccounts) 调用
+T0:  await saveAccounts() - 开始等待 Chrome Storage API
+T16: setActiveId(null) - 清除拖拽状态（来自 handleDragEnd）
+T50: setAccounts(newAccounts) - 状态更新（被 await 延迟）
+     ↓
+结果：React 状态在拖拽清除后 30ms 才更新，导致 dnd-kit 的动画出现跳动
+```
+
+**解决方案**：
+```typescript
+// ✅ 正确：先更新状态，后异步存储
+setAccounts(newAccounts)  // 立即更新 UI（< 1ms）
+await StorageManager.saveAccounts(newAccounts)  // 后台异步保存
+```
+
+**关键原则**：
+- **UI 响应优先**：用户操作必须立即反馈到 UI（< 16ms）
+- **持久化异步**：存储操作不应阻塞 UI 更新
+- **乐观更新**：先更新 UI，后保存数据（Optimistic UI）
+
+**误区**：
+- ❌ 以为问题在 `handleDragEnd` 的执行顺序
+- ❌ 以为问题在 dnd-kit 的动画配置
+- ❌ 以为问题在 React 的批处理机制
+- ✅ 实际问题在 `await` 阻塞了 `setState`
+
+**适用场景**：
+任何需要异步存储的状态更新（Chrome Storage API、IndexedDB、网络请求等）都应该使用这个模式。
+
+### requestAnimationFrame 的正确使用
+
+在拖拽结束时清除状态仍然需要使用 `requestAnimationFrame`：
+```typescript
+const handleDragEnd = (event: DragEndEvent) => {
+  // ... 计算并更新数据
+  onReorder(newAccounts)  // 立即更新
+
+  // 延迟清除 UI 状态，让动画完成
+  requestAnimationFrame(() => {
+    setActiveId(null)
+  })
+}
+```
+
+**原因**：确保 DragOverlay 的 CSS 动画有时间完成，避免闪烁。

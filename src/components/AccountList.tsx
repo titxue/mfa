@@ -121,10 +121,6 @@ export function AccountList({
     })
   }
 
-  const handleDragCancel = () => {
-    setActiveId(null)
-  }
-
   if (accounts.length === 0) {
     return (
       <div className="p-4 h-full">
@@ -141,7 +137,6 @@ export function AccountList({
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
     >
       <ScrollArea className="h-full">
         <div className="p-4 space-y-3">
@@ -163,16 +158,14 @@ export function AccountList({
       </ScrollArea>
 
       <DragOverlay>
-        {activeAccount ? (
-          <div style={{ cursor: 'grabbing' }}>
-            <AccountItem
-              name={activeAccount.name}
-              code={codes[activeAccount.name] || '------'}
-              remaining={remaining}
-              onDelete={onDeleteAccount}
-            />
-          </div>
-        ) : null}
+        {activeAccount && (
+          <AccountItem
+            name={activeAccount.name}
+            code={codes[activeAccount.name] || '------'}
+            remaining={remaining}
+            onDelete={onDeleteAccount}
+          />
+        )}
       </DragOverlay>
     </DndContext>
   )
