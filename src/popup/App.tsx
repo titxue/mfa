@@ -20,6 +20,10 @@ export function App() {
     await deleteAccount(name)
   }
 
+  const handleReorder = async (newAccounts: Account[]) => {
+    await updateAccounts(newAccounts)
+  }
+
   const handleImport = async (newAccounts: Account[]) => {
     await updateAccounts(newAccounts)
   }
@@ -37,6 +41,7 @@ export function App() {
           codes={codes}
           remaining={remaining}
           onDeleteAccount={handleDeleteAccount}
+          onReorder={handleReorder}
         />
       </div>
 

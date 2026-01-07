@@ -48,8 +48,10 @@ export function useAccounts() {
       }
 
       const newAccounts = [...accounts, account]
-      await StorageManager.saveAccounts(newAccounts)
+      // UI 优先：先立即更新状态
       setAccounts(newAccounts)
+      // 后台异步保存
+      await StorageManager.saveAccounts(newAccounts)
 
       return { success: true }
     } catch (error) {
@@ -64,8 +66,10 @@ export function useAccounts() {
   const deleteAccount = async (accountName: string): Promise<boolean> => {
     try {
       const newAccounts = accounts.filter(a => a.name !== accountName)
-      await StorageManager.saveAccounts(newAccounts)
+      // UI 优先：先立即更新状态
       setAccounts(newAccounts)
+      // 后台异步保存
+      await StorageManager.saveAccounts(newAccounts)
       return true
     } catch (error) {
       return false
@@ -75,8 +79,11 @@ export function useAccounts() {
   // 更新账户列表（用于导入）
   const updateAccounts = async (newAccounts: Account[]): Promise<boolean> => {
     try {
-      await StorageManager.saveAccounts(newAccounts)
+      // 关键修复：先立即更新 React 状态
       setAccounts(newAccounts)
+
+      // 然后异步保存到存储（不阻塞 UI）
+      await StorageManager.saveAccounts(newAccounts)
       return true
     } catch (error) {
       return false
