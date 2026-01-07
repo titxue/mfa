@@ -28,6 +28,11 @@ export const enUS: Translations = {
   'form.dropImageHere': 'Drop to upload image',
   'form.dropImageDesc': 'Drop an image containing QR code here',
 
+  // QR Code
+  'qr.modal_title': 'Account QR Code',
+  'qr.modal_description': 'Scan this QR code to import this account on other devices',
+  'qr.download_button': 'Download QR Code',
+
   // Settings
   'settings.title': 'Settings',
   'settings.accountManagement': 'Account Management',
@@ -76,6 +81,8 @@ export const enUS: Translations = {
   'toast.token_parse_success': 'Token parsed successfully',
   'toast.language_reset': 'Language settings have been reset to system default',
   'toast.language_reset_failed': 'Failed to reset language settings, please try again',
+  'toast.qr_generate_failed': 'Failed to generate QR code, please try again',
+  'toast.qr_download_success': 'QR code downloaded',
 
   // Confirmation dialogs
   'dialog.export_title': 'Confirm Export',

@@ -1,6 +1,6 @@
 {
   "name": "mfa",
-  "version": "2.0.2",
+  "version": "2.0.5",
   "description": "TOTP 生成器 Chrome 扩展 - 基于 React + TypeScript + Bun",
   "repository": {
     "type": "git",
@@ -42,6 +42,7 @@
     "clsx": "^2.1.1",
     "jsqr": "^1.4.0",
     "lucide-react": "^0.562.0",
+    "qrcode": "^1.5.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "sonner": "^2.0.7",
@@ -51,6 +52,7 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/chrome": "^0.1.32",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.23",

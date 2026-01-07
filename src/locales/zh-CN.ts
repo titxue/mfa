@@ -26,6 +26,11 @@ export const zhCN = {
   'form.dropImageHere': '释放以上传图片',
   'form.dropImageDesc': '将包含二维码的图片拖放到此处',
 
+  // QR 码相关
+  'qr.modal_title': '账户二维码',
+  'qr.modal_description': '扫描此二维码可在其他设备导入此账户',
+  'qr.download_button': '下载二维码',
+
   // 设置页面
   'settings.title': '设置',
   'settings.accountManagement': '账户管理',
@@ -74,6 +79,8 @@ export const zhCN = {
   'toast.token_parse_success': '令牌解析成功',
   'toast.language_reset': '语言设置已重置，已切换到系统默认语言',
   'toast.language_reset_failed': '重置语言设置失败，请重试',
+  'toast.qr_generate_failed': '二维码生成失败，请重试',
+  'toast.qr_download_success': '二维码已下载',
 
   // 确认对话框
   'dialog.export_title': '确认导出',

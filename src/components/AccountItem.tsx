@@ -15,20 +15,23 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { QRCodeModal } from './QRCodeModal'
 
 interface AccountItemProps {
   name: string
   code: string
   remaining: number
+  secret: string
   onDelete: (name: string) => void
 }
 
 /**
  * 账户卡片组件
  */
-export function AccountItem({ name, code, remaining, onDelete }: AccountItemProps) {
+export function AccountItem({ name, code, remaining, secret, onDelete }: AccountItemProps) {
   const { t } = useI18n()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showQRModal, setShowQRModal] = useState(false)
 
   // 点击账户卡片 - 自动填充或复制验证码
   const handleClick = async () => {
@@ -43,6 +46,11 @@ export function AccountItem({ name, code, remaining, onDelete }: AccountItemProp
     } else {
       toast.error(t('toast.fill_failed'))
     }
+  }
+
+  // 双击显示二维码
+  const handleDoubleClick = () => {
+    setShowQRModal(true)
   }
 
   // 右键点击 - 显示删除确认
@@ -62,6 +70,7 @@ export function AccountItem({ name, code, remaining, onDelete }: AccountItemProp
       <Card
         className="cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
         onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
         onContextMenu={handleContextMenu}
       >
         <CardContent className="p-6 flex items-center gap-4">
@@ -79,6 +88,15 @@ export function AccountItem({ name, code, remaining, onDelete }: AccountItemProp
         </CardContent>
       </Card>
 
+      {/* QR 码模态框 */}
+      <QRCodeModal
+        open={showQRModal}
+        onOpenChange={setShowQRModal}
+        accountName={name}
+        accountSecret={secret}
+      />
+
+      {/* 删除确认对话框 */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

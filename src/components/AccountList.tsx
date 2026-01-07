@@ -70,6 +70,7 @@ function SortableAccountItem({
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       <AccountItem
         name={account.name}
+        secret={account.secret}
         code={code}
         remaining={remaining}
         onDelete={onDelete}
@@ -91,7 +92,11 @@ export function AccountList({
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,  // 拖动 5px 后才激活拖拽
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates
     })
@@ -161,6 +166,7 @@ export function AccountList({
         {activeAccount && (
           <AccountItem
             name={activeAccount.name}
+            secret={activeAccount.secret}
             code={codes[activeAccount.name] || '------'}
             remaining={remaining}
             onDelete={onDeleteAccount}
