@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "TOTP Authenticator - 2FA OTP Code Generator",
+    "description": "Extension name"
+  },
+  "extensionDescription": {
+    "message": "Secure and fast TOTP authenticator for 2FA login. Generate OTP codes offline and manage multiple accounts easily.",
+    "description": "Extension description"
+  }
+}

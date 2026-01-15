@@ -1,6 +1,6 @@
 import { $ } from 'bun'
 import { copyFile, mkdir, readFile, writeFile } from 'fs/promises'
-import { existsSync } from 'fs'
+import { existsSync, readdirSync } from 'fs'
 
 const isDev = Bun.argv.includes('--watch')
 
@@ -103,6 +103,19 @@ if (existsSync('./public/icons')) {
   console.warn('⚠️  No icons found in ./public/icons/')
 }
 
+// 复制 _locales 目录
+console.log('🌐 Copying _locales directory...')
+const localesSource = './public/_locales'
+const localesTarget = './dist/_locales'
+
+if (existsSync(localesSource)) {
+  await mkdir(localesTarget, { recursive: true })
+  await copyDirectory(localesSource, localesTarget)
+  console.log('✅ _locales directory copied')
+} else {
+  console.warn('⚠️  Warning: _locales directory not found')
+}
+
 console.log('✅ Build completed successfully!')
 console.log('📦 Output directory: ./dist')
 
@@ -110,4 +123,21 @@ if (isDev) {
   console.log('👀 Watching for changes...')
   // 注意：这里只是示意，实际的 watch 模式需要更复杂的实现
   // 可以使用 chokidar 或其他 file watcher
+}
+
+// 辅助函数：递归复制目录
+async function copyDirectory(src: string, dest: string) {
+  const entries = readdirSync(src, { withFileTypes: true })
+
+  for (const entry of entries) {
+    const srcPath = `${src}/${entry.name}`
+    const destPath = `${dest}/${entry.name}`
+
+    if (entry.isDirectory()) {
+      await mkdir(destPath, { recursive: true })
+      await copyDirectory(srcPath, destPath)
+    } else {
+      await copyFile(srcPath, destPath)
+    }
+  }
 }
