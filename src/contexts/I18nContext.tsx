@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import type { Language } from '@/types'
 import type { Translations } from '@/locales/zh-CN'
-import { zhCN } from '@/locales/zh-CN'
-import { enUS } from '@/locales/en-US'
+import { translations, detectSystemLanguage, supportedLanguages } from '@/locales'
 import { StorageManager } from '@/utils/storage'
 
 interface I18nContextValue {
@@ -13,42 +12,6 @@ interface I18nContextValue {
 }
 
 const I18nContext = createContext<I18nContextValue | undefined>(undefined)
-
-const translations: Record<Language, Translations> = {
-  'zh-CN': zhCN,
-  'en-US': enUS,
-}
-
-/**
- * 检测系统语言
- */
-function detectSystemLanguage(): Language {
-  const systemLang = navigator.language || 'zh-CN'
-
-  const langMap: Record<string, Language> = {
-    'zh': 'zh-CN',
-    'zh-CN': 'zh-CN',
-    'zh-TW': 'zh-CN',
-    'zh-HK': 'zh-CN',
-    'en': 'en-US',
-    'en-US': 'en-US',
-    'en-GB': 'en-US',
-  }
-
-  // 首先尝试完整匹配
-  if (langMap[systemLang]) {
-    return langMap[systemLang]
-  }
-
-  // 然后尝试语言代码匹配
-  const langCode = systemLang.split('-')[0]
-  if (langMap[langCode]) {
-    return langMap[langCode]
-  }
-
-  // 默认返回中文
-  return 'zh-CN'
-}
 
 /**
  * 格式化翻译文本，替换参数占位符
@@ -75,7 +38,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     // 初始化语言设置
     async function initLanguage() {
       const savedLanguage = await StorageManager.getLanguage()
-      if (savedLanguage && (savedLanguage === 'zh-CN' || savedLanguage === 'en-US')) {
+      if (savedLanguage && supportedLanguages.includes(savedLanguage as Language)) {
         setLocaleState(savedLanguage as Language)
       } else {
         const detected = detectSystemLanguage()

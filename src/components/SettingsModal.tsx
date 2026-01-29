@@ -32,6 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { LANGUAGE_CONFIGS } from '@/locales'
 
 interface SettingsModalProps {
   open: boolean
@@ -200,8 +201,11 @@ export function SettingsModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="zh-CN">{t('settings.languageChinese')}</SelectItem>
-                    <SelectItem value="en-US">{t('settings.languageEnglish')}</SelectItem>
+                    {LANGUAGE_CONFIGS.map((config) => (
+                      <SelectItem key={config.code} value={config.code}>
+                        {config.nativeName}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">

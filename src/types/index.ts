@@ -26,9 +26,9 @@ export interface ExportData {
 }
 
 /**
- * 语言选项
+ * 语言选项（从 locales 自动导入）
  */
-export type Language = 'zh-CN' | 'en-US'
+export type { Language } from '@/locales'
 
 /**
  * Toast 类型
