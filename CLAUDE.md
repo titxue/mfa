@@ -141,14 +141,67 @@ App
 
 ## 国际化
 
-翻译文件位于 `src/locales/`：
-- `zh-CN.ts` - 中文翻译（默认）
-- `en-US.ts` - 英文翻译（必须与 zh-CN 的 key 保持一致）
+### 架构说明
 
-添加新翻译时：
-1. 在 `zh-CN.ts` 中添加新 key
-2. 在 `en-US.ts` 中添加对应翻译
-3. TypeScript 会自动检查类型一致性（`en-US.ts` 使用 `Translations` 类型）
+项目使用自动化语言注册机制，添加新语言无需修改多个文件。
+
+**核心文件**：
+- **`src/locales/index.ts`**: 语言注册中心（唯一需要修改的地方）
+- **`src/locales/*.ts`**: 各语言翻译文件
+- **`src/types/index.ts`**: Language 类型自动从 locales 导入
+- **`src/contexts/I18nContext.tsx`**: 自动使用注册的语言
+- **`src/components/SettingsModal.tsx`**: 自动渲染所有语言选项
+
+### 当前支持的语言（12 种）
+
+- 🇨🇳 中文（zh-CN）
+- 🇹🇼 繁体中文（zh-TW）
+- 🇺🇸 English（en-US）
+- 🇪🇸 Español（es-ES）
+- 🇫🇷 Français（fr-FR）
+- 🇧🇷 Português（pt-BR）
+- 🇩🇪 Deutsch（de-DE）
+- 🇷🇺 Русский（ru-RU）
+- 🇸🇦 العربية（ar-SA）
+- 🇯🇵 日本語（ja-JP）
+- 🇰🇷 한국어（ko-KR）
+- 🇮🇳 हिन्दी（hi-IN）
+
+### 添加新语言（仅需 2 步）
+
+**详细指南**：参见 `docs/ADD_NEW_LANGUAGE.md`
+
+**快速步骤**：
+
+1. **创建翻译文件** `src/locales/xx-XX.ts`：
+```typescript
+import type { Translations } from './zh-CN'
+export const xxXX: Translations = { /* 翻译内容 */ }
+```
+
+2. **在 `src/locales/index.ts` 中注册**：
+```typescript
+// 导入
+import { xxXX } from './xx-XX'
+
+// 添加到 LANGUAGE_CONFIGS 数组
+{
+  code: 'xx-XX',
+  nativeName: '原生名称',
+  translations: xxXX,
+  detectCodes: ['xx', 'xx-XX'],
+}
+```
+
+完成！运行 `bun run build` 即可。
+
+### 自动化特性
+
+- ✅ 类型自动生成（TypeScript 联合类型）
+- ✅ 翻译映射自动构建
+- ✅ 语言检测自动配置
+- ✅ UI 选项自动渲染
+- ✅ 编译时类型检查
 
 ## Content Script
 
