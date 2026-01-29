@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "TOTP Authenticator - 2FA OTP Code Generator",
+    "description": "擴充功能名稱"
+  },
+  "extensionDescription": {
+    "message": "安全快速的 TOTP 雙重驗證器。離線生成驗證碼，輕鬆管理多個帳戶。",
+    "description": "擴充功能描述"
+  }
+}
