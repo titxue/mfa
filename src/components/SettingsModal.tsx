@@ -54,7 +54,7 @@ export function SettingsModal({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const clickCountRef = useRef(0)
   const lastClickTimeRef = useRef(0)
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [exportDialog, setExportDialog] = React.useState(false)
   const [importDialog, setImportDialog] = React.useState(false)
   const [importFile, setImportFile] = React.useState<File | null>(null)

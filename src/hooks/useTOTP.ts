@@ -12,7 +12,7 @@ interface TOTPCodes {
 export function useTOTP(accounts: Account[]) {
   const [codes, setCodes] = useState<TOTPCodes>({})
   const [remaining, setRemaining] = useState(30)
-  const animationFrameRef = useRef<number>()
+  const animationFrameRef = useRef<number | undefined>(undefined)
 
   // 生成所有账户的验证码
   const generateCodes = async () => {

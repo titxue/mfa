@@ -52,7 +52,7 @@ export class TOTP {
     // 生成 HMAC-SHA1
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      key,
+      key as BufferSource,
       { name: 'HMAC', hash: 'SHA-1' },
       false,
       ['sign']
