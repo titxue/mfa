@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Account } from '@/types'
 import { TOTP } from '@/utils/totp'
 
@@ -12,10 +12,11 @@ interface TOTPCodes {
 export function useTOTP(accounts: Account[]) {
   const [codes, setCodes] = useState<TOTPCodes>({})
   const [remaining, setRemaining] = useState(30)
-  const animationFrameRef = useRef<number | undefined>(undefined)
+  const intervalRef = useRef<number | undefined>(undefined)
+  const lastStepRef = useRef<number>(-1)
 
   // 生成所有账户的验证码
-  const generateCodes = async () => {
+  const generateCodes = useCallback(async () => {
     const newCodes: TOTPCodes = {}
 
     for (const account of accounts) {
@@ -28,39 +29,32 @@ export function useTOTP(accounts: Account[]) {
     }
 
     setCodes(newCodes)
-  }
+  }, [accounts])
 
-  // 使用 requestAnimationFrame 实现精确的定时更新
+  // 使用低频 interval 刷新剩余秒数，跨越 30 秒边界时再生成新验证码
   useEffect(() => {
-    let lastTimestamp = Date.now()
-
     const updateTimer = () => {
-      const currentTimestamp = Date.now()
-      const currentRemaining = TOTP.getRemainingSeconds()
+      const currentStep = Math.floor(Date.now() / 30000)
+      setRemaining(TOTP.getRemainingSeconds())
 
-      // 检测是否需要重新生成验证码（跨越30秒边界）
-      if (Math.floor(lastTimestamp / 30000) !== Math.floor(currentTimestamp / 30000)) {
+      if (lastStepRef.current !== currentStep) {
+        lastStepRef.current = currentStep
         generateCodes()
       }
-
-      setRemaining(currentRemaining)
-      lastTimestamp = currentTimestamp
-
-      animationFrameRef.current = requestAnimationFrame(updateTimer)
     }
 
-    // 立即生成一次验证码
-    generateCodes()
+    // 初始化：立即同步剩余时间与验证码
+    updateTimer()
 
-    // 开始动画循环
-    animationFrameRef.current = requestAnimationFrame(updateTimer)
+    // 每 250ms 刷新一次 UI，避免每帧更新造成不必要开销
+    intervalRef.current = window.setInterval(updateTimer, 250)
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
+      if (intervalRef.current !== undefined) {
+        clearInterval(intervalRef.current)
       }
     }
-  }, [accounts])
+  }, [generateCodes])
 
   return {
     codes,
