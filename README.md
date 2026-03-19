@@ -1,4 +1,4 @@
-# TOTP 生成器 Chrome 扩展
+# TOTP
 
 <div align="center">
 
