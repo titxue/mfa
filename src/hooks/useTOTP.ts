@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Account } from '@/types'
 import { TOTP } from '@/utils/totp'
 
@@ -12,10 +12,14 @@ interface TOTPCodes {
 export function useTOTP(accounts: Account[]) {
   const [codes, setCodes] = useState<TOTPCodes>({})
   const [remaining, setRemaining] = useState(30)
-  const animationFrameRef = useRef<number | undefined>(undefined)
+  const timeoutRef = useRef<number | undefined>(undefined)
+  const intervalRef = useRef<number | undefined>(undefined)
+  const lastStepRef = useRef<number>(-1)
+  const generationIdRef = useRef(0)
 
   // 生成所有账户的验证码
-  const generateCodes = async () => {
+  const generateCodes = useCallback(async () => {
+    const currentGenerationId = ++generationIdRef.current
     const newCodes: TOTPCodes = {}
 
     for (const account of accounts) {
@@ -27,40 +31,45 @@ export function useTOTP(accounts: Account[]) {
       }
     }
 
-    setCodes(newCodes)
-  }
-
-  // 使用 requestAnimationFrame 实现精确的定时更新
-  useEffect(() => {
-    let lastTimestamp = Date.now()
-
-    const updateTimer = () => {
-      const currentTimestamp = Date.now()
-      const currentRemaining = TOTP.getRemainingSeconds()
-
-      // 检测是否需要重新生成验证码（跨越30秒边界）
-      if (Math.floor(lastTimestamp / 30000) !== Math.floor(currentTimestamp / 30000)) {
-        generateCodes()
-      }
-
-      setRemaining(currentRemaining)
-      lastTimestamp = currentTimestamp
-
-      animationFrameRef.current = requestAnimationFrame(updateTimer)
-    }
-
-    // 立即生成一次验证码
-    generateCodes()
-
-    // 开始动画循环
-    animationFrameRef.current = requestAnimationFrame(updateTimer)
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
+    // 避免异步竞态导致旧结果覆盖新结果
+    if (generationIdRef.current === currentGenerationId) {
+      setCodes(newCodes)
     }
   }, [accounts])
+
+  // 使用秒级刷新策略：先对齐到下一秒边界，再每秒更新一次
+  useEffect(() => {
+    const updateTimer = () => {
+      const currentStep = Math.floor(Date.now() / 30000)
+      setRemaining(TOTP.getRemainingSeconds())
+
+      if (lastStepRef.current !== currentStep) {
+        lastStepRef.current = currentStep
+        generateCodes()
+      }
+    }
+
+    // 初始化：立即同步剩余时间与验证码
+    updateTimer()
+
+    // 对齐到下一秒边界，减少时间漂移
+    const now = Date.now()
+    const msToNextSecond = 1000 - (now % 1000)
+
+    timeoutRef.current = window.setTimeout(() => {
+      updateTimer()
+      intervalRef.current = window.setInterval(updateTimer, 1000)
+    }, msToNextSecond)
+
+    return () => {
+      if (timeoutRef.current !== undefined) {
+        clearTimeout(timeoutRef.current)
+      }
+      if (intervalRef.current !== undefined) {
+        clearInterval(intervalRef.current)
+      }
+    }
+  }, [generateCodes])
 
   return {
     codes,
