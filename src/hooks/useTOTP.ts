@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Account } from '@/types'
 import { TOTP } from '@/utils/totp'
 
@@ -12,10 +12,11 @@ interface TOTPCodes {
 export function useTOTP(accounts: Account[]) {
   const [codes, setCodes] = useState<TOTPCodes>({})
   const [remaining, setRemaining] = useState(30)
-  const animationFrameRef = useRef<number | undefined>(undefined)
+  const timeoutRef = useRef<number | undefined>(undefined)
+  const lastStepRef = useRef<number>(-1)
 
   // 生成所有账户的验证码
-  const generateCodes = async () => {
+  const generateCodes = useCallback(async () => {
     const newCodes: TOTPCodes = {}
 
     for (const account of accounts) {
@@ -28,39 +29,42 @@ export function useTOTP(accounts: Account[]) {
     }
 
     setCodes(newCodes)
+  }, [accounts])
+
+  // 调度到下一个整秒执行
+  const scheduleNext = () => {
+    const now = Date.now()
+    const nextSecond = Math.ceil(now / 1000) * 1000
+    const delay = nextSecond - now
+    timeoutRef.current = window.setTimeout(updateTimer, delay)
   }
 
-  // 使用 requestAnimationFrame 实现精确的定时更新
-  useEffect(() => {
-    let lastTimestamp = Date.now()
+  const updateTimer = () => {
+    const currentStep = Math.floor(Date.now() / 30000)
+    setRemaining(TOTP.getRemainingSeconds())
 
-    const updateTimer = () => {
-      const currentTimestamp = Date.now()
-      const currentRemaining = TOTP.getRemainingSeconds()
-
-      // 检测是否需要重新生成验证码（跨越30秒边界）
-      if (Math.floor(lastTimestamp / 30000) !== Math.floor(currentTimestamp / 30000)) {
-        generateCodes()
-      }
-
-      setRemaining(currentRemaining)
-      lastTimestamp = currentTimestamp
-
-      animationFrameRef.current = requestAnimationFrame(updateTimer)
+    if (lastStepRef.current !== currentStep) {
+      lastStepRef.current = currentStep
+      generateCodes()
     }
 
-    // 立即生成一次验证码
-    generateCodes()
+    scheduleNext()
+  }
 
-    // 开始动画循环
-    animationFrameRef.current = requestAnimationFrame(updateTimer)
+  // 自适应定时更新：只在每秒整点执行，零无用调用
+  useEffect(() => {
+    // 重置 step 标记，确保依赖变化时重新生成验证码
+    lastStepRef.current = -1
+
+    // 立即执行一次初始化
+    updateTimer()
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
+      if (timeoutRef.current !== undefined) {
+        clearTimeout(timeoutRef.current)
       }
     }
-  }, [accounts])
+  }, [generateCodes])
 
   return {
     codes,
