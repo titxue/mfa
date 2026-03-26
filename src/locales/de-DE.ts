@@ -31,6 +31,9 @@ export const deDE: Translations = {
   'form.pasteQRCodeHint': 'oder drücken Sie Strg+V, um Bild/Token einzufügen',
   'form.dropImageHere': 'Loslassen zum Hochladen',
   'form.dropImageDesc': 'Ziehen Sie ein Bild mit QR-Code hierher',
+  'form.website': 'Website',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': 'Optional: Website URL for this account',
 
   // QR-Code
   'qr.modal_title': 'Konto-QR-Code',

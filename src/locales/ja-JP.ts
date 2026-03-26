@@ -31,6 +31,9 @@ export const jaJP: Translations = {
   'form.pasteQRCodeHint': 'またはCtrl+Vで画像/トークンを貼り付け',
   'form.dropImageHere': 'ドロップして画像をアップロード',
   'form.dropImageDesc': 'QRコードを含む画像をここにドラッグ＆ドロップ',
+  'form.website': 'Website',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': 'Optional: Website URL for this account',
 
   // QRコード
   'qr.modal_title': 'アカウントQRコード',

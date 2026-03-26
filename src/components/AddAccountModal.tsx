@@ -40,6 +40,7 @@ export function AddAccountModal({
 }: AddAccountModalProps) {
   const { t } = useI18n()
   const [name, setName] = useState('')
+  const [website, setWebsite] = useState('')
   const [secret, setSecret] = useState('')
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
@@ -51,9 +52,11 @@ export function AddAccountModal({
   useEffect(() => {
     if (open && mode === 'edit' && initialData) {
       setName(initialData.name)
+      setWebsite(initialData.website || '')
       setSecret(initialData.secret)
     } else if (open && mode === 'add') {
       setName('')
+      setWebsite('')
       setSecret('')
     }
   }, [open, mode, initialData])
@@ -120,6 +123,7 @@ export function AddAccountModal({
     try {
       const processedAccount = {
         name: name.trim(),
+        website: website.trim() || undefined,
         secret: mode === 'edit' && initialData
           ? initialData.secret  // 编辑模式保持原密钥
           : secret.trim().toUpperCase().replace(/\s/g, '')
@@ -349,6 +353,20 @@ export function AddAccountModal({
             />
             <p className="text-xs text-muted-foreground mt-1">
               {t('form.accountNameDesc')}
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="website">{t('form.website')}</Label>
+            <Input
+              id="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder={t('form.websitePlaceholder')}
+              className="mt-2"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('form.websiteDesc')}
             </p>
           </div>
 

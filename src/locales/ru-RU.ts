@@ -31,6 +31,9 @@ export const ruRU: Translations = {
   'form.pasteQRCodeHint': 'или нажмите Ctrl+V, чтобы вставить изображение/токен',
   'form.dropImageHere': 'Отпустите для загрузки изображения',
   'form.dropImageDesc': 'Перетащите сюда изображение с QR-кодом',
+  'form.website': 'Website',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': 'Optional: Website URL for this account',
 
   // QR-код
   'qr.modal_title': 'QR-код аккаунта',

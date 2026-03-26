@@ -31,6 +31,9 @@ export const ptBR: Translations = {
   'form.pasteQRCodeHint': 'ou pressione Ctrl+V para colar imagem/token',
   'form.dropImageHere': 'Solte para enviar a imagem',
   'form.dropImageDesc': 'Arraste e solte uma imagem contendo código QR aqui',
+  'form.website': 'Website',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': 'Optional: Website URL for this account',
 
   // Código QR
   'qr.modal_title': 'Código QR da conta',

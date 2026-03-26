@@ -29,6 +29,9 @@ export const zhCN = {
   'form.pasteQRCodeHint': '或按 Ctrl+V 粘贴图片/令牌',
   'form.dropImageHere': '释放以上传图片',
   'form.dropImageDesc': '将包含二维码的图片拖放到此处',
+  'form.website': '网站地址',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': '可选填写账户对应的网站地址',
 
   // QR 码相关
   'qr.modal_title': '账户二维码',

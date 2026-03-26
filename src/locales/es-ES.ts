@@ -31,6 +31,9 @@ export const esES: Translations = {
   'form.pasteQRCodeHint': 'o presiona Ctrl+V para pegar imagen/token',
   'form.dropImageHere': 'Suelta para subir la imagen',
   'form.dropImageDesc': 'Arrastra y suelta aquí una imagen con código QR',
+  'form.website': 'Website',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': 'Optional: Website URL for this account',
 
   // Código QR
   'qr.modal_title': 'Código QR de cuenta',

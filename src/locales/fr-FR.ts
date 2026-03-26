@@ -31,6 +31,9 @@ export const frFR: Translations = {
   'form.pasteQRCodeHint': 'ou appuyez sur Ctrl+V pour coller une image/token',
   'form.dropImageHere': 'Déposez pour télécharger l\'image',
   'form.dropImageDesc': 'Glissez-déposez une image contenant un code QR ici',
+  'form.website': 'Website',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': 'Optional: Website URL for this account',
 
   // Code QR
   'qr.modal_title': 'Code QR du compte',

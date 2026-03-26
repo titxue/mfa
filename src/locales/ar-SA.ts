@@ -31,6 +31,9 @@ export const arSA: Translations = {
   'form.pasteQRCodeHint': 'أو اضغط Ctrl+V للصق صورة/رمز',
   'form.dropImageHere': 'أفلت لتحميل الصورة',
   'form.dropImageDesc': 'اسحب وأفلت صورة تحتوي على رمز QR هنا',
+  'form.website': 'Website',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': 'Optional: Website URL for this account',
 
   // رمز QR
   'qr.modal_title': 'رمز QR للحساب',

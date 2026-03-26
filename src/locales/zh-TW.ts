@@ -31,6 +31,9 @@ export const zhTW: Translations = {
   'form.pasteQRCodeHint': '或按 Ctrl+V 貼上圖片/權杖',
   'form.dropImageHere': '放開以上傳圖片',
   'form.dropImageDesc': '將包含 QR 碼的圖片拖放到此處',
+  'form.website': '網站地址',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': '可選填寫帳戶對應的網站地址',
 
   // QR 碼相關
   'qr.modal_title': '帳戶 QR 碼',

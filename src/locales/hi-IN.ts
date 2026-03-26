@@ -31,6 +31,9 @@ export const hiIN: Translations = {
   'form.pasteQRCodeHint': 'या छवि/टोकन पेस्ट करने के लिए Ctrl+V दबाएं',
   'form.dropImageHere': 'छवि अपलोड करने के लिए छोड़ें',
   'form.dropImageDesc': 'QR कोड वाली छवि को यहां खींचें और छोड़ें',
+  'form.website': 'Website',
+  'form.websitePlaceholder': 'https://example.com',
+  'form.websiteDesc': 'Optional: Website URL for this account',
 
   // QR कोड
   'qr.modal_title': 'खाता QR कोड',
