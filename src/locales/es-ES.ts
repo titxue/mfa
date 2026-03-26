@@ -10,12 +10,12 @@ export const esES: Translations = {
   'button.export': 'Exportar',
   'button.import': 'Importar',
   'button.delete': 'Eliminar',
-  'button.edit': 'Edit',
-  'button.save': 'Save',
+  'button.edit': 'Editar',
+  'button.save': 'Guardar',
 
   // Formulario
-  'form.title_add': 'Add Account',
-  'form.title_edit': 'Edit Account',
+  'form.title_add': 'Agregar cuenta',
+  'form.title_edit': 'Editar cuenta',
   'form.title': 'Agregar cuenta',
   'form.accountName': 'Nombre de cuenta',
   'form.secretKey': 'Clave secreta',
@@ -31,9 +31,9 @@ export const esES: Translations = {
   'form.pasteQRCodeHint': 'o presiona Ctrl+V para pegar imagen/token',
   'form.dropImageHere': 'Suelta para subir la imagen',
   'form.dropImageDesc': 'Arrastra y suelta aquí una imagen con código QR',
-  'form.website': 'Website',
+  'form.website': 'Sitio web',
   'form.websitePlaceholder': 'https://example.com',
-  'form.websiteDesc': 'Optional: Website URL for this account',
+  'form.websiteDesc': 'Opcional: URL del sitio web para esta cuenta',
 
   // Código QR
   'qr.modal_title': 'Código QR de cuenta',

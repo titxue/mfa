@@ -10,12 +10,12 @@ export const jaJP: Translations = {
   'button.export': 'エクスポート',
   'button.import': 'インポート',
   'button.delete': '削除',
-  'button.edit': 'Edit',
-  'button.save': 'Save',
+  'button.edit': '編集',
+  'button.save': '保存',
 
   // フォーム
-  'form.title_add': 'Add Account',
-  'form.title_edit': 'Edit Account',
+  'form.title_add': 'アカウントを追加',
+  'form.title_edit': 'アカウントを編集',
   'form.title': 'アカウントを追加',
   'form.accountName': 'アカウント名',
   'form.secretKey': 'シークレットキー',
@@ -31,9 +31,9 @@ export const jaJP: Translations = {
   'form.pasteQRCodeHint': 'またはCtrl+Vで画像/トークンを貼り付け',
   'form.dropImageHere': 'ドロップして画像をアップロード',
   'form.dropImageDesc': 'QRコードを含む画像をここにドラッグ＆ドロップ',
-  'form.website': 'Website',
+  'form.website': 'ウェブサイト',
   'form.websitePlaceholder': 'https://example.com',
-  'form.websiteDesc': 'Optional: Website URL for this account',
+  'form.websiteDesc': '任意：このアカウントのウェブサイト URL',
 
   // QRコード
   'qr.modal_title': 'アカウントQRコード',

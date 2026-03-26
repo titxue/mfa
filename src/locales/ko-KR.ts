@@ -10,12 +10,12 @@ export const koKR: Translations = {
   'button.export': '내보내기',
   'button.import': '가져오기',
   'button.delete': '삭제',
-  'button.edit': 'Edit',
-  'button.save': 'Save',
+  'button.edit': '편집',
+  'button.save': '저장',
 
   // 양식
-  'form.title_add': 'Add Account',
-  'form.title_edit': 'Edit Account',
+  'form.title_add': '계정 추가',
+  'form.title_edit': '계정 편집',
   'form.title': '계정 추가',
   'form.accountName': '계정 이름',
   'form.secretKey': '비밀 키',
@@ -31,9 +31,9 @@ export const koKR: Translations = {
   'form.pasteQRCodeHint': '또는 Ctrl+V를 눌러 이미지/토큰을 붙여넣기',
   'form.dropImageHere': '놓아서 이미지 업로드',
   'form.dropImageDesc': 'QR 코드가 포함된 이미지를 여기에 드래그 앤 드롭하세요',
-  'form.website': 'Website',
+  'form.website': '웹사이트',
   'form.websitePlaceholder': 'https://example.com',
-  'form.websiteDesc': 'Optional: Website URL for this account',
+  'form.websiteDesc': '선택 사항: 이 계정의 웹사이트 URL',
 
   // QR 코드
   'qr.modal_title': '계정 QR 코드',

@@ -10,12 +10,12 @@ export const ruRU: Translations = {
   'button.export': 'Экспорт',
   'button.import': 'Импорт',
   'button.delete': 'Удалить',
-  'button.edit': 'Edit',
-  'button.save': 'Save',
+  'button.edit': 'Редактировать',
+  'button.save': 'Сохранить',
 
   // Форма
-  'form.title_add': 'Add Account',
-  'form.title_edit': 'Edit Account',
+  'form.title_add': 'Добавить аккаунт',
+  'form.title_edit': 'Редактировать аккаунт',
   'form.title': 'Добавить аккаунт',
   'form.accountName': 'Имя аккаунта',
   'form.secretKey': 'Секретный ключ',
@@ -31,9 +31,9 @@ export const ruRU: Translations = {
   'form.pasteQRCodeHint': 'или нажмите Ctrl+V, чтобы вставить изображение/токен',
   'form.dropImageHere': 'Отпустите для загрузки изображения',
   'form.dropImageDesc': 'Перетащите сюда изображение с QR-кодом',
-  'form.website': 'Website',
+  'form.website': 'Веб-сайт',
   'form.websitePlaceholder': 'https://example.com',
-  'form.websiteDesc': 'Optional: Website URL for this account',
+  'form.websiteDesc': 'Необязательно: URL веб-сайта для этой учетной записи',
 
   // QR-код
   'qr.modal_title': 'QR-код аккаунта',

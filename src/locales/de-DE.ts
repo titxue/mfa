@@ -10,12 +10,12 @@ export const deDE: Translations = {
   'button.export': 'Exportieren',
   'button.import': 'Importieren',
   'button.delete': 'Löschen',
-  'button.edit': 'Edit',
-  'button.save': 'Save',
+  'button.edit': 'Bearbeiten',
+  'button.save': 'Speichern',
 
   // Formular
-  'form.title_add': 'Add Account',
-  'form.title_edit': 'Edit Account',
+  'form.title_add': 'Konto hinzufügen',
+  'form.title_edit': 'Konto bearbeiten',
   'form.title': 'Konto hinzufügen',
   'form.accountName': 'Kontoname',
   'form.secretKey': 'Geheimer Schlüssel',
@@ -33,7 +33,7 @@ export const deDE: Translations = {
   'form.dropImageDesc': 'Ziehen Sie ein Bild mit QR-Code hierher',
   'form.website': 'Website',
   'form.websitePlaceholder': 'https://example.com',
-  'form.websiteDesc': 'Optional: Website URL for this account',
+  'form.websiteDesc': 'Optional: Website-URL für dieses Konto',
 
   // QR-Code
   'qr.modal_title': 'Konto-QR-Code',

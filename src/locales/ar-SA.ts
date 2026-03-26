@@ -10,12 +10,12 @@ export const arSA: Translations = {
   'button.export': 'تصدير',
   'button.import': 'استيراد',
   'button.delete': 'حذف',
-  'button.edit': 'Edit',
-  'button.save': 'Save',
+  'button.edit': 'تعديل',
+  'button.save': 'حفظ',
 
   // النموذج
-  'form.title_add': 'Add Account',
-  'form.title_edit': 'Edit Account',
+  'form.title_add': 'إضافة حساب',
+  'form.title_edit': 'تعديل الحساب',
   'form.title': 'إضافة حساب',
   'form.accountName': 'اسم الحساب',
   'form.secretKey': 'المفتاح السري',
@@ -31,9 +31,9 @@ export const arSA: Translations = {
   'form.pasteQRCodeHint': 'أو اضغط Ctrl+V للصق صورة/رمز',
   'form.dropImageHere': 'أفلت لتحميل الصورة',
   'form.dropImageDesc': 'اسحب وأفلت صورة تحتوي على رمز QR هنا',
-  'form.website': 'Website',
+  'form.website': 'الموقع الإلكتروني',
   'form.websitePlaceholder': 'https://example.com',
-  'form.websiteDesc': 'Optional: Website URL for this account',
+  'form.websiteDesc': 'اختياري: عنوان URL للموقع الإلكتروني لهذا الحساب',
 
   // رمز QR
   'qr.modal_title': 'رمز QR للحساب',
