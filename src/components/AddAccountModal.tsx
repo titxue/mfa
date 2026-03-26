@@ -16,16 +16,28 @@ import { parseQRCodeFromFile, parseOtpauthURI } from '@/utils/qr-parser'
 import { cn } from '@/utils/cn'
 import type { Account } from '@/types'
 
+type ModalMode = 'add' | 'edit'
+
 interface AddAccountModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onAdd: (account: Account) => Promise<{ success: boolean; message?: string }>
+  mode: ModalMode
+  onAdd?: (account: Account) => Promise<{ success: boolean; message?: string }>
+  onEdit?: (originalName: string, account: Account) => Promise<{ success: boolean; message?: string }>
+  initialData?: Account
 }
 
 /**
- * 添加账户模态框
+ * 添加/编辑账户模态框
  */
-export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalProps) {
+export function AddAccountModal({
+  open,
+  onOpenChange,
+  mode,
+  onAdd,
+  onEdit,
+  initialData
+}: AddAccountModalProps) {
   const { t } = useI18n()
   const [name, setName] = useState('')
   const [secret, setSecret] = useState('')
@@ -34,6 +46,17 @@ export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalPr
   const [isDragging, setIsDragging] = useState(false)
   const qrInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
+
+  // 当模态框打开时填充初始值
+  useEffect(() => {
+    if (open && mode === 'edit' && initialData) {
+      setName(initialData.name)
+      setSecret(initialData.secret)
+    } else if (open && mode === 'add') {
+      setName('')
+      setSecret('')
+    }
+  }, [open, mode, initialData])
 
   // 处理扫描二维码
   const handleScanQRCode = () => {
@@ -87,7 +110,7 @@ export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!name.trim() || !secret.trim()) {
+    if (!name.trim()) {
       toast.error(t('toast.fill_all_fields'))
       return
     }
@@ -95,13 +118,29 @@ export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalPr
     setLoading(true)
 
     try {
-      const result = await onAdd({
+      const processedAccount = {
         name: name.trim(),
-        secret: secret.trim().toUpperCase().replace(/\s/g, '')
-      })
+        secret: mode === 'edit' && initialData
+          ? initialData.secret  // 编辑模式保持原密钥
+          : secret.trim().toUpperCase().replace(/\s/g, '')
+      }
+
+      let result: { success: boolean; message?: string }
+
+      if (mode === 'add' && onAdd) {
+        result = await onAdd(processedAccount)
+      } else if (mode === 'edit' && onEdit && initialData) {
+        result = await onEdit(initialData.name, processedAccount)
+      } else {
+        throw new Error('Invalid modal configuration')
+      }
 
       if (result.success) {
-        toast.success(`${name}`)
+        if (mode === 'add') {
+          toast.success(`${name}`)
+        } else {
+          toast.success(t('toast.account_updated'))
+        }
         setName('')
         setSecret('')
         onOpenChange(false)
@@ -276,7 +315,7 @@ export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalPr
         )}
       >
         <DialogHeader>
-          <DialogTitle>{t('form.title')}</DialogTitle>
+          <DialogTitle>{mode === 'add' ? t('form.title_add') : t('form.title_edit')}</DialogTitle>
           <DialogDescription className="sr-only">
             {t('form.accountInfo')}
           </DialogDescription>
@@ -313,19 +352,21 @@ export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalPr
             </p>
           </div>
 
-          <div>
-            <Label htmlFor="secret">{t('form.secretKey')}</Label>
-            <Input
-              id="secret"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              placeholder={t('form.secretKeyPlaceholder')}
-              className="mt-2 font-mono"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('form.secretKeyDesc')}
-            </p>
-          </div>
+          {mode === 'add' && (
+            <div>
+              <Label htmlFor="secret">{t('form.secretKey')}</Label>
+              <Input
+                id="secret"
+                value={secret}
+                onChange={(e) => setSecret(e.target.value)}
+                placeholder={t('form.secretKeyPlaceholder')}
+                className="mt-2 font-mono"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {t('form.secretKeyDesc')}
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-2 pt-2">
             <Button
@@ -337,7 +378,7 @@ export function AddAccountModal({ open, onOpenChange, onAdd }: AddAccountModalPr
               {t('button.cancel')}
             </Button>
             <Button type="submit" disabled={loading} className="flex-1">
-              {t('button.add')}
+              {mode === 'add' ? t('button.add') : t('button.save')}
             </Button>
           </div>
         </form>

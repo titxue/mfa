@@ -29,6 +29,7 @@ interface AccountListProps {
   codes: { [key: string]: string }
   remaining: number
   onDeleteAccount: (name: string) => void
+  onEditAccount: (name: string) => void
   onReorder: (newAccounts: Account[]) => void
 }
 
@@ -40,13 +41,15 @@ interface SortableAccountItemProps {
   code: string
   remaining: number
   onDelete: (name: string) => void
+  onEdit: (name: string) => void
 }
 
 function SortableAccountItem({
   account,
   code,
   remaining,
-  onDelete
+  onDelete,
+  onEdit
 }: SortableAccountItemProps) {
   const {
     attributes,
@@ -74,6 +77,7 @@ function SortableAccountItem({
         code={code}
         remaining={remaining}
         onDelete={onDelete}
+        onEdit={onEdit}
       />
     </div>
   )
@@ -87,6 +91,7 @@ export function AccountList({
   codes,
   remaining,
   onDeleteAccount,
+  onEditAccount,
   onReorder
 }: AccountListProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -156,6 +161,7 @@ export function AccountList({
                 code={codes[account.name] || '------'}
                 remaining={remaining}
                 onDelete={onDeleteAccount}
+                onEdit={onEditAccount}
               />
             ))}
           </SortableContext>
@@ -170,6 +176,7 @@ export function AccountList({
             code={codes[activeAccount.name] || '------'}
             remaining={remaining}
             onDelete={onDeleteAccount}
+            onEdit={onEditAccount}
           />
         )}
       </DragOverlay>

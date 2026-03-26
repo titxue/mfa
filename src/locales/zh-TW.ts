@@ -10,8 +10,12 @@ export const zhTW: Translations = {
   'button.export': '匯出',
   'button.import': '匯入',
   'button.delete': '刪除',
+  'button.edit': '編輯',
+  'button.save': '儲存',
 
   // 表單
+  'form.title_add': '新增帳戶',
+  'form.title_edit': '編輯帳戶',
   'form.title': '新增帳戶',
   'form.accountName': '帳戶名稱',
   'form.secretKey': '金鑰',
@@ -78,6 +82,7 @@ export const zhTW: Translations = {
   'toast.fill_all_fields': '請填寫所有欄位',
   'toast.invalid_secret': '無效的金鑰格式',
   'toast.account_exists': '帳戶名稱已存在',
+  'toast.account_updated': '帳戶已更新',
   'toast.import_success': '成功匯入 {imported} 個帳戶',
   'toast.import_success_with_skip': '成功匯入 {imported} 個帳戶，跳過 {skipped} 個重複帳戶',
   'toast.import_all_duplicates': '所有帳戶都已存在，未匯入任何新帳戶',

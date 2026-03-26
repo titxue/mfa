@@ -10,8 +10,12 @@ export const ruRU: Translations = {
   'button.export': 'Экспорт',
   'button.import': 'Импорт',
   'button.delete': 'Удалить',
+  'button.edit': 'Edit',
+  'button.save': 'Save',
 
   // Форма
+  'form.title_add': 'Add Account',
+  'form.title_edit': 'Edit Account',
   'form.title': 'Добавить аккаунт',
   'form.accountName': 'Имя аккаунта',
   'form.secretKey': 'Секретный ключ',
@@ -78,6 +82,7 @@ export const ruRU: Translations = {
   'toast.fill_all_fields': 'Пожалуйста, заполните все поля',
   'toast.invalid_secret': 'Неверный формат секретного ключа',
   'toast.account_exists': 'Имя аккаунта уже существует',
+  'toast.account_updated': 'Account updated',
   'toast.import_success': 'Успешно импортировано аккаунтов: {imported}',
   'toast.import_success_with_skip': 'Успешно импортировано аккаунтов: {imported}, пропущено дубликатов: {skipped}',
   'toast.import_all_duplicates': 'Все аккаунты уже существуют, новые аккаунты не импортированы',

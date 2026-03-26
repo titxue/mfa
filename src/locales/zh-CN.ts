@@ -8,8 +8,12 @@ export const zhCN = {
   'button.export': '导出',
   'button.import': '导入',
   'button.delete': '删除',
+  'button.edit': '编辑',
+  'button.save': '保存',
 
   // 表单
+  'form.title_add': '添加账户',
+  'form.title_edit': '编辑账户',
   'form.title': '添加账户',
   'form.accountName': '账户名称',
   'form.secretKey': '密钥',
@@ -76,6 +80,7 @@ export const zhCN = {
   'toast.fill_all_fields': '请填写所有字段',
   'toast.invalid_secret': '无效的密钥格式',
   'toast.account_exists': '账户名已存在',
+  'toast.account_updated': '账户已更新',
   'toast.import_success': '成功导入 {imported} 个账户',
   'toast.import_success_with_skip': '成功导入 {imported} 个账户，跳过 {skipped} 个重复账户',
   'toast.import_all_duplicates': '所有账户都已存在，未导入任何新账户',

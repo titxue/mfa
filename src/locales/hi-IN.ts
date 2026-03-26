@@ -10,8 +10,12 @@ export const hiIN: Translations = {
   'button.export': 'निर्यात करें',
   'button.import': 'आयात करें',
   'button.delete': 'हटाएं',
+  'button.edit': 'Edit',
+  'button.save': 'Save',
 
   // फ़ॉर्म
+  'form.title_add': 'Add Account',
+  'form.title_edit': 'Edit Account',
   'form.title': 'खाता जोड़ें',
   'form.accountName': 'खाता नाम',
   'form.secretKey': 'गुप्त कुंजी',
@@ -78,6 +82,7 @@ export const hiIN: Translations = {
   'toast.fill_all_fields': 'कृपया सभी फ़ील्ड भरें',
   'toast.invalid_secret': 'अमान्य गुप्त कुंजी प्रारूप',
   'toast.account_exists': 'खाता नाम पहले से मौजूद है',
+  'toast.account_updated': 'Account updated',
   'toast.import_success': '{imported} खाते सफलतापूर्वक आयात किए गए',
   'toast.import_success_with_skip': '{imported} खाते सफलतापूर्वक आयात किए गए, {skipped} डुप्लिकेट खाते छोड़े गए',
   'toast.import_all_duplicates': 'सभी खाते पहले से मौजूद हैं, कोई नया खाता आयात नहीं किया गया',

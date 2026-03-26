@@ -15,6 +15,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu'
 import { QRCodeModal } from './QRCodeModal'
 
 interface AccountItemProps {
@@ -23,12 +29,13 @@ interface AccountItemProps {
   remaining: number
   secret: string
   onDelete: (name: string) => void
+  onEdit: (name: string) => void
 }
 
 /**
  * 账户卡片组件
  */
-export function AccountItem({ name, code, remaining, secret, onDelete }: AccountItemProps) {
+export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }: AccountItemProps) {
   const { t } = useI18n()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
@@ -53,9 +60,13 @@ export function AccountItem({ name, code, remaining, secret, onDelete }: Account
     setShowQRModal(true)
   }
 
-  // 右键点击 - 显示删除确认
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault()
+  // 点击编辑菜单项
+  const handleEditClick = () => {
+    onEdit(name)
+  }
+
+  // 点击删除菜单项
+  const handleDeleteClick = () => {
     setShowDeleteDialog(true)
   }
 
@@ -67,26 +78,37 @@ export function AccountItem({ name, code, remaining, secret, onDelete }: Account
 
   return (
     <>
-      <Card
-        className="cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
-        onClick={handleClick}
-        onDoubleClick={handleDoubleClick}
-        onContextMenu={handleContextMenu}
-      >
-        <CardContent className="p-6 flex items-center gap-4">
-          <div className="flex-1 min-w-0 max-w-[220px]">
-            <p className="text-sm font-medium text-primary mb-2 truncate">
-              {name}
-            </p>
-            <p className="text-3xl font-mono font-bold tracking-wider">
-              {TOTP.formatCode(code)}
-            </p>
-          </div>
-          <div className="flex-shrink-0">
-            <ProgressRing value={remaining} max={30} size={48} />
-          </div>
-        </CardContent>
-      </Card>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <Card
+            className="cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+            onClick={handleClick}
+            onDoubleClick={handleDoubleClick}
+          >
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="flex-1 min-w-0 max-w-[220px]">
+                <p className="text-sm font-medium text-primary mb-2 truncate">
+                  {name}
+                </p>
+                <p className="text-3xl font-mono font-bold tracking-wider">
+                  {TOTP.formatCode(code)}
+                </p>
+              </div>
+              <div className="flex-shrink-0">
+                <ProgressRing value={remaining} max={30} size={48} />
+              </div>
+            </CardContent>
+          </Card>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={handleEditClick}>
+            {t('button.edit')}
+          </ContextMenuItem>
+          <ContextMenuItem onClick={handleDeleteClick} className="text-destructive">
+            {t('button.delete')}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
 
       {/* QR 码模态框 */}
       <QRCodeModal

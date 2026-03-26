@@ -10,8 +10,12 @@ export const enUS: Translations = {
   'button.export': 'Export',
   'button.import': 'Import',
   'button.delete': 'Delete',
+  'button.edit': 'Edit',
+  'button.save': 'Save',
 
   // Form
+  'form.title_add': 'Add Account',
+  'form.title_edit': 'Edit Account',
   'form.title': 'Add Account',
   'form.accountName': 'Account Name',
   'form.secretKey': 'Secret Key',
@@ -78,6 +82,7 @@ export const enUS: Translations = {
   'toast.fill_all_fields': 'Please fill in all fields',
   'toast.invalid_secret': 'Invalid secret key format',
   'toast.account_exists': 'Account name already exists',
+  'toast.account_updated': 'Account updated',
   'toast.import_success': 'Successfully imported {imported} accounts',
   'toast.import_success_with_skip': 'Successfully imported {imported} accounts, skipped {skipped} duplicate accounts',
   'toast.import_all_duplicates': 'All accounts already exist, no new accounts imported',

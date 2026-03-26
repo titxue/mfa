@@ -10,8 +10,12 @@ export const koKR: Translations = {
   'button.export': '내보내기',
   'button.import': '가져오기',
   'button.delete': '삭제',
+  'button.edit': 'Edit',
+  'button.save': 'Save',
 
   // 양식
+  'form.title_add': 'Add Account',
+  'form.title_edit': 'Edit Account',
   'form.title': '계정 추가',
   'form.accountName': '계정 이름',
   'form.secretKey': '비밀 키',
@@ -78,6 +82,7 @@ export const koKR: Translations = {
   'toast.fill_all_fields': '모든 필드를 입력해주세요',
   'toast.invalid_secret': '잘못된 비밀 키 형식입니다',
   'toast.account_exists': '계정 이름이 이미 존재합니다',
+  'toast.account_updated': 'Account updated',
   'toast.import_success': '{imported}개의 계정을 성공적으로 가져왔습니다',
   'toast.import_success_with_skip': '{imported}개의 계정을 성공적으로 가져왔고 {skipped}개의 중복 계정을 건너뛰었습니다',
   'toast.import_all_duplicates': '모든 계정이 이미 존재합니다. 새 계정을 가져오지 않았습니다',

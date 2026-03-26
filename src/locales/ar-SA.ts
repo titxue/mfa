@@ -10,8 +10,12 @@ export const arSA: Translations = {
   'button.export': 'تصدير',
   'button.import': 'استيراد',
   'button.delete': 'حذف',
+  'button.edit': 'Edit',
+  'button.save': 'Save',
 
   // النموذج
+  'form.title_add': 'Add Account',
+  'form.title_edit': 'Edit Account',
   'form.title': 'إضافة حساب',
   'form.accountName': 'اسم الحساب',
   'form.secretKey': 'المفتاح السري',
@@ -78,6 +82,7 @@ export const arSA: Translations = {
   'toast.fill_all_fields': 'يرجى ملء جميع الحقول',
   'toast.invalid_secret': 'تنسيق المفتاح السري غير صالح',
   'toast.account_exists': 'اسم الحساب موجود بالفعل',
+  'toast.account_updated': 'Account updated',
   'toast.import_success': 'تم استيراد {imported} حسابات بنجاح',
   'toast.import_success_with_skip': 'تم استيراد {imported} حسابات بنجاح، تم تخطي {skipped} حسابات مكررة',
   'toast.import_all_duplicates': 'جميع الحسابات موجودة بالفعل، لم يتم استيراد أي حسابات جديدة',

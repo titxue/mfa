@@ -10,8 +10,12 @@ export const jaJP: Translations = {
   'button.export': 'エクスポート',
   'button.import': 'インポート',
   'button.delete': '削除',
+  'button.edit': 'Edit',
+  'button.save': 'Save',
 
   // フォーム
+  'form.title_add': 'Add Account',
+  'form.title_edit': 'Edit Account',
   'form.title': 'アカウントを追加',
   'form.accountName': 'アカウント名',
   'form.secretKey': 'シークレットキー',
@@ -78,6 +82,7 @@ export const jaJP: Translations = {
   'toast.fill_all_fields': 'すべてのフィールドを入力してください',
   'toast.invalid_secret': '無効なシークレットキー形式です',
   'toast.account_exists': 'アカウント名は既に存在します',
+  'toast.account_updated': 'Account updated',
   'toast.import_success': '{imported}個のアカウントのインポートに成功しました',
   'toast.import_success_with_skip': '{imported}個のアカウントのインポートに成功しました、{skipped}個の重複アカウントをスキップしました',
   'toast.import_all_duplicates': 'すべてのアカウントは既に存在します。新しいアカウントはインポートされませんでした',

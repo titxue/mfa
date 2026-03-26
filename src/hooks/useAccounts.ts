@@ -90,11 +90,56 @@ export function useAccounts() {
     }
   }
 
+  // 更新账户信息
+  const updateAccount = async (
+    originalName: string,
+    updatedAccount: Account
+  ): Promise<{ success: boolean; message?: string }> => {
+    try {
+      // 只有当名称改变时才检查重名
+      if (originalName !== updatedAccount.name &&
+          accounts.some(a => a.name === updatedAccount.name)) {
+        return {
+          success: false,
+          message: 'toast.account_exists'
+        }
+      }
+
+      // 验证密钥格式（无论是否修改都重新验证）
+      try {
+        await TOTP.generateTOTP(updatedAccount.secret)
+      } catch (error) {
+        return {
+          success: false,
+          message: 'toast.invalid_secret'
+        }
+      }
+
+      // 替换账户
+      const newAccounts = accounts.map(account =>
+        account.name === originalName ? updatedAccount : account
+      )
+
+      // 乐观 UI：先立即更新状态
+      setAccounts(newAccounts)
+      // 后台异步保存
+      await StorageManager.saveAccounts(newAccounts)
+
+      return { success: true }
+    } catch (error) {
+      return {
+        success: false,
+        message: 'error.init_failed'
+      }
+    }
+  }
+
   return {
     accounts,
     loading,
     addAccount,
     deleteAccount,
-    updateAccounts
+    updateAccounts,
+    updateAccount
   }
 }
