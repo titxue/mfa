@@ -33,6 +33,9 @@ export function useTOTP(accounts: Account[]) {
 
   // 使用低频 interval 刷新剩余秒数，跨越 30 秒边界时再生成新验证码
   useEffect(() => {
+    // 重置 step 标记，确保依赖变化时重新生成验证码
+    lastStepRef.current = -1
+
     const updateTimer = () => {
       const currentStep = Math.floor(Date.now() / 30000)
       setRemaining(TOTP.getRemainingSeconds())
