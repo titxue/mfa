@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="了解如何安装 TOTP Authenticator Chrome 插件、导入 2FA 二维码、复制验证码，并安全备份认证账户。"
+    />
+    <link rel="canonical" href="https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/" />
+    <link rel="alternate" hreflang="x-default" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+    <link rel="alternate" hreflang="en-US" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/" />
+    <link rel="icon" type="image/png" href="/icon128.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="TOTP Authenticator" />
+    <meta property="og:title" content="如何在 Chrome 中使用 TOTP Authenticator" />
+    <meta
+      property="og:description"
+      content="安装 Chrome 插件、导入二维码、复制 2FA 验证码并安全备份账户的实用指南。"
+    />
+    <meta property="og:url" content="https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/" />
+    <meta property="og:image" content="https://mfa.xuejy.com/icon128.png" />
+    <title>如何在 Chrome 中使用 TOTP Authenticator</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "如何在 Chrome 中使用 TOTP Authenticator",
+        "description": "了解如何安装 TOTP Authenticator Chrome 插件、导入 2FA 二维码、复制验证码，并安全备份认证账户。",
+        "datePublished": "2026-07-31",
+        "dateModified": "2026-07-31",
+        "author": {
+          "@type": "Organization",
+          "name": "TOTP Authenticator"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "TOTP Authenticator",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://mfa.xuejy.com/icon128.png"
+          }
+        },
+        "mainEntityOfPage": "https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "首页",
+            "item": "https://mfa.xuejy.com/zh/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "如何使用 TOTP Authenticator",
+            "item": "https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/"
+          }
+        ]
+      }
+    </script>
+    <style>
+      :root {
+        color: #132238;
+        background: #f6f8fb;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+      }
+      header,
+      main,
+      footer {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 28px 20px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      a {
+        color: #0f766e;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      h1 {
+        margin: 32px 0 16px;
+        font-size: clamp(2.1rem, 6vw, 3.8rem);
+        line-height: 1.1;
+      }
+      h2 {
+        margin-top: 42px;
+        font-size: 1.6rem;
+      }
+      p,
+      li {
+        color: #475569;
+        font-size: 1.05rem;
+        line-height: 1.9;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #132238;
+      }
+      .brand img {
+        width: 36px;
+        height: 36px;
+      }
+      .panel {
+        border: 1px solid #dbe3ee;
+        border-radius: 8px;
+        background: white;
+        padding: 24px;
+        box-shadow: 0 16px 45px rgba(19, 34, 56, 0.08);
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+        border-radius: 6px;
+        background: #132238;
+        color: white;
+        padding: 13px 18px;
+      }
+      footer {
+        border-top: 1px solid #dbe3ee;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/zh/">
+        <img src="/icon128.png" alt="" />
+        <span>TOTP Authenticator</span>
+      </a>
+      <a href="/guide/how-to-use-totp-authenticator/">English</a>
+    </header>
+    <main>
+      <article class="panel">
+        <p><a href="/zh/">首页</a> / 使用指南</p>
+        <h1>如何在 Chrome 中使用 TOTP Authenticator</h1>
+        <p>
+          TOTP Authenticator 是一个用于离线生成双因素认证验证码的 Chrome 插件。
+          它适合希望在桌面浏览器中本地管理 2FA 账户的用户，支持二维码导入、
+          一键复制验证码和账户备份。
+        </p>
+        <a class="cta" href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=official_site&utm_medium=guide&utm_campaign=install_cta">
+          前往 Chrome Web Store 安装
+        </a>
+
+        <h2>1. 安装 Chrome 插件</h2>
+        <p>
+          打开 Chrome Web Store 页面并安装插件。安装后建议固定到浏览器工具栏，
+          这样登录网站时可以更快打开验证码列表。
+        </p>
+
+        <h2>2. 添加第一个 2FA 账户</h2>
+        <p>
+          当服务商显示 TOTP 设置二维码时，可以保存或复制二维码图片并导入插件。
+          如果没有二维码，也可以粘贴 otpauth:// URI，或手动输入 Base32 密钥。
+        </p>
+
+        <h2>3. 复制并使用验证码</h2>
+        <p>
+          打开插件，选择对应账户，复制当前六位验证码，并在倒计时结束前粘贴到
+          网站的 2FA 验证输入框中。
+        </p>
+
+        <h2>4. 安全备份账户</h2>
+        <p>
+          导出账户适合换设备或迁移浏览器时使用，但备份文件包含认证密钥。
+          请只保存在可信位置，迁移完成后及时清理不需要的副本。
+        </p>
+
+        <h2>5. 常见排查</h2>
+        <ul>
+          <li>如果验证码总是错误，先确认电脑时间和时区准确。</li>
+          <li>如果二维码无法识别，尝试使用更清晰的截图，或粘贴 otpauth:// URI。</li>
+          <li>如果另一台设备没有账户，请确认 Chrome 同步已开启。</li>
+        </ul>
+      </article>
+    </main>
+    <footer>
+      <p>
+        <a href="/zh/">TOTP Authenticator</a> ·
+        <a href="https://github.com/titxue/mfa">GitHub</a>
+      </p>
+    </footer>
+  </body>
+</html>
