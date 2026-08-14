@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://mfa.xuejy.com/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://mfa.xuejy.com/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mfa.xuejy.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mfa.xuejy.com/" />
+  </url>
+  <url>
+    <loc>https://mfa.xuejy.com/zh/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://mfa.xuejy.com/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mfa.xuejy.com/zh/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mfa.xuejy.com/" />
+  </url>
+  <url>
+    <loc>https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+  </url>
+  <url>
+    <loc>https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/</loc>
+    <lastmod>2026-07-31</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="en-US" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+  </url>
+</urlset>

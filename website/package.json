@@ -4,10 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync:metadata": "node scripts/sync-extension-metadata.mjs",
+    "predev": "npm run sync:metadata",
     "dev": "vite --host 0.0.0.0",
+    "prebuild": "npm run sync:metadata",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "preview": "wrangler dev",
     "deploy": "npm run build && wrangler deploy",
+    "pretype-check": "npm run sync:metadata",
     "type-check": "tsc --noEmit -p tsconfig.json --pretty"
   },
   "dependencies": {

@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Upload,
 } from 'lucide-react'
+import { extensionMetadata } from './generated/extensionMetadata'
 import './styles.css'
 
 type Locale = 'zh-CN' | 'en-US'
@@ -37,6 +38,12 @@ type Step = {
   body: string
 }
 
+type TrustSignal = {
+  label: string
+  value: string
+  dynamic?: 'users' | 'rating' | 'version'
+}
+
 type Copy = {
   nav: {
     features: string
@@ -51,6 +58,9 @@ type Copy = {
     install: string
     github: string
     proof: string[]
+    trustSignals: TrustSignal[]
+    usersSuffix: string
+    ratingSuffix: string
   }
   mockup: {
     title: string
@@ -76,12 +86,17 @@ type Copy = {
     summary: string
     install: string
     source: string
+    guide: string
   }
 }
 
 const chromeStoreUrl =
-  'https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf'
+  'https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=official_site&utm_medium=website&utm_campaign=install_cta'
 const githubUrl = 'https://github.com/titxue/mfa'
+const chromeStoreUsersUrl =
+  'https://img.shields.io/chrome-web-store/users/dhipejmoajhjflafhbibojfoeogbmjgf.json'
+const chromeStoreRatingUrl =
+  'https://img.shields.io/chrome-web-store/rating/dhipejmoajhjflafhbibojfoeogbmjgf.json'
 
 const copy: Record<Locale, Copy> = {
   'zh-CN': {
@@ -99,6 +114,15 @@ const copy: Record<Locale, Copy> = {
       install: '安装扩展',
       github: '查看源码',
       proof: ['本地生成验证码', '无第三方网络请求', '支持 Chrome 同步存储'],
+      trustSignals: [
+        { label: '用户数量', value: 'Chrome Web Store', dynamic: 'users' },
+        { label: '评分', value: 'Chrome Web Store', dynamic: 'rating' },
+        { label: '版本', value: '自动同步', dynamic: 'version' },
+        { label: '源代码', value: 'GitHub 开源' },
+        { label: '许可证', value: 'MIT License' },
+      ],
+      usersSuffix: '用户',
+      ratingSuffix: '评分',
     },
     mockup: {
       title: 'TOTP 生成器',
@@ -215,6 +239,7 @@ const copy: Record<Locale, Copy> = {
       summary: '一个专注、离线、开源的 2FA 验证码工具。',
       install: '前往 Chrome Web Store',
       source: 'GitHub 项目',
+      guide: '完整使用指南',
     },
   },
   'en-US': {
@@ -232,6 +257,15 @@ const copy: Record<Locale, Copy> = {
       install: 'Install extension',
       github: 'View source',
       proof: ['Codes generated locally', 'No third-party network requests', 'Chrome sync storage support'],
+      trustSignals: [
+        { label: 'Users', value: 'Chrome Web Store', dynamic: 'users' },
+        { label: 'Rating', value: 'Chrome Web Store', dynamic: 'rating' },
+        { label: 'Version', value: 'Synced from package.json', dynamic: 'version' },
+        { label: 'Source code', value: 'Open source on GitHub' },
+        { label: 'License', value: 'MIT License' },
+      ],
+      usersSuffix: 'users',
+      ratingSuffix: 'rating',
     },
     mockup: {
       title: 'TOTP Generator',
@@ -347,6 +381,7 @@ const copy: Record<Locale, Copy> = {
       summary: 'A focused, offline, open-source 2FA code tool.',
       install: 'Open Chrome Web Store',
       source: 'GitHub project',
+      guide: 'Full setup guide',
     },
   },
 }
@@ -354,6 +389,10 @@ const copy: Record<Locale, Copy> = {
 function getInitialLocale(): Locale {
   if (typeof window === 'undefined') {
     return 'en-US'
+  }
+
+  if (window.location.pathname.startsWith('/zh')) {
+    return 'zh-CN'
   }
 
   const saved = window.localStorage.getItem('mfa-site-locale')
@@ -368,8 +407,89 @@ function getInitialLocale(): Locale {
   return browserLanguages.some((language) => language.startsWith('zh')) ? 'zh-CN' : 'en-US'
 }
 
+function useChromeWebStoreStats() {
+  const [stats, setStats] = React.useState<{ users?: string; rating?: string }>({})
+
+  React.useEffect(() => {
+    let ignore = false
+
+    async function loadStats() {
+      try {
+        const [usersResponse, ratingResponse] = await Promise.all([
+          fetch(chromeStoreUsersUrl),
+          fetch(chromeStoreRatingUrl),
+        ])
+
+        if (!usersResponse.ok || !ratingResponse.ok) {
+          return
+        }
+
+        const users = (await usersResponse.json()) as { value?: string; message?: string }
+        const rating = (await ratingResponse.json()) as { value?: string; message?: string }
+
+        if (!ignore) {
+          setStats({
+            users: users.value ?? users.message,
+            rating: rating.value ?? rating.message,
+          })
+        }
+      } catch {
+        if (!ignore) {
+          setStats({})
+        }
+      }
+    }
+
+    void loadStats()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  return stats
+}
+
+function useExtensionMetadata() {
+  const [metadata, setMetadata] = React.useState(extensionMetadata)
+
+  React.useEffect(() => {
+    let ignore = false
+
+    async function loadMetadata() {
+      try {
+        const response = await fetch('/version.json')
+
+        if (!response.ok) {
+          return
+        }
+
+        const nextMetadata = (await response.json()) as typeof extensionMetadata
+
+        if (!ignore) {
+          setMetadata(nextMetadata)
+        }
+      } catch {
+        if (!ignore) {
+          setMetadata(extensionMetadata)
+        }
+      }
+    }
+
+    void loadMetadata()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  return metadata
+}
+
 function App() {
   const [locale, setLocale] = React.useState<Locale>(getInitialLocale)
+  const storeStats = useChromeWebStoreStats()
+  const siteMetadata = useExtensionMetadata()
   const t = copy[locale]
 
   React.useEffect(() => {
@@ -378,6 +498,13 @@ function App() {
   }, [locale])
 
   const alternateLocale = locale === 'zh-CN' ? 'en-US' : 'zh-CN'
+  const guideUrl = locale === 'zh-CN' ? '/zh/guide/how-to-use-totp-authenticator/' : '/guide/how-to-use-totp-authenticator/'
+  const switchLocale = () => {
+    const nextPath = alternateLocale === 'zh-CN' ? '/zh/' : '/'
+
+    setLocale(alternateLocale)
+    window.history.pushState(null, '', nextPath)
+  }
 
   return (
     <div className="min-h-screen bg-cloud text-ink">
@@ -404,7 +531,7 @@ function App() {
           <button
             className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-ink shadow-sm transition hover:border-mint hover:text-mint"
             type="button"
-            onClick={() => setLocale(alternateLocale)}
+            onClick={switchLocale}
           >
             <Globe2 className="h-4 w-4" />
             {alternateLocale}
@@ -440,6 +567,16 @@ function App() {
                   <div className="flex items-start gap-2" key={item}>
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-mint" />
                     <span>{item}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {t.hero.trustSignals.map((item) => (
+                  <div className="rounded-lg border border-slate-200 bg-cloud px-4 py-3" key={item.label}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
+                    <p className="mt-1 text-sm font-bold text-ink">
+                      {formatTrustSignal(item, storeStats, siteMetadata, t)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -514,6 +651,10 @@ function App() {
             </div>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
+            <a className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-white/25 px-4 text-sm font-semibold text-white" href={guideUrl}>
+              <ArrowRight className="h-4 w-4" />
+              {t.footer.guide}
+            </a>
             <a className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-ink" href={chromeStoreUrl}>
               <Chrome className="h-4 w-4" />
               {t.footer.install}
@@ -527,6 +668,27 @@ function App() {
       </footer>
     </div>
   )
+}
+
+function formatTrustSignal(
+  signal: TrustSignal,
+  stats: { users?: string; rating?: string },
+  metadata: typeof extensionMetadata,
+  t: Copy,
+) {
+  if (signal.dynamic === 'users' && stats.users) {
+    return `${stats.users} ${t.hero.usersSuffix}`
+  }
+
+  if (signal.dynamic === 'rating' && stats.rating) {
+    return `${stats.rating} ${t.hero.ratingSuffix}`
+  }
+
+  if (signal.dynamic === 'version') {
+    return `v${metadata.version}`
+  }
+
+  return signal.value
 }
 
 function SectionHeader({ id, title, lead }: { id: string; title: string; lead: string }) {

@@ -6,5 +6,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        zh: 'zh/index.html',
+        guide: 'guide/how-to-use-totp-authenticator/index.html',
+        zhGuide: 'zh/guide/how-to-use-totp-authenticator/index.html',
+      },
+    },
   },
 })

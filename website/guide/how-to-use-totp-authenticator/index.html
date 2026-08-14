@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Learn how to install TOTP Authenticator for Chrome, import a 2FA QR code, copy OTP codes, and back up your authenticator accounts safely."
+    />
+    <link rel="canonical" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+    <link rel="alternate" hreflang="x-default" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+    <link rel="alternate" hreflang="en-US" href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+    <link rel="alternate" hreflang="zh-CN" href="https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/" />
+    <link rel="icon" type="image/png" href="/icon128.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="TOTP Authenticator" />
+    <meta property="og:title" content="How to Use TOTP Authenticator on Chrome" />
+    <meta
+      property="og:description"
+      content="A practical setup guide for installing the Chrome extension, importing QR codes, copying 2FA codes, and backing up accounts."
+    />
+    <meta property="og:url" content="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/" />
+    <meta property="og:image" content="https://mfa.xuejy.com/icon128.png" />
+    <title>How to Use TOTP Authenticator on Chrome</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "How to Use TOTP Authenticator on Chrome",
+        "description": "Learn how to install TOTP Authenticator for Chrome, import a 2FA QR code, copy OTP codes, and back up your authenticator accounts safely.",
+        "datePublished": "2026-07-31",
+        "dateModified": "2026-07-31",
+        "author": {
+          "@type": "Organization",
+          "name": "TOTP Authenticator"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "TOTP Authenticator",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://mfa.xuejy.com/icon128.png"
+          }
+        },
+        "mainEntityOfPage": "https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://mfa.xuejy.com/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "How to Use TOTP Authenticator",
+            "item": "https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/"
+          }
+        ]
+      }
+    </script>
+    <style>
+      :root {
+        color: #132238;
+        background: #f6f8fb;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+      }
+      header,
+      main,
+      footer {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 28px 20px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      a {
+        color: #0f766e;
+        font-weight: 700;
+        text-decoration: none;
+      }
+      h1 {
+        margin: 32px 0 16px;
+        font-size: clamp(2.2rem, 6vw, 4rem);
+        line-height: 1.05;
+      }
+      h2 {
+        margin-top: 42px;
+        font-size: 1.6rem;
+      }
+      p,
+      li {
+        color: #475569;
+        font-size: 1.05rem;
+        line-height: 1.8;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #132238;
+      }
+      .brand img {
+        width: 36px;
+        height: 36px;
+      }
+      .panel {
+        border: 1px solid #dbe3ee;
+        border-radius: 8px;
+        background: white;
+        padding: 24px;
+        box-shadow: 0 16px 45px rgba(19, 34, 56, 0.08);
+      }
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 20px;
+        border-radius: 6px;
+        background: #132238;
+        color: white;
+        padding: 13px 18px;
+      }
+      footer {
+        border-top: 1px solid #dbe3ee;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">
+        <img src="/icon128.png" alt="" />
+        <span>TOTP Authenticator</span>
+      </a>
+      <a href="/zh/guide/how-to-use-totp-authenticator/">中文</a>
+    </header>
+    <main>
+      <article class="panel">
+        <p><a href="/">Home</a> / Guide</p>
+        <h1>How to Use TOTP Authenticator on Chrome</h1>
+        <p>
+          TOTP Authenticator is a Chrome extension for generating two-factor authentication
+          codes offline. It is designed for users who want a local-first authenticator on
+          desktop, with QR import, one-click code copy, and simple account backup.
+        </p>
+        <a class="cta" href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=official_site&utm_medium=guide&utm_campaign=install_cta">
+          Install from Chrome Web Store
+        </a>
+
+        <h2>1. Install the Chrome extension</h2>
+        <p>
+          Open the Chrome Web Store listing and install the extension. After installation,
+          pin it to the toolbar so you can open your 2FA codes during sign-in.
+        </p>
+
+        <h2>2. Add your first 2FA account</h2>
+        <p>
+          When a service shows a TOTP setup QR code, save or copy the QR image and import
+          it in the extension. You can also paste an otpauth:// URI or enter the Base32
+          secret manually when a QR code is unavailable.
+        </p>
+
+        <h2>3. Copy and use a code</h2>
+        <p>
+          Open the extension, choose the matching account, and copy the current six-digit
+          code. Paste it into the website's 2FA prompt before the countdown expires.
+        </p>
+
+        <h2>4. Back up accounts safely</h2>
+        <p>
+          Exporting accounts is useful when moving devices, but the backup file contains
+          authenticator secrets. Store it only in a trusted location and remove old copies
+          after migration.
+        </p>
+
+        <h2>5. Troubleshooting</h2>
+        <ul>
+          <li>If codes fail repeatedly, check that your computer time and timezone are accurate.</li>
+          <li>If a QR image cannot be read, try a clearer screenshot or paste the otpauth:// URI.</li>
+          <li>If accounts do not appear on another device, confirm Chrome sync is enabled.</li>
+        </ul>
+      </article>
+    </main>
+    <footer>
+      <p>
+        <a href="/">TOTP Authenticator</a> ·
+        <a href="https://github.com/titxue/mfa">GitHub</a>
+      </p>
+    </footer>
+  </body>
+</html>

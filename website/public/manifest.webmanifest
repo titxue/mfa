@@ -1,0 +1,17 @@
+{
+  "name": "TOTP Authenticator",
+  "short_name": "TOTP",
+  "description": "Offline Chrome TOTP authenticator for 2FA login with QR import, one-click copy, and account backup.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fb",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icon128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    }
+  ]
+}

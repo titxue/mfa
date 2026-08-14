@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="en-US">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Offline Chrome TOTP authenticator for 2FA login. Import QR codes, copy OTP codes, back up accounts, and keep secrets local."
+      content="TOTP Authenticator Chrome 插件可离线生成 2FA 验证码，支持二维码导入、一键复制、账户备份，并让密钥留在本地。"
     />
     <meta name="google-site-verification" content="DrwOxH0uM-avcvLawOo-hCM6WYSRuUV37bdxGGksZgQ" />
     <meta name="theme-color" content="#0f172a" />
-    <link rel="canonical" href="https://mfa.xuejy.com/" />
+    <link rel="canonical" href="https://mfa.xuejy.com/zh/" />
     <link rel="alternate" hreflang="x-default" href="https://mfa.xuejy.com/" />
     <link rel="alternate" hreflang="en-US" href="https://mfa.xuejy.com/" />
     <link rel="alternate" hreflang="zh-CN" href="https://mfa.xuejy.com/zh/" />
@@ -17,30 +17,30 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TOTP Authenticator" />
-    <meta property="og:title" content="TOTP Authenticator for Chrome - Offline 2FA Code Generator" />
+    <meta property="og:title" content="TOTP Authenticator Chrome 插件 - 离线 2FA 验证码生成器" />
     <meta
       property="og:description"
-      content="Generate TOTP codes offline in Chrome. Import QR codes, copy OTP codes quickly, back up accounts, and keep secrets local."
+      content="在 Chrome 中离线生成 TOTP 验证码，支持二维码导入、一键复制、账户备份，并让密钥留在本地。"
     />
-    <meta property="og:url" content="https://mfa.xuejy.com/" />
+    <meta property="og:url" content="https://mfa.xuejy.com/zh/" />
     <meta property="og:image" content="https://mfa.xuejy.com/icon128.png" />
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="TOTP Authenticator for Chrome - Offline 2FA Code Generator" />
+    <meta name="twitter:title" content="TOTP Authenticator Chrome 插件 - 离线 2FA 验证码生成器" />
     <meta
       name="twitter:description"
-      content="Offline Chrome 2FA code generator with QR import, one-click copy, backup, and 12 languages."
+      content="隐私优先的 Chrome 2FA 验证码工具，支持离线生成、二维码导入、一键复制、备份和 12 种语言。"
     />
     <meta name="twitter:image" content="https://mfa.xuejy.com/icon128.png" />
-    <title>TOTP Authenticator for Chrome - Offline 2FA Code Generator</title>
+    <title>TOTP Authenticator Chrome 插件 - 离线 2FA 验证码生成器</title>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "TOTP Authenticator for Chrome - Offline 2FA Code Generator",
+        "name": "TOTP Authenticator Chrome 插件 - 离线 2FA 验证码生成器",
         "applicationCategory": "SecurityApplication",
         "operatingSystem": "Chrome",
-        "description": "Offline Chrome TOTP authenticator for 2FA login. Import QR codes, copy OTP codes, back up accounts, and keep secrets local.",
-        "url": "https://mfa.xuejy.com/",
+        "description": "TOTP Authenticator Chrome 插件可离线生成 2FA 验证码，支持二维码导入、一键复制、账户备份，并让密钥留在本地。",
+        "url": "https://mfa.xuejy.com/zh/",
         "downloadUrl": "https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf",
         "softwareVersion": "2.1.0",
         "license": "https://opensource.org/licenses/MIT",
@@ -59,34 +59,34 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "Why are my TOTP codes incorrect?",
+            "name": "验证码总是不正确怎么办？",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "TOTP is time-based. Check that your system time and timezone are accurate and synced automatically."
+              "text": "TOTP 基于时间计算，请先确认电脑系统时间和时区准确，并开启自动校时。"
             }
           },
           {
             "@type": "Question",
-            "name": "What if a copied code does not work?",
+            "name": "复制验证码后无法登录怎么办？",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Check that the code has not expired, then confirm your system time and selected account are correct."
+              "text": "请先确认验证码没有过期，再检查系统时间和服务商账户是否匹配。"
             }
           },
           {
             "@type": "Question",
-            "name": "Does data sync with my Google account?",
+            "name": "数据会跟随 Google 账号同步吗？",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The extension uses Chrome Storage first. It can sync across devices when the same Google account has Chrome sync enabled."
+              "text": "扩展优先使用 Chrome Storage，同一 Google 账号且开启同步时可跨设备同步；未登录或不可用时回退本地存储。"
             }
           },
           {
             "@type": "Question",
-            "name": "Can I install it in developer mode?",
+            "name": "可以通过开发者模式安装吗？",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes. Build the project, then open chrome://extensions/, enable developer mode, and load the unpacked dist directory."
+              "text": "可以。运行项目构建命令生成 dist 目录后，在 chrome://extensions/ 中开启开发者模式并加载已解压扩展。"
             }
           }
         ]
@@ -97,14 +97,13 @@
     <div id="root"></div>
     <noscript>
       <main>
-        <h1>TOTP Authenticator - 2FA OTP Code Generator</h1>
+        <h1>TOTP Authenticator - 2FA OTP 验证码生成器</h1>
         <p>
-          Generate TOTP codes offline in Chrome. Import QR codes, copy codes quickly,
-          back up accounts, and keep secrets local.
+          在 Chrome 中离线生成 TOTP 验证码，支持二维码导入、一键复制、账户备份，并让密钥留在本地。
         </p>
         <p>
           <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=official_site&utm_medium=website&utm_campaign=install_cta">
-            Install from Chrome Web Store
+            前往 Chrome Web Store 安装
           </a>
         </p>
       </main>

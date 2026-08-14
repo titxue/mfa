@@ -1,0 +1,5 @@
+Contact: https://github.com/titxue/mfa/issues
+Expires: 2027-07-31T00:00:00Z
+Preferred-Languages: en, zh
+Canonical: https://mfa.xuejy.com/.well-known/security.txt
+Policy: https://github.com/titxue/mfa/security
