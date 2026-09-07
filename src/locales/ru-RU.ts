@@ -71,6 +71,16 @@ export const ruRU: Translations = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Инструкция по использованию',
   'settings.usageDesc': 'Нажмите на аккаунт для копирования кода, щелкните правой кнопкой для удаления аккаунта',
+  'settings.autofill': 'Автозаполнение',
+  'settings.autofillDesc': 'Автоматически заполнять коды на страницах входа',
+  'settings.inlineMenu': 'Встроенное меню на страницах',
+  'settings.inlineMenuDesc': 'Показывать меню учетных записей у поля OTP при фокусе; нажмите, чтобы заполнить',
+  'settings.clipboardFallback': 'Копировать в буфер обмена, если заполнение не удалось',
+  'settings.clipboardFallbackDesc': 'Автоматически копировать код, если поле OTP не найдено',
+
+  // Inline menu
+  'menu.fill': 'Заполнить',
+  'menu.no_accounts': 'Нет учетных записей, добавьте в расширении',
 
   // Уведомления
   'toast.no_accounts_to_export': 'Нет данных аккаунтов для экспорта',
@@ -82,6 +92,7 @@ export const ruRU: Translations = {
   'toast.code_copied': 'Код подтверждения скопирован в буфер обмена',
   'toast.code_filled': 'Код подтверждения автоматически заполнен',
   'toast.fill_failed': 'Автозаполнение не удалось',
+  'toast.no_otp_field': 'Поле OTP не найдено на этой странице',
   'toast.fill_all_fields': 'Пожалуйста, заполните все поля',
   'toast.invalid_secret': 'Неверный формат секретного ключа',
   'toast.account_exists': 'Имя аккаунта уже существует',

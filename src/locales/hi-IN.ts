@@ -71,6 +71,16 @@ export const hiIN: Translations = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'उपयोग निर्देश',
   'settings.usageDesc': 'कोड कॉपी करने के लिए खाते पर क्लिक करें, खाता हटाने के लिए राइट-क्लिक करें',
+  'settings.autofill': 'ऑटोफ़िल',
+  'settings.autofillDesc': 'लॉगिन पृष्ठों पर कोड स्वचालित रूप से भरें',
+  'settings.inlineMenu': 'पृष्ठों पर इनलाइन मेनू',
+  'settings.inlineMenuDesc': 'OTP फ़ील्ड पर फ़ोकस होने पर खाता मेनू दिखाएँ; भरने के लिए क्लिक करें',
+  'settings.clipboardFallback': 'भरने में विफल होने पर क्लिपबोर्ड पर कॉपी करें',
+  'settings.clipboardFallbackDesc': 'OTP फ़ील्ड न मिलने पर कोड स्वचालित रूप से कॉपी करें',
+
+  // Inline menu
+  'menu.fill': 'भरें',
+  'menu.no_accounts': 'कोई खाता नहीं, कृपया एक्सटेंशन में जोड़ें',
 
   // टोस्ट सूचनाएं
   'toast.no_accounts_to_export': 'निर्यात करने के लिए कोई खाता डेटा नहीं है',
@@ -82,6 +92,7 @@ export const hiIN: Translations = {
   'toast.code_copied': 'सत्यापन कोड क्लिपबोर्ड पर कॉपी किया गया',
   'toast.code_filled': 'सत्यापन कोड स्वचालित रूप से भरा गया',
   'toast.fill_failed': 'स्वतः भरण विफल रहा',
+  'toast.no_otp_field': 'इस पृष्ठ पर कोई OTP फ़ील्ड नहीं मिला',
   'toast.fill_all_fields': 'कृपया सभी फ़ील्ड भरें',
   'toast.invalid_secret': 'अमान्य गुप्त कुंजी प्रारूप',
   'toast.account_exists': 'खाता नाम पहले से मौजूद है',

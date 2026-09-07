@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
 import type { Language } from '@/types'
 import type { Translations } from '@/locales/zh-CN'
 import { translations, detectSystemLanguage, supportedLanguages } from '@/locales'
@@ -33,21 +33,36 @@ function formatMessage(
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Language>('zh-CN')
+  const hasUserChangedLocaleRef = useRef(false)
 
   useEffect(() => {
+    let cancelled = false
+
     // 初始化语言设置
     async function initLanguage() {
       const savedLanguage = await StorageManager.getLanguage()
+      if (cancelled || hasUserChangedLocaleRef.current) {
+        return
+      }
+
       if (savedLanguage && supportedLanguages.includes(savedLanguage as Language)) {
         setLocaleState(savedLanguage as Language)
       } else {
         const detected = detectSystemLanguage()
+        if (cancelled || hasUserChangedLocaleRef.current) {
+          return
+        }
+
         setLocaleState(detected)
         await StorageManager.saveLanguage(detected)
       }
     }
 
-    initLanguage()
+    void initLanguage()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const t = (
@@ -59,11 +74,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }
 
   const setLocale = async (newLocale: Language) => {
+    hasUserChangedLocaleRef.current = true
     setLocaleState(newLocale)
     await StorageManager.saveLanguage(newLocale)
   }
 
   const resetLanguage = async () => {
+    hasUserChangedLocaleRef.current = true
     await StorageManager.removeLanguage()
     const detected = detectSystemLanguage()
     setLocaleState(detected)

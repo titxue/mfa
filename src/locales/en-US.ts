@@ -71,6 +71,16 @@ export const enUS: Translations = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Usage Instructions',
   'settings.usageDesc': 'Click account to copy code, right-click to delete account',
+  'settings.autofill': 'Autofill',
+  'settings.autofillDesc': 'Autofill codes on login pages',
+  'settings.inlineMenu': 'Inline menu on pages',
+  'settings.inlineMenuDesc': 'Show an account menu near the OTP field when focused; click to fill',
+  'settings.clipboardFallback': 'Copy to clipboard when fill fails',
+  'settings.clipboardFallbackDesc': 'Automatically copy the code when no OTP field is found',
+
+  // Inline menu
+  'menu.fill': 'Fill',
+  'menu.no_accounts': 'No accounts yet, add one in the extension',
 
   // Toast messages
   'toast.no_accounts_to_export': 'No account data to export',
@@ -82,6 +92,7 @@ export const enUS: Translations = {
   'toast.code_copied': 'Verification code copied to clipboard',
   'toast.code_filled': 'Verification code auto-filled',
   'toast.fill_failed': 'Auto-fill failed',
+  'toast.no_otp_field': 'No OTP field found on this page',
   'toast.fill_all_fields': 'Please fill in all fields',
   'toast.invalid_secret': 'Invalid secret key format',
   'toast.account_exists': 'Account name already exists',

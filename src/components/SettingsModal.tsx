@@ -6,17 +6,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Github, Tag, ExternalLink } from 'lucide-react'
+import { Github, Tag, ExternalLink, ChevronDown } from 'lucide-react'
 import { useI18n } from '@/contexts/I18nContext'
 import { ImportExportManager } from '@/utils/import-export'
 import { VERSION } from '@/version'
@@ -33,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { LANGUAGE_CONFIGS } from '@/locales'
+import { useSettings } from '@/hooks/useSettings'
 
 interface SettingsModalProps {
   open: boolean
@@ -51,6 +46,7 @@ export function SettingsModal({
   onImport
 }: SettingsModalProps) {
   const { t, locale, setLocale, resetLanguage } = useI18n()
+  const { settings, updateSettings } = useSettings()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const clickCountRef = useRef(0)
   const lastClickTimeRef = useRef(0)
@@ -185,7 +181,7 @@ export function SettingsModal({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-6 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain">
             {/* 语言设置 */}
             <div className="space-y-2">
               <h3
@@ -196,21 +192,66 @@ export function SettingsModal({
               </h3>
               <div className="space-y-2">
                 <Label htmlFor="language">{t('settings.languageTitle')}</Label>
-                <Select value={locale} onValueChange={handleLanguageChange}>
-                  <SelectTrigger id="language">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
+                <div className="relative">
+                  <select
+                    id="language"
+                    value={locale}
+                    onChange={(event) => {
+                      void handleLanguageChange(event.target.value as Language)
+                    }}
+                    className="block h-9 w-full appearance-none rounded-md border border-solid border-input bg-background px-3 py-2 pr-10 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-inset focus:ring-ring"
+                  >
                     {LANGUAGE_CONFIGS.map((config) => (
-                      <SelectItem key={config.code} value={config.code}>
+                      <option key={config.code} value={config.code}>
                         {config.nativeName}
-                      </SelectItem>
+                      </option>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </select>
+                  <ChevronDown
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {t('settings.languageDesc')}
                 </p>
+              </div>
+            </div>
+
+            {/* 自动填充设置 */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold">{t('settings.autofill')}</h3>
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-1 min-w-0">
+                    <p className="text-sm font-medium">{t('settings.inlineMenu')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('settings.inlineMenuDesc')}
+                    </p>
+                  </div>
+                  <Switch
+                    className="flex-shrink-0"
+                    checked={settings.autofillInlineMenu}
+                    onCheckedChange={(value) =>
+                      updateSettings({ autofillInlineMenu: value })
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-1 min-w-0">
+                    <p className="text-sm font-medium">{t('settings.clipboardFallback')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t('settings.clipboardFallbackDesc')}
+                    </p>
+                  </div>
+                  <Switch
+                    className="flex-shrink-0"
+                    checked={settings.clipboardFallback}
+                    onCheckedChange={(value) =>
+                      updateSettings({ clipboardFallback: value })
+                    }
+                  />
+                </div>
               </div>
             </div>
 

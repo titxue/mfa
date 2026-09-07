@@ -1,115 +1,22 @@
 /**
- * 页面分析器 - 用于自动填充验证码
+ * 页面分析器 - 弹窗侧自动填充入口
+ * 通过消息驱动已注入的内容脚本填充；内容脚本未注入时（如扩展重载后未刷新的标签页）
+ * 自动 executeScript 重注入同一 bundle（content-script.js），仍失败才回退剪贴板
  */
 
-/**
- * TOTP 关键词列表
- */
-const TOTP_KEYWORDS = [
-  'otp',
-  '2fa',
-  'totp',
-  'authenticator',
-  'verification',
-  'security',
-  'code',
-  'security code',
-  '安全码',
-  '验证码',
-  '动态码'
-]
+import { StorageManager } from '@/utils/storage'
 
-/**
- * 在页面中查找可能的 TOTP 输入框
- */
-export function findTOTPInput(): HTMLInputElement | null {
-  const inputs = Array.from(document.querySelectorAll('input'))
+export type FillStatus = 'filled' | 'copied' | 'no-field' | 'error'
 
-  // 优先查找匹配关键词的输入框
-  for (const input of inputs) {
-    const text = [
-      input.name,
-      input.id,
-      input.placeholder,
-      input.getAttribute('aria-label'),
-      input.getAttribute('autocomplete')
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase()
-
-    for (const keyword of TOTP_KEYWORDS) {
-      if (text.includes(keyword.toLowerCase())) {
-        return input
-      }
-    }
-  }
-
-  // 查找 type="text" 且可见的输入框
-  for (const input of inputs) {
-    if (
-      (input.type === 'text' || input.type === 'tel' || input.type === 'number') &&
-      input.offsetParent !== null &&
-      !input.disabled &&
-      !input.readOnly
-    ) {
-      return input
-    }
-  }
-
-  return null
+export interface FillResult {
+  status: FillStatus
+  mode?: 'single' | 'segmented'
 }
 
-/**
- * 填充验证码到输入框
- * @param code - TOTP 验证码
- * @returns 是否填充成功
- */
-export function fillTOTPCode(code: string): boolean {
-  const input = findTOTPInput()
-
-  if (input) {
-    // 设置值
-    input.value = code
-
-    // 触发事件
-    input.dispatchEvent(new Event('input', { bubbles: true }))
-    input.dispatchEvent(new Event('change', { bubbles: true }))
-
-    // 聚焦输入框
-    input.focus()
-
-    return true
-  }
-
-  return false
-}
-
-/**
- * 复制到剪贴板
- * @param text - 要复制的文本
- * @returns 是否复制成功
- */
-export async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(text)
-      return true
-    } else {
-      // Fallback: 使用 document.execCommand
-      const textarea = document.createElement('textarea')
-      textarea.value = text
-      textarea.style.position = 'fixed'
-      textarea.style.opacity = '0'
-      document.body.appendChild(textarea)
-      textarea.select()
-      const success = document.execCommand('copy')
-      document.body.removeChild(textarea)
-      return success
-    }
-  } catch (error) {
-    return false
-  }
+/** 内容脚本 FILL_CODE 消息响应 */
+interface FillMessageResponse {
+  status: 'filled' | 'no-field' | 'error'
+  mode?: 'single' | 'segmented'
 }
 
 /**
@@ -134,55 +41,127 @@ export async function getCurrentTab(): Promise<chrome.tabs.Tab | null> {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
     return tab || null
-  } catch (error) {
+  } catch {
     return null
   }
 }
 
 /**
+ * 复制到剪贴板
+ * @param text - 要复制的文本
+ * @returns 是否复制成功
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text)
+      return true
+    } else {
+      // Fallback: 使用 document.execCommand
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      const success = document.execCommand('copy')
+      document.body.removeChild(textarea)
+      return success
+    }
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 向标签页发送 FILL_CODE 消息
+ * @param frameId - 指定帧；缺省则广播到所有帧
+ * @returns 响应；消息无接收端（内容脚本未注入/受限页面）时返回 undefined
+ */
+async function sendFillMessage(
+  tabId: number,
+  code: string,
+  frameId?: number
+): Promise<FillMessageResponse | undefined> {
+  try {
+    const options = frameId === undefined ? {} : { frameId }
+    return (await chrome.tabs.sendMessage(
+      tabId,
+      { type: 'FILL_CODE', code },
+      options
+    )) as FillMessageResponse
+  } catch {
+    return undefined
+  }
+}
+
+/** 注入内容脚本 bundle（所有帧），受限页面会失败 */
+async function injectContentScript(tabId: number): Promise<boolean> {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames: true },
+      files: ['content-script.js'],
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** 按设置回退：复制到剪贴板或仅报告未找到字段 */
+async function fallbackToClipboard(code: string): Promise<FillResult> {
+  try {
+    const settings = await StorageManager.getSettings()
+    if (settings.clipboardFallback) {
+      const copied = await copyToClipboard(code)
+      return copied ? { status: 'copied' } : { status: 'error' }
+    }
+    return { status: 'no-field' }
+  } catch {
+    const copied = await copyToClipboard(code)
+    return copied ? { status: 'copied' } : { status: 'error' }
+  }
+}
+
+/**
  * 自动填充验证码到当前页面
+ * 流程：顶层帧消息 → 全帧广播（iframe 场景）→ 重注入内容脚本后重试 → 剪贴板回退
  * @param code - TOTP 验证码
  * @returns 填充结果
  */
-export async function autoFillCode(code: string): Promise<{
-  success: boolean
-  message: string
-}> {
-  try {
-    const tab = await getCurrentTab()
+export async function fillCodeInActiveTab(code: string): Promise<FillResult> {
+  const tab = await getCurrentTab()
+  if (!tab || !tab.id) {
+    return fallbackToClipboard(code)
+  }
 
-    if (!tab || !tab.id) {
-      throw new Error('No active tab found')
-    }
+  // 1) 顶层帧
+  const top = await sendFillMessage(tab.id, code, 0)
+  if (top?.status === 'filled') {
+    return { status: 'filled', mode: top.mode }
+  }
 
-    // 注入脚本到当前标签页
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: fillTOTPCode,
-      args: [code]
-    })
-
-    const filled = results[0]?.result
-
-    if (filled) {
-      return {
-        success: true,
-        message: 'Code filled successfully'
-      }
-    } else {
-      // 填充失败，回退到复制到剪贴板
-      const copied = await copyToClipboard(code)
-      return {
-        success: copied,
-        message: copied ? 'Code copied to clipboard' : 'Failed to fill or copy code'
-      }
-    }
-  } catch (error) {
-    // 尝试复制到剪贴板
-    const copied = await copyToClipboard(code)
-    return {
-      success: copied,
-      message: copied ? 'Code copied to clipboard' : 'Failed to auto-fill'
+  // 2) 全帧广播（OTP 表单可能在 iframe 中）
+  if (top !== undefined) {
+    const all = await sendFillMessage(tab.id, code)
+    if (all?.status === 'filled') {
+      return { status: 'filled', mode: all.mode }
     }
   }
+
+  // 3) 无内容脚本（如扩展刚重载、标签页未刷新）→ 注入后重试
+  if (top === undefined) {
+    await injectContentScript(tab.id)
+    const retry = await sendFillMessage(tab.id, code, 0)
+    if (retry?.status === 'filled') {
+      return { status: 'filled', mode: retry.mode }
+    }
+    const retryAll = await sendFillMessage(tab.id, code)
+    if (retryAll?.status === 'filled') {
+      return { status: 'filled', mode: retryAll.mode }
+    }
+  }
+
+  // 4) 剪贴板回退（受设置控制）
+  return fallbackToClipboard(code)
 }

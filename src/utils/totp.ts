@@ -3,6 +3,8 @@
  * 符合 RFC 6238 标准
  */
 
+import { hmacSha1 } from './hmac-sha1'
+
 export class TOTP {
   private static readonly BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 
@@ -33,6 +35,7 @@ export class TOTP {
 
   /**
    * 生成 TOTP 验证码
+   * 优先使用 WebCrypto（crypto.subtle），不可用时（如 http 页面上的内容脚本）回退到纯 JS HMAC-SHA1
    * @param secret - Base32 编码的密钥
    * @param interval - 时间间隔（秒），默认 30 秒
    * @returns 6 位 TOTP 验证码
@@ -44,22 +47,27 @@ export class TOTP {
     // 计算当前时间步
     const timestamp = Math.floor(Date.now() / 1000 / interval)
 
-    // 将时间戳转换为 buffer
+    // 将时间戳转换为 8 字节大端 buffer
     const timeBuffer = new ArrayBuffer(8)
     const view = new DataView(timeBuffer)
     view.setBigUint64(0, BigInt(timestamp), false)
 
     // 生成 HMAC-SHA1
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      key as BufferSource,
-      { name: 'HMAC', hash: 'SHA-1' },
-      false,
-      ['sign']
-    )
-
-    const hmac = await crypto.subtle.sign('HMAC', cryptoKey, timeBuffer)
-    const hmacArray = new Uint8Array(hmac)
+    let hmacArray: Uint8Array
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        key as BufferSource,
+        { name: 'HMAC', hash: 'SHA-1' },
+        false,
+        ['sign']
+      )
+      const hmac = await crypto.subtle.sign('HMAC', cryptoKey, timeBuffer)
+      hmacArray = new Uint8Array(hmac)
+    } else {
+      // 非安全上下文回退：纯 JS 实现（输出与 WebCrypto 一致）
+      hmacArray = hmacSha1(key, new Uint8Array(timeBuffer))
+    }
 
     // 动态截断
     const offset = hmacArray[19] & 0xf

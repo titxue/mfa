@@ -71,6 +71,16 @@ export const koKR: Translations = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': '사용 방법',
   'settings.usageDesc': '계정을 클릭하여 코드를 복사하고 마우스 오른쪽 버튼으로 계정을 삭제하세요',
+  'settings.autofill': '자동 채우기',
+  'settings.autofillDesc': '로그인 페이지에서 인증 코드를 자동으로 채웁니다',
+  'settings.inlineMenu': '페이지 인라인 메뉴',
+  'settings.inlineMenuDesc': 'OTP 입력란에 포커스하면 계정 메뉴를 표시하고 클릭하여 채웁니다',
+  'settings.clipboardFallback': '채우기 실패 시 클립보드에 복사',
+  'settings.clipboardFallbackDesc': 'OTP 입력란을 찾지 못하면 코드를 자동으로 복사합니다',
+
+  // Inline menu
+  'menu.fill': '채우기',
+  'menu.no_accounts': '계정이 없습니다. 확장 프로그램에서 추가하세요',
 
   // 토스트 알림
   'toast.no_accounts_to_export': '내보낼 계정 데이터가 없습니다',
@@ -82,6 +92,7 @@ export const koKR: Translations = {
   'toast.code_copied': '인증 코드를 클립보드에 복사했습니다',
   'toast.code_filled': '인증 코드가 자동으로 입력되었습니다',
   'toast.fill_failed': '자동 입력 실패',
+  'toast.no_otp_field': '이 페이지에서 OTP 입력란을 찾을 수 없습니다',
   'toast.fill_all_fields': '모든 필드를 입력해주세요',
   'toast.invalid_secret': '잘못된 비밀 키 형식입니다',
   'toast.account_exists': '계정 이름이 이미 존재합니다',

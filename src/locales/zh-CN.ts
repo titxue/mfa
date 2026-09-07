@@ -69,6 +69,16 @@ export const zhCN = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': '使用说明',
   'settings.usageDesc': '点击账户可复制验证码，右键可删除账户',
+  'settings.autofill': '自动填充',
+  'settings.autofillDesc': '在登录页面自动填充验证码',
+  'settings.inlineMenu': '页面内联菜单',
+  'settings.inlineMenuDesc': '聚焦验证码输入框时显示账户菜单，点击即可填充',
+  'settings.clipboardFallback': '填充失败时复制到剪贴板',
+  'settings.clipboardFallbackDesc': '未找到验证码输入框时自动复制验证码到剪贴板',
+
+  // Inline menu
+  'menu.fill': '填充',
+  'menu.no_accounts': '暂无账户，请先在扩展中添加',
 
   // Toast 提示
   'toast.no_accounts_to_export': '没有账户数据可导出',
@@ -80,6 +90,7 @@ export const zhCN = {
   'toast.code_copied': '验证码已复制到剪贴板',
   'toast.code_filled': '验证码已自动填充',
   'toast.fill_failed': '自动填充失败',
+  'toast.no_otp_field': '未在页面中找到验证码输入框',
   'toast.fill_all_fields': '请填写所有字段',
   'toast.invalid_secret': '无效的密钥格式',
   'toast.account_exists': '账户名已存在',

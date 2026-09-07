@@ -71,6 +71,16 @@ export const ptBR: Translations = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Instruções de uso',
   'settings.usageDesc': 'Clique na conta para copiar o código, clique com o botão direito para excluir conta',
+  'settings.autofill': 'Preenchimento automático',
+  'settings.autofillDesc': 'Preencher códigos automaticamente nas páginas de login',
+  'settings.inlineMenu': 'Menu integrado nas páginas',
+  'settings.inlineMenuDesc': 'Mostrar um menu de contas próximo ao campo OTP ao focar; clique para preencher',
+  'settings.clipboardFallback': 'Copiar para a área de transferência se o preenchimento falhar',
+  'settings.clipboardFallbackDesc': 'Copiar o código automaticamente quando nenhum campo OTP for encontrado',
+
+  // Inline menu
+  'menu.fill': 'Preencher',
+  'menu.no_accounts': 'Nenhuma conta, adicione uma na extensão',
 
   // Notificações toast
   'toast.no_accounts_to_export': 'Não há dados de contas para exportar',
@@ -82,6 +92,7 @@ export const ptBR: Translations = {
   'toast.code_copied': 'Código de verificação copiado para a área de transferência',
   'toast.code_filled': 'Código de verificação preenchido automaticamente',
   'toast.fill_failed': 'Falha no preenchimento automático',
+  'toast.no_otp_field': 'Nenhum campo OTP encontrado nesta página',
   'toast.fill_all_fields': 'Por favor preencha todos os campos',
   'toast.invalid_secret': 'Formato de chave secreta inválido',
   'toast.account_exists': 'Nome da conta já existe',

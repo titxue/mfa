@@ -71,6 +71,16 @@ export const zhTW: Translations = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': '使用說明',
   'settings.usageDesc': '點擊帳戶可複製驗證碼，右鍵可刪除帳戶',
+  'settings.autofill': '自動填充',
+  'settings.autofillDesc': '在登入頁面自動填充驗證碼',
+  'settings.inlineMenu': '頁面內聯選單',
+  'settings.inlineMenuDesc': '聚焦驗證碼輸入框時顯示帳戶選單，點擊即可填充',
+  'settings.clipboardFallback': '填充失敗時複製到剪貼簿',
+  'settings.clipboardFallbackDesc': '未找到驗證碼輸入框時自動複製驗證碼到剪貼簿',
+
+  // Inline menu
+  'menu.fill': '填充',
+  'menu.no_accounts': '尚無帳戶，請先在擴充功能中新增',
 
   // Toast 提示
   'toast.no_accounts_to_export': '沒有帳戶資料可匯出',
@@ -82,6 +92,7 @@ export const zhTW: Translations = {
   'toast.code_copied': '驗證碼已複製到剪貼簿',
   'toast.code_filled': '驗證碼已自動填入',
   'toast.fill_failed': '自動填入失敗',
+  'toast.no_otp_field': '未在頁面中找到驗證碼輸入框',
   'toast.fill_all_fields': '請填寫所有欄位',
   'toast.invalid_secret': '無效的金鑰格式',
   'toast.account_exists': '帳戶名稱已存在',

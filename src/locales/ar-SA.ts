@@ -71,6 +71,16 @@ export const arSA: Translations = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'تعليمات الاستخدام',
   'settings.usageDesc': 'انقر على الحساب لنسخ الرمز، انقر بزر الماوس الأيمن لحذف الحساب',
+  'settings.autofill': 'التعبئة التلقائية',
+  'settings.autofillDesc': 'تعبئة الرموز تلقائيًا في صفحات تسجيل الدخول',
+  'settings.inlineMenu': 'قائمة مضمّنة في الصفحات',
+  'settings.inlineMenuDesc': 'عرض قائمة الحسابات بجوار حقل OTP عند التركيز عليه؛ انقر للتعبئة',
+  'settings.clipboardFallback': 'نسخ إلى الحافظة عند فشل التعبئة',
+  'settings.clipboardFallbackDesc': 'نسخ الرمز تلقائيًا عند عدم العثور على حقل OTP',
+
+  // Inline menu
+  'menu.fill': 'تعبئة',
+  'menu.no_accounts': 'لا توجد حسابات، أضف واحدًا في الامتداد',
 
   // إشعارات Toast
   'toast.no_accounts_to_export': 'لا توجد بيانات حسابات للتصدير',
@@ -82,6 +92,7 @@ export const arSA: Translations = {
   'toast.code_copied': 'تم نسخ رمز التحقق إلى الحافظة',
   'toast.code_filled': 'تم ملء رمز التحقق تلقائيًا',
   'toast.fill_failed': 'فشل الملء التلقائي',
+  'toast.no_otp_field': 'لم يتم العثور على حقل OTP في هذه الصفحة',
   'toast.fill_all_fields': 'يرجى ملء جميع الحقول',
   'toast.invalid_secret': 'تنسيق المفتاح السري غير صالح',
   'toast.account_exists': 'اسم الحساب موجود بالفعل',

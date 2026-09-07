@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { ProgressRing } from './ProgressRing'
 import { TOTP } from '@/utils/totp'
-import { autoFillCode } from '@/utils/page-analyzer'
+import { fillCodeInActiveTab } from '@/utils/page-analyzer'
 import { toast } from 'sonner'
 import { useI18n } from '@/contexts/I18nContext'
 import {
@@ -42,14 +42,14 @@ export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }:
 
   // 点击账户卡片 - 自动填充或复制验证码
   const handleClick = async () => {
-    const result = await autoFillCode(code)
+    const result = await fillCodeInActiveTab(code)
 
-    if (result.success) {
-      if (result.message === 'Code filled successfully') {
-        toast.success(t('toast.code_filled'))
-      } else {
-        toast.success(t('toast.code_copied'))
-      }
+    if (result.status === 'filled') {
+      toast.success(t('toast.code_filled'))
+    } else if (result.status === 'copied') {
+      toast.success(t('toast.code_copied'))
+    } else if (result.status === 'no-field') {
+      toast.error(t('toast.no_otp_field'))
     } else {
       toast.error(t('toast.fill_failed'))
     }

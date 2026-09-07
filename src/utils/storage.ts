@@ -1,6 +1,24 @@
 import type { Account, AppState } from '@/types'
 
 /**
+ * 自动填充设置
+ */
+export interface AutofillSettings {
+  /** 聚焦 OTP 输入框时显示页面内联菜单（1Password 风格） */
+  autofillInlineMenu: boolean
+  /** 填充失败时回退复制到剪贴板 */
+  clipboardFallback: boolean
+}
+
+/**
+ * 自动填充设置默认值
+ */
+export const DEFAULT_AUTOFILL_SETTINGS: AutofillSettings = {
+  autofillInlineMenu: true,
+  clipboardFallback: true,
+}
+
+/**
  * 存储管理工具
  * 封装 Chrome Storage API，支持同步存储和本地存储回退
  */
@@ -112,6 +130,21 @@ export class StorageManager {
     } catch (error) {
       // Failed to remove language
     }
+  }
+
+  /**
+   * 获取自动填充设置
+   */
+  static async getSettings(): Promise<AutofillSettings> {
+    const settings = await this.getFromStorage<Partial<AutofillSettings>>('autofillSettings')
+    return { ...DEFAULT_AUTOFILL_SETTINGS, ...settings }
+  }
+
+  /**
+   * 保存自动填充设置
+   */
+  static async saveSettings(settings: AutofillSettings): Promise<void> {
+    await this.saveToStorage('autofillSettings', settings)
   }
 
   /**

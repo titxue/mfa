@@ -71,6 +71,16 @@ export const jaJP: Translations = {
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': '使用方法',
   'settings.usageDesc': 'アカウントをクリックしてコードをコピー、右クリックでアカウントを削除',
+  'settings.autofill': '自動入力',
+  'settings.autofillDesc': 'ログインページで認証コードを自動入力します',
+  'settings.inlineMenu': 'ページ内メニュー',
+  'settings.inlineMenuDesc': 'OTPフィールドにフォーカスするとアカウントメニューを表示し、クリックで入力します',
+  'settings.clipboardFallback': '入力に失敗したらクリップボードにコピー',
+  'settings.clipboardFallbackDesc': 'OTPフィールドが見つからない場合にコードを自動コピーします',
+
+  // Inline menu
+  'menu.fill': '入力',
+  'menu.no_accounts': 'アカウントがありません。拡張機能で追加してください',
 
   // トースト通知
   'toast.no_accounts_to_export': 'エクスポートするアカウントデータがありません',
@@ -82,6 +92,7 @@ export const jaJP: Translations = {
   'toast.code_copied': '確認コードをクリップボードにコピーしました',
   'toast.code_filled': '確認コードを自動入力しました',
   'toast.fill_failed': '自動入力に失敗しました',
+  'toast.no_otp_field': 'このページにOTPフィールドが見つかりません',
   'toast.fill_all_fields': 'すべてのフィールドを入力してください',
   'toast.invalid_secret': '無効なシークレットキー形式です',
   'toast.account_exists': 'アカウント名は既に存在します',
