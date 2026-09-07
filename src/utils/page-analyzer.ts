@@ -104,7 +104,15 @@ async function injectContentScript(tabId: number): Promise<boolean> {
     })
     return true
   } catch {
-    return false
+    // Cross-origin frames may reject allFrames under activeTab; retain top-frame filling.
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId }, files: ['content-script.js'],
+      })
+      return true
+    } catch {
+      return false
+    }
   }
 }
 

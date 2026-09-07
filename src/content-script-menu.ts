@@ -16,9 +16,13 @@ export interface MenuAccount {
 export interface MenuStrings {
   fill: string
   noAccounts: string
+  filled?: string
+  failed?: string
 }
 
 export interface InlineMenuOptions {
+  /** 分格验证码共用一个组外按钮，填充仍以当前输入框为锚点。 */
+  inputGroup?: HTMLInputElement[]
   accounts: MenuAccount[]
   strings: MenuStrings
   /** 点击账户时回调（code 为点击时刻重新生成的最新验证码） */
@@ -38,7 +42,7 @@ const INLINE_CSS = `
   width: 24px;
   height: 24px;
   padding: 0;
-  border-radius: 9999px;
+  border-radius: 6px;
   background: hsl(0 0% 100%);
   border: 1px solid hsl(240 5.9% 90%);
   color: hsl(240 5.9% 10%);
@@ -50,6 +54,8 @@ const INLINE_CSS = `
 .mfa-button:hover {
   background: hsl(240 4.8% 95.9%);
 }
+.mfa-button:focus-visible { outline: 2px solid hsl(240 5.9% 10%); outline-offset: 2px; }
+.mfa-button:active { transform: scale(0.96); }
 .mfa-button svg {
   display: block;
 }
@@ -77,7 +83,7 @@ const INLINE_CSS = `
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: 10px 8px;
   border-radius: 4px;
   cursor: pointer;
   user-select: none;
@@ -93,9 +99,9 @@ const INLINE_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 9999px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
   background: hsl(240 4.8% 95.9%);
   color: hsl(240 3.8% 46.1%);
   transition: color 150ms;
@@ -121,14 +127,14 @@ const INLINE_CSS = `
 .mfa-item-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.05em;
   color: hsl(240 5.9% 10%);
 }
 .mfa-item-fill {
   flex-shrink: 0;
-  padding: 3px 10px;
-  border-radius: 4px;
+  padding: 5px 10px;
+  border-radius: 6px;
   border: 1px solid hsl(240 5.9% 90%);
   background: hsl(0 0% 100%);
   color: hsl(240 5.9% 10%);
@@ -154,13 +160,16 @@ const INLINE_CSS = `
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background: hsl(142 76% 36%);
-  color: #fff;
+  min-height: 28px;
+  padding: 4px 10px;
+  gap: 6px;
+  white-space: nowrap;
+  border-radius: 6px;
+  border: 1px solid hsl(240 5.9% 90%);
+  background: hsl(0 0% 100%);
+  color: hsl(240 5.9% 10%);
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
   animation: mfa-feedback-in 150ms ease-out;
@@ -173,6 +182,10 @@ const INLINE_CSS = `
   padding: 6px 8px;
   font-size: 14px;
   color: hsl(240 3.8% 46.1%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mfa-menu, .mfa-feedback-badge { animation: none; }
+  .mfa-button, .mfa-item, .mfa-item-fill { transition: none; }
 }
 `
 
@@ -232,6 +245,7 @@ export function matchAccountsForSite(accounts: MenuAccount[], hostname: string):
 // ---------- 内联 UI 状态 ----------
 
 let anchorElement: HTMLInputElement | null = null
+let anchorGroup: HTMLInputElement[] = []
 let options: InlineMenuOptions | null = null
 let buttonHost: HTMLElement | null = null
 let buttonShadow: ShadowRoot | null = null
@@ -246,10 +260,10 @@ let feedbackTimer: number | null = null
 let feedbackBadge: HTMLElement | null = null
 
 /**
- * 填充成功反馈：输入框短暂绿色描边 + 字段旁 ✓ 徽标
+ * 填充反馈：黑白提示条，不修改宿主网页输入框样式。
  * @param anchor - 被填充的输入框
  */
-export function showFilledFeedback(anchor: HTMLInputElement): void {
+export function showFilledFeedback(anchor: HTMLInputElement, label = '✓'): void {
   if (feedbackTimer !== null) {
     window.clearTimeout(feedbackTimer)
     feedbackTimer = null
@@ -259,9 +273,6 @@ export function showFilledFeedback(anchor: HTMLInputElement): void {
     feedbackBadge = null
   }
   const doc = anchor.ownerDocument
-  // 绿色描边
-  anchor.style.outline = '2px solid hsl(142 76% 36%)'
-  anchor.style.outlineOffset = '1px'
   // ✓ 徽标（fixed 定位在字段右侧）
   feedbackBadge = doc.createElement('div')
   feedbackBadge.style.cssText = 'all: initial; position: fixed; z-index: 2147483647;'
@@ -271,24 +282,27 @@ export function showFilledFeedback(anchor: HTMLInputElement): void {
   shadow.appendChild(styleEl)
   const badgeEl = doc.createElement('div')
   badgeEl.className = 'mfa-feedback-badge'
-  badgeEl.textContent = '✓'
+  badgeEl.textContent = label
+  badgeEl.setAttribute('role', 'status')
+  badgeEl.setAttribute('aria-live', 'polite')
+  feedbackBadge.style.pointerEvents = 'none'
   shadow.appendChild(badgeEl)
   const rect = anchor.getBoundingClientRect()
-  const left = Math.min(Math.max(rect.right + 8, 4), Math.max(4, window.innerWidth - 28))
-  const top = rect.top + Math.max(0, (rect.height - 20) / 2)
+  doc.documentElement.appendChild(feedbackBadge)
+  const width = feedbackBadge.getBoundingClientRect().width
+  const left = Math.min(Math.max(rect.left, 4), Math.max(4, window.innerWidth - width - 4))
+  const top = rect.bottom + 6 + 28 > window.innerHeight ? Math.max(4, rect.top - 34) : rect.bottom + 6
   feedbackBadge.style.left = Math.round(left) + 'px'
   feedbackBadge.style.top = Math.round(top) + 'px'
   doc.documentElement.appendChild(feedbackBadge)
 
   feedbackTimer = window.setTimeout(() => {
-    anchor.style.outline = ''
-    anchor.style.outlineOffset = ''
     if (feedbackBadge && feedbackBadge.parentNode) {
       feedbackBadge.parentNode.removeChild(feedbackBadge)
     }
     feedbackBadge = null
     feedbackTimer = null
-  }, 1200)
+  }, 1600)
 }
 
 /** 清除按钮与菜单，解绑所有监听器 */
@@ -309,6 +323,7 @@ export function hideInlineUI(): void {
     refreshTimer = null
   }
   anchorElement = null
+  anchorGroup = []
   options = null
   buttonShadow = null
   menuShadow = null
@@ -325,13 +340,23 @@ export function hideInlineUI(): void {
 /** 定位按钮到输入框右侧（视口内夹取） */
 function positionButton(): void {
   if (!buttonHost || !anchorElement) return
-  const rect = anchorElement.getBoundingClientRect()
+  const rects = anchorGroup.filter(el => el.isConnected).map(el => el.getBoundingClientRect())
+    .filter(rect => rect.width > 0 && rect.height > 0)
+  const segmented = anchorGroup.length > 1
+  const rect = segmented && rects.length ? {
+    left: Math.min(...rects.map(r => r.left)), right: Math.max(...rects.map(r => r.right)),
+    top: Math.min(...rects.map(r => r.top)), bottom: Math.max(...rects.map(r => r.bottom)),
+    width: Math.max(...rects.map(r => r.right)) - Math.min(...rects.map(r => r.left)),
+    height: Math.max(...rects.map(r => r.bottom)) - Math.min(...rects.map(r => r.top)),
+  } : anchorElement.getBoundingClientRect()
   if (rect.width <= 0 || rect.height <= 0) {
     hideInlineUI()
     return
   }
-  const left = Math.min(Math.max(rect.right - BUTTON_SIZE - 4, 4), Math.max(4, window.innerWidth - BUTTON_SIZE - 4))
-  const top = rect.top + Math.max(0, (rect.height - BUTTON_SIZE) / 2)
+  const fitsRight = rect.right + GAP + BUTTON_SIZE <= window.innerWidth - 4
+  const preferredLeft = segmented ? (fitsRight ? rect.right + GAP : rect.right - BUTTON_SIZE) : rect.right - BUTTON_SIZE - 4
+  const left = Math.min(Math.max(preferredLeft, 4), Math.max(4, window.innerWidth - BUTTON_SIZE - 4))
+  const top = segmented && !fitsRight ? rect.bottom + GAP : rect.top + Math.max(0, (rect.height - BUTTON_SIZE) / 2)
   buttonHost.style.left = Math.round(left) + 'px'
   buttonHost.style.top = Math.round(top) + 'px'
 }
@@ -403,12 +428,13 @@ function renderMenu(menuEl: HTMLElement, opts: InlineMenuOptions): () => void {
 
     const handleActivate = (): void => {
       const onFill = opts.onFill
+      const anchor = anchorElement
       hideInlineUI()
       // 点击时重新生成最新验证码
       TOTP.generateTOTP(account.secret)
         .then((code) => onFill(account, code))
         .catch(() => {
-          // 生成失败则不填充
+          if (anchor) showFilledFeedback(anchor, opts.strings.failed ?? '!')
         })
     }
     item.addEventListener('click', handleActivate)
@@ -505,8 +531,17 @@ function closeMenu(): void {
  * @param anchor - 触发 UI 的 OTP 输入框
  */
 export function showInlineUI(anchor: HTMLInputElement, opts: InlineMenuOptions): void {
+  const group = opts.inputGroup ?? [anchor]
+  if (buttonHost && group.length > 1 && group.length === anchorGroup.length && group.every((el, index) => el === anchorGroup[index])) {
+    anchorElement = anchor
+    options = opts
+    if (hideTimer !== null) { window.clearTimeout(hideTimer); hideTimer = null }
+    positionButton()
+    return
+  }
   hideInlineUI()
   anchorElement = anchor
+  anchorGroup = group
   options = opts
 
   const doc = anchor.ownerDocument
@@ -534,11 +569,12 @@ export function showInlineUI(anchor: HTMLInputElement, opts: InlineMenuOptions):
     const matches = matchAccountsForSite(current?.accounts ?? [], window.location.hostname)
     if (matches.length === 1) {
       const onFill = current?.onFill
+      const anchor = anchorElement
       hideInlineUI()
       TOTP.generateTOTP(matches[0].secret)
         .then((code) => onFill?.(matches[0], code))
         .catch(() => {
-          // 生成失败则不填充
+          if (anchor) showFilledFeedback(anchor, current?.strings.failed ?? '!')
         })
       return
     }
@@ -560,7 +596,7 @@ export function showInlineUI(anchor: HTMLInputElement, opts: InlineMenuOptions):
     if (target === buttonHost || target === menuHost) return
     if (buttonShadow && buttonShadow.contains(target)) return
     if (menuShadow && menuShadow.contains(target)) return
-    if (target === anchorElement) return
+    if (anchorGroup.some(el => target === el)) return
     hideInlineUI()
   }
   const onScroll = (): void => {
@@ -577,7 +613,7 @@ export function showInlineUI(anchor: HTMLInputElement, opts: InlineMenuOptions):
       const ae = document.activeElement
       // 焦点仍在按钮/菜单（closed 阴影内聚焦时 activeElement 为宿主）或输入框内 → 保持
       if (ae === buttonHost || ae === menuHost) return
-      if (anchorElement && (ae === anchorElement || anchorElement.contains(ae))) return
+      if (anchorGroup.some(el => ae === el)) return
       hideInlineUI()
     }, 150)
   }

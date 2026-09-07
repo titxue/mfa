@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { LANGUAGE_CONFIGS } from '@/locales'
 import { useSettings } from '@/hooks/useSettings'
+import { SiteAccessSettings } from './SiteAccessSettings'
 
 interface SettingsModalProps {
   open: boolean
@@ -221,6 +222,7 @@ export function SettingsModal({
             {/* 自动填充设置 */}
             <div className="space-y-2">
               <h3 className="text-sm font-semibold">{t('settings.autofill')}</h3>
+              <SiteAccessSettings />
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-1 min-w-0">

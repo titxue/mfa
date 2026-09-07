@@ -1,6 +1,6 @@
 {
   "name": "mfa",
-  "version": "2.1.2",
+  "version": "2.1.4",
   "description": "TOTP 生成器 Chrome 扩展 - 基于 React + TypeScript + Bun",
   "repository": {
     "type": "git",

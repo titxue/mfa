@@ -1,6 +1,6 @@
 /**
  * 内容脚本 - 在页面中检测 OTP 字段、提供内联菜单与消息驱动填充
- * 编译为 IIFE 后注入页面（manifest content_scripts + executeScript 兜底注入共用同一 bundle）
+ * 编译为 IIFE：已授权网站动态注入；点击填充使用 activeTab 临时注入。
  */
 
 import type { Account } from '@/types'
@@ -28,6 +28,24 @@ const MENU_STRINGS: Record<string, MenuStrings> = {
   'ja-JP': { fill: '入力', noAccounts: 'アカウントがありません。拡張機能で追加してください' },
   'ko-KR': { fill: '채우기', noAccounts: '계정이 없습니다. 확장 프로그램에서 추가하세요' },
   'hi-IN': { fill: 'भरें', noAccounts: 'कोई खाता नहीं, कृपया एक्सटेंशन में जोड़ें' },
+}
+
+const FEEDBACK: Record<string, [string, string]> = {
+  'zh-CN': ['✓ 已填充', '未能填充，请重试'],
+  'zh-TW': ['✓ 已填入', '無法填入，請重試'],
+  'en-US': ['✓ Filled', 'Could not fill. Try again.'],
+  'es-ES': ['✓ Completado', 'No se pudo rellenar. Reinténtalo.'],
+  'fr-FR': ['✓ Rempli', 'Échec du remplissage. Réessayez.'],
+  'pt-BR': ['✓ Preenchido', 'Não foi possível preencher. Tente novamente.'],
+  'de-DE': ['✓ Ausgefüllt', 'Ausfüllen fehlgeschlagen. Erneut versuchen.'],
+  'ru-RU': ['✓ Заполнено', 'Не удалось заполнить. Повторите.'],
+  'ar-SA': ['✓ تمت التعبئة', 'تعذرت التعبئة. حاول مجدداً.'],
+  'ja-JP': ['✓ 入力済み', '入力できませんでした。再試行してください。'],
+  'ko-KR': ['✓ 입력 완료', '입력하지 못했습니다. 다시 시도하세요.'],
+  'hi-IN': ['✓ भर दिया गया', 'भर नहीं सके। फिर कोशिश करें।'],
+}
+for (const [locale, [filled, failed]] of Object.entries(FEEDBACK)) {
+  Object.assign(MENU_STRINGS[locale], { filled, failed })
 }
 
 /** 按浏览器语言推断菜单语言（用于首次使用、未设置语言时） */
@@ -68,11 +86,30 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
   let settings: AutofillSettings = DEFAULT_AUTOFILL_SETTINGS
   let menuStrings: MenuStrings = MENU_STRINGS['en-US']
   let lastAnchor: HTMLInputElement | null = null
+  let siteAllowed = false
+  let accessRevision = 0
+
+  async function refreshAccess(): Promise<boolean> {
+    const revision = ++accessRevision
+    let allowed = false
+    try {
+      allowed = (await chrome.runtime.sendMessage({ type: 'SITE_ACCESS_CHECK' }))?.allowed === true
+    } catch { /* Missing worker or revoked extension: deny by default. */ }
+    if (revision !== accessRevision) return false
+    siteAllowed = allowed
+    if (!allowed) {
+      hideInlineUI()
+      accounts = []
+    }
+    return allowed
+  }
 
   /** 重新加载状态（存储变化时调用） */
   async function reloadState(): Promise<void> {
+    const allowed = await refreshAccess()
     try {
-      accounts = await StorageManager.getAccounts()
+      accounts = allowed ? await StorageManager.getAccounts() : []
+      if (!siteAllowed) accounts = []
     } catch {
       accounts = []
     }
@@ -83,6 +120,7 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
     }
     const stored = await getStoredLanguage()
     menuStrings = MENU_STRINGS[stored || detectMenuLanguage()] || MENU_STRINGS['en-US']
+    if (!siteAllowed || !settings.autofillInlineMenu) hideInlineUI()
   }
 
   // 存储变化时同步状态（popup 增删账户/修改设置后无需刷新页面）
@@ -96,6 +134,14 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
   chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     if (!message || typeof message !== 'object') return false
     const msg = message as Record<string, unknown>
+
+    if (msg.type === 'SITE_ACCESS_CHANGED') {
+      siteAllowed = false
+      accounts = []
+      hideInlineUI()
+      void reloadState()
+      return false
+    }
 
     if (msg.type === 'PING') {
       let hasField = false
@@ -112,7 +158,7 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
       hideInlineUI()
       const result = fillCode(msg.code)
       if (result.status === 'filled' && lastAnchor && lastAnchor.isConnected) {
-        showFilledFeedback(lastAnchor)
+        showFilledFeedback(lastAnchor, menuStrings.filled)
       }
       if (result.status === 'no-field') {
         // 延迟响应：若本帧无字段，让其他帧（iframe）优先返回 filled 结果
@@ -135,10 +181,12 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
   // 焦点进入 OTP 字段/分段组时显示内联菜单
   document.addEventListener(
     'focusin',
-    (e) => {
+    async (e) => {
       const target = e.target
       if (!(target instanceof HTMLInputElement)) return
       if (!settings.autofillInlineMenu) return
+      if (!await refreshAccess()) return
+      if (document.activeElement !== target) return
       const isOtp = isOTPField(target)
       const segmentedGroup = isSegmentedInput(target) ? findSegmentedGroupFor(target) : null
       if (!isOtp && !segmentedGroup) return
@@ -153,13 +201,17 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
       // 1Password 风格：字段右侧显示填充按钮，点击弹出菜单选择填充（有匹配时菜单只显示匹配项）
       // 不做聚焦即自动填充——始终由用户点击按钮后填充
       showInlineUI(target, {
+        inputGroup: segmentedGroup ?? undefined,
         accounts: matches.length > 0 ? matches : menuAccounts,
         strings: menuStrings,
-        onFill: (account, code) => {
+        onFill: async (account, code) => {
+          if (!await refreshAccess()) return
           hideInlineUI()
           const result = fillCode(code, target)
           if (result.status === 'filled') {
-            showFilledFeedback(target)
+            showFilledFeedback(target, menuStrings.filled)
+          } else {
+            showFilledFeedback(target, menuStrings.failed)
           }
         },
       })

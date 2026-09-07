@@ -64,6 +64,18 @@ if (!contentBuild.success) {
 
 console.log('✅ Content script built successfully')
 
+const backgroundBuild = await Bun.build({
+  entrypoints: ['./src/background.ts'],
+  outdir: './dist',
+  target: 'browser',
+  minify: !isDev,
+  format: 'esm',
+})
+if (!backgroundBuild.success) {
+  console.error(backgroundBuild.logs)
+  process.exit(1)
+}
+
 // 编译 Tailwind CSS
 console.log('🎨 Compiling Tailwind CSS...')
 await $`./node_modules/.bin/tailwindcss -i ./src/styles/globals.css -o ./dist/styles.css ${isDev ? '' : '--minify'}`

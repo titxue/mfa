@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MFA 自动填充测试台</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:#182333;font:15px/1.7 system-ui,sans-serif}
+main{max-width:880px;margin:40px auto;padding:0 24px}h1{font-size:30px;margin:4px 0 12px}h2{font-size:18px}
+.badge{color:#53657b;font-size:12px;letter-spacing:2px}p{color:#576477}section{background:white;border:1px solid #dce2eb;border-radius:14px;padding:24px;margin:20px 0}
+nav{display:flex;gap:8px;flex-wrap:wrap}a,button{color:#224f93}nav a,button{border:1px solid #cad5e5;border-radius:8px;padding:8px 14px;background:white;text-decoration:none;cursor:pointer;font:inherit}
+nav a[aria-current=page]{background:#224f93;color:white;border-color:#224f93}
+label{display:block;margin-bottom:10px}input{font:24px ui-monospace,monospace;border:1px solid #aebace;border-radius:8px;padding:12px;width:min(100%,340px);background:white}
+input:focus{outline:2px solid #4d83ca;outline-offset:2px}.digits{display:flex;gap:8px}.digits input{width:46px;text-align:center;padding:12px 4px}
+.actions{margin-top:20px;display:flex;gap:10px}output{display:block;margin-top:16px;color:#224f93}code{overflow-wrap:anywhere;background:#f0f3f7;padding:2px 5px}
+iframe{width:100%;height:290px;border:1px solid #ccd5e2;border-radius:10px}small{color:#68778b}
+.frame main{margin:16px auto;padding:0 16px}.frame section{margin:0;padding:16px}.frame .intro,.frame nav,.frame .guide{display:none}
+@media(max-width:480px){main{padding:0 12px}.digits{gap:4px}.digits input{width:38px}section{padding:16px}}
+</style>
+</head>
+<body>
+<main>
+<section id="file-warning" hidden role="alert" style="position:sticky;top:8px;z-index:10;border-color:#d79720;background:#fff8e7">
+<strong>当前打开的是本地文件，无法测试网站授权和自动菜单。</strong>
+<p>请使用 <a href="http://127.0.0.1:4173/?mode=single">HTTP 测试入口</a>，不要双击 HTML 文件。若服务未启动，在项目目录运行：</p>
+<code>python -m http.server 4173 --bind 127.0.0.1 --directory tests/manual</code>
+</section>
+<header class="intro"><span class="badge">LOCAL TEST LAB · 无需登录</span><h1>验证码自动填充测试台</h1>
+<p>配合已加载的 MFA 扩展，检查手动填充、按网站授权、撤销权限与 iframe。页面只读取测试输入框，不模拟扩展菜单，也不发送验证码。</p></header>
+<nav aria-label="测试场景">
+<a href="?mode=single">普通验证码</a><a href="?mode=segmented">六格验证码</a>
+<a href="?mode=same">同源 iframe</a><a href="?mode=cross">跨站 iframe</a><a href="?mode=empty">无验证码字段</a>
+</nav>
+<section><h2 id="heading"></h2><p id="description"></p><div id="fixture"></div>
+<div class="actions" id="actions"><button id="inspect" type="button">检查填入结果</button><button id="clear" type="button">清空</button></div>
+<output id="result" aria-live="polite">等待测试</output><small id="events"></small></section>
+<section class="guide">
+<h2>先准备一个测试账户</h2>
+<p>在扩展内添加名称为“本地测试”的账户，使用以下<strong>公开测试密钥</strong>；不要用于真实账号：</p>
+<code>JBSWY3DPEHPK3PXP</code>
+<p>也可以在添加账户弹窗粘贴：<br><code>otpauth://totp/Local%20Test:demo?secret=JBSWY3DPEHPK3PXP&amp;issuer=Local%20Test</code></p>
+<h2>建议测试顺序</h2>
+<ol>
+<li>未授权：点击输入框不应出现自动菜单；点击扩展中的测试账户，应填入当前验证码。</li>
+<li>确认已重新加载 2.1.4 或更新版本的扩展。在网页右键 → 扩展名称 → 在此网站启用自动菜单，确认 Chrome 授权。返回后重新聚焦输入框，应出现扩展菜单（设置中的页面内联菜单总开关需开启）。</li>
+<li>刷新页面，再次聚焦；授权应继续生效。</li>
+<li>扩展设置中撤销网站授权；已有菜单应消失，重新聚焦和刷新后均不应自动出现。</li>
+<li>切换到六格、同源 iframe 和无字段场景，分别检查分格填充、iframe 填充、剪贴板回退。</li>
+</ol>
+<p><strong>两个测试网站：</strong> <a id="host-a">127.0.0.1</a> · <a id="host-b">localhost</a>。授权其中一个不会授权另一个。同一主机的不同端口不构成不同主机权限。</p>
+<p>跨站 iframe 使用另一个主机名。先在新标签页打开 iframe 网站并授权它，再返回刷新本页。只授权顶层网站时，iframe 不应自动显示菜单。</p>
+<p>“检查填入结果”仅确认是否为 6 位数字，不代表服务端验证通过。所有测试数据只留在当前页面，刷新即清空。</p>
+</section>
+</main>
+<script>
+const query = new URLSearchParams(location.search);
+document.getElementById('file-warning').hidden = location.protocol !== 'file:';
+const mode = query.get('mode') || 'single';
+if (query.has('frame')) document.body.classList.add('frame');
+const fixture = document.getElementById('fixture');
+const result = document.getElementById('result');
+const events = document.getElementById('events');
+const descriptions = {
+single: ['普通验证码', '使用 autocomplete="one-time-code"。聚焦下面输入框，测试扩展菜单或手动填充。'],
+segmented: ['六格验证码', '六个独立输入框，每格一位。聚焦第一格后填充。'],
+same: ['同源 iframe', '顶层页面没有验证码输入框；输入框位于同源框架中。'],
+cross: ['跨站 iframe', '顶层页面与框架使用不同主机名，需要分别授权。'],
+empty: ['无验证码字段', '这里没有输入框。点击扩展账户，应按设置回退复制或报告未找到字段。']
+};
+const selected = descriptions[mode] ? mode : 'single';
+document.getElementById('heading').textContent = descriptions[selected][0];
+document.getElementById('description').textContent = descriptions[selected][1];
+document.querySelectorAll('nav a').forEach(a => { if (a.search === '?mode=' + selected) a.setAttribute('aria-current','page'); });
+if (selected === 'single') {
+const label = document.createElement('label'); label.htmlFor='otp'; label.textContent='一次性验证码';
+const input = document.createElement('input'); Object.assign(input,{id:'otp',name:'otp',type:'text',maxLength:6,autocomplete:'one-time-code',placeholder:'六位数字'}); input.inputMode='numeric';
+fixture.append(label,input);
+} else if (selected === 'segmented') {
+const group = document.createElement('div'); group.className='digits'; group.setAttribute('role','group'); group.setAttribute('aria-label','一次性验证码');
+for(let i=0;i<6;i++){const input=document.createElement('input'); input.type='text';input.maxLength=1;input.inputMode='numeric';input.name='otp-digit-'+i;input.setAttribute('aria-label','验证码第 '+(i+1)+' 位');group.append(input);}
+fixture.append(group);
+} else if (selected === 'same' || selected === 'cross') {
+const url = new URL(location.href); url.search='?mode=single&frame=1';
+if(selected==='cross') url.hostname=location.hostname==='localhost'?'127.0.0.1':'localhost';
+const frame=document.createElement('iframe');frame.title='验证码测试框架';frame.src=url.href;
+const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener';link.textContent='单独打开框架网站以授权';
+fixture.append(frame,link);document.getElementById('actions').hidden=true;result.textContent='请使用框架内的检查按钮';
+}
+let inputCount=0,changeCount=0;
+for(const eventName of ['input','change']) fixture.addEventListener(eventName,()=>{
+if(eventName==='input')inputCount++;else changeCount++;
+events.textContent='收到 input 事件 '+inputCount+' 次 / change 事件 '+changeCount+' 次';
+});
+document.getElementById('inspect').onclick=()=>{
+const fields=[...fixture.querySelectorAll('input')];const value=fields.map(e=>e.value).join('');
+result.textContent=fields.length===0?'本场景没有验证码字段':(/^[0-9]{6}$/.test(value)?'已填入六位数字：'+value:'尚未填满六位数字');
+};
+document.getElementById('clear').onclick=()=>{fixture.querySelectorAll('input').forEach(e=>e.value='');result.textContent='已清空';inputCount=changeCount=0;events.textContent='';};
+for(const [id,host] of [['host-a','127.0.0.1'],['host-b','localhost']]){const url=new URL(location.href);url.hostname=host;url.search='?mode=single';document.getElementById(id).href=url.href;}
+</script>
+</body></html>
