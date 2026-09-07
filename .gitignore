@@ -31,4 +31,5 @@ src/version.ts
 Thumbs.db
 
 # Test files
-test_wrapping.html 
+test_wrapping.html
+nul
