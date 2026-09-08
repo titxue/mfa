@@ -51,3 +51,4 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
   return false
 })
 refresh()
+import './vault-background'

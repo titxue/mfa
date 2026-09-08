@@ -9,7 +9,6 @@ import { TOTP } from '@/utils/totp'
 
 export interface MenuAccount {
   name: string
-  secret: string
   website?: string
 }
 
@@ -26,6 +25,7 @@ export interface InlineMenuOptions {
   accounts: MenuAccount[]
   strings: MenuStrings
   /** 点击账户时回调（code 为点击时刻重新生成的最新验证码） */
+  getCode: (account: MenuAccount) => Promise<string>
   onFill: (account: MenuAccount, code: string) => void
 }
 
@@ -431,7 +431,7 @@ function renderMenu(menuEl: HTMLElement, opts: InlineMenuOptions): () => void {
       const anchor = anchorElement
       hideInlineUI()
       // 点击时重新生成最新验证码
-      TOTP.generateTOTP(account.secret)
+      opts.getCode(account)
         .then((code) => onFill(account, code))
         .catch(() => {
           if (anchor) showFilledFeedback(anchor, opts.strings.failed ?? '!')
@@ -478,7 +478,7 @@ function renderMenu(menuEl: HTMLElement, opts: InlineMenuOptions): () => void {
   // 实时刷新验证码（随 30s 周期更新，仅更新文本不重建 DOM）
   const refreshCodes = (): void => {
     for (const [account, el] of codeEls) {
-      TOTP.generateTOTP(account.secret)
+      opts.getCode(account)
         .then((code) => {
           if (el.isConnected) el.textContent = TOTP.formatCode(code)
         })
@@ -571,7 +571,7 @@ export function showInlineUI(anchor: HTMLInputElement, opts: InlineMenuOptions):
       const onFill = current?.onFill
       const anchor = anchorElement
       hideInlineUI()
-      TOTP.generateTOTP(matches[0].secret)
+      current!.getCode(matches[0])
         .then((code) => onFill?.(matches[0], code))
         .catch(() => {
           if (anchor) showFilledFeedback(anchor, current?.strings.failed ?? '!')

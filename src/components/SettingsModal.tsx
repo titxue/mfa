@@ -29,12 +29,19 @@ import {
 import { LANGUAGE_CONFIGS } from '@/locales'
 import { useSettings } from '@/hooks/useSettings'
 import { SiteAccessSettings } from './SiteAccessSettings'
+import { PasswordProtection } from './PasswordProtection'
+import { Input } from './ui/input'
+import { securityStrings, securityError } from '@/locales/security'
+import { vaultRequest } from '@/utils/vault-client'
 
 interface SettingsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   accounts: Account[]
-  onImport: (newAccounts: Account[]) => void
+  onImport: (newAccounts: Account[]) => Promise<boolean>
+  protected: boolean
+  revision: string
+  reload: () => Promise<void>
 }
 
 /**
@@ -44,10 +51,20 @@ export function SettingsModal({
   open,
   onOpenChange,
   accounts,
-  onImport
+  onImport,
+  protected: protectedMode,
+  revision,
+  reload
 }: SettingsModalProps) {
   const { t, locale, setLocale, resetLanguage } = useI18n()
   const { settings, updateSettings } = useSettings()
+  const s = securityStrings(locale)
+  const [plainExport, setPlainExport] = React.useState(false)
+  const [backupPassword, setBackupPassword] = React.useState('')
+  const [busy, setBusy] = React.useState(false)
+  const alive = useRef(true)
+  useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
+  useEffect(() => { if (!open) { setBackupPassword(''); setImportFile(null); setImportDialog(false); setExportDialog(false) } }, [open])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const clickCountRef = useRef(0)
   const lastClickTimeRef = useRef(0)
@@ -62,13 +79,22 @@ export function SettingsModal({
       toast.error(t('toast.no_accounts_to_export'))
       return
     }
+    setPlainExport(false)
+    setBackupPassword('')
     setExportDialog(true)
   }
 
-  const confirmExport = () => {
-    ImportExportManager.downloadExportFile(accounts)
-    toast.success(t('toast.export_success'))
-    setExportDialog(false)
+  const confirmExport = async () => {
+    if (busy) return
+    setBusy(true)
+    try {
+      const data = await vaultRequest<string>('backup', { plain: plainExport, password: backupPassword })
+      if (!alive.current) return
+      ImportExportManager.downloadJSON(data)
+      toast.success(t('toast.export_success'))
+      setExportDialog(false)
+    } catch (e) { if (alive.current) toast.error(securityError(locale, e)) }
+    finally { setBusy(false); setBackupPassword('') }
   }
 
   // 导入账户
@@ -79,6 +105,7 @@ export function SettingsModal({
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      setBackupPassword('')
       setImportFile(file)
       setImportDialog(true)
     }
@@ -89,10 +116,12 @@ export function SettingsModal({
   }
 
   const confirmImport = async () => {
-    if (!importFile) return
+    if (!importFile || busy) return
+    setBusy(true)
 
     try {
-      const result = await ImportExportManager.importAccounts(importFile, accounts)
+      const result = await ImportExportManager.importAccounts(importFile, accounts, backupPassword)
+      if (!alive.current) return
 
       if (result.newAccounts.length === 0) {
         if (result.duplicateCount > 0) {
@@ -101,7 +130,7 @@ export function SettingsModal({
           toast.error(t('toast.import_no_valid'))
         }
       } else {
-        onImport([...accounts, ...result.newAccounts])
+        if (!await onImport([...accounts, ...result.newAccounts])) throw new Error('storageError')
 
         if (result.duplicateCount > 0) {
           toast.success(
@@ -119,9 +148,13 @@ export function SettingsModal({
         }
       }
     } catch (error) {
-      toast.error(t('toast.invalid_file_format'))
+      if (alive.current) toast.error(securityError(locale, error))
+      setBusy(false)
+      return
     }
 
+    setBusy(false)
+    setBackupPassword('')
     setImportDialog(false)
     setImportFile(null)
   }
@@ -174,15 +207,15 @@ export function SettingsModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
-          <DialogHeader>
+        <DialogContent className="flex max-h-[calc(100vh-2rem)] flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="shrink-0 border-b px-6 py-5">
             <DialogTitle>{t('settings.title')}</DialogTitle>
             <DialogDescription className="sr-only">
               {t('settings.language')}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain">
+          <div className="min-h-0 space-y-6 overflow-y-auto overscroll-contain px-6 py-5">
             {/* 语言设置 */}
             <div className="space-y-2">
               <h3
@@ -218,6 +251,8 @@ export function SettingsModal({
                 </p>
               </div>
             </div>
+
+            <PasswordProtection protected={protectedMode} revision={revision} reload={reload} />
 
             {/* 自动填充设置 */}
             <div className="space-y-2">
@@ -329,17 +364,24 @@ export function SettingsModal({
       />
 
       {/* 导出确认对话框 */}
-      <AlertDialog open={exportDialog} onOpenChange={setExportDialog}>
-        <AlertDialogContent>
+      <AlertDialog open={exportDialog} onOpenChange={value => { if (!busy) { setExportDialog(value); setBackupPassword('') } }}>
+        <AlertDialogContent className="export-confirm-dialog">
           <AlertDialogHeader>
             <AlertDialogTitle>{t('dialog.export_title')}</AlertDialogTitle>
             <AlertDialogDescription>
               {t('dialog.export_message', { count: accounts.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {protectedMode && <div className="space-y-3">
+            <Label htmlFor="backup-format">{s.encrypted} / {s.plain}</Label>
+            <select id="backup-format" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={plainExport ? 'plain' : 'encrypted'} disabled={busy} onChange={e => setPlainExport(e.target.value === 'plain')}>
+              <option value="encrypted">{s.encrypted}</option><option value="plain">{s.plain}</option>
+            </select>
+            {plainExport && <><p className="text-xs text-muted-foreground">{s.plainWarning}</p><Label htmlFor="export-password">{s.password}</Label><Input id="export-password" type="password" autoComplete="current-password" value={backupPassword} disabled={busy} onChange={e => setBackupPassword(e.target.value)} /></>}
+          </div>}
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('button.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmExport}>
+            <AlertDialogCancel disabled={busy}>{t('button.cancel')}</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={e => { e.preventDefault(); void confirmExport() }}>
               {t('button.export')}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -347,7 +389,7 @@ export function SettingsModal({
       </AlertDialog>
 
       {/* 导入确认对话框 */}
-      <AlertDialog open={importDialog} onOpenChange={setImportDialog}>
+      <AlertDialog open={importDialog} onOpenChange={value => { if (!busy) { setImportDialog(value); setBackupPassword('') } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('dialog.import_title')}</AlertDialogTitle>
@@ -355,9 +397,11 @@ export function SettingsModal({
               {t('dialog.import_message', { count: '?' })}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <Label htmlFor="import-password">{s.backupPassword}</Label>
+          <Input id="import-password" type="password" autoComplete="off" value={backupPassword} disabled={busy} onChange={e => setBackupPassword(e.target.value)} />
           <AlertDialogFooter>
-            <AlertDialogCancel>{t('button.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmImport}>
+            <AlertDialogCancel disabled={busy}>{t('button.cancel')}</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={e => { e.preventDefault(); void confirmImport() }}>
               {t('button.import')}
             </AlertDialogAction>
           </AlertDialogFooter>

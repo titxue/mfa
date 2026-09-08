@@ -1,145 +1,66 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { Account } from '@/types'
-import { StorageManager } from '@/utils/storage'
 import { TOTP } from '@/utils/totp'
+import { vaultRequest, onVaultChange } from '@/utils/vault-client'
+import type { VaultSnapshot } from '@/utils/vault'
 
-/**
- * 账户管理 Hook
- */
 export function useAccounts() {
-  const [accounts, setAccounts] = useState<Account[]>([])
+  const [snapshot, setSnapshot] = useState<VaultSnapshot>({ accounts: [], revision: '', protected: false, locked: true })
   const [loading, setLoading] = useState(true)
-
-  // 加载账户列表
-  useEffect(() => {
-    async function loadAccounts() {
-      try {
-        const savedAccounts = await StorageManager.getAccounts()
-        setAccounts(savedAccounts)
-      } catch (error) {
-        // Failed to load accounts
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    loadAccounts()
+  const [error, setError] = useState('')
+  const current = useRef(snapshot)
+  const generation = useRef(0)
+  const saving = useRef(false)
+  const apply = (value: VaultSnapshot) => { current.current = value; setSnapshot(value) }
+  const reload = useCallback(async () => {
+    const id = ++generation.current
+    try {
+      const value = await vaultRequest('snapshot')
+      if (id === generation.current) { apply(value); setError('') }
+    } catch (e) {
+      if (id === generation.current) { apply({ ...current.current, accounts: [], locked: true }); setError((e as Error).message) }
+    } finally { if (id === generation.current) setLoading(false) }
   }, [])
-
-  // 添加账户
-  const addAccount = async (account: Account): Promise<{ success: boolean; message?: string }> => {
+  useEffect(() => {
+    void reload()
+    const unsubscribe = onVaultChange(invalidate => {
+      if (invalidate) apply({ ...current.current, accounts: [], locked: true })
+      void reload()
+    })
+    return () => { generation.current++; unsubscribe() }
+  }, [reload])
+  const updateAccounts = async (accounts: Account[]): Promise<boolean> => {
+    if (saving.current || current.current.locked) return false
+    if (snapshot.revision !== current.current.revision) { setError('conflict'); return false }
+    saving.current = true
+    const before = current.current
+    const id = ++generation.current
+    apply({ ...before, accounts })
     try {
-      // 验证账户名是否已存在
-      if (accounts.some(a => a.name === account.name)) {
-        return {
-          success: false,
-          message: 'toast.account_exists'
-        }
-      }
-
-      // 验证密钥格式
-      try {
-        await TOTP.generateTOTP(account.secret)
-      } catch (error) {
-        return {
-          success: false,
-          message: 'toast.invalid_secret'
-        }
-      }
-
-      const newAccounts = [...accounts, account]
-      // UI 优先：先立即更新状态
-      setAccounts(newAccounts)
-      // 后台异步保存
-      await StorageManager.saveAccounts(newAccounts)
-
-      return { success: true }
-    } catch (error) {
-      return {
-        success: false,
-        message: 'error.init_failed'
-      }
-    }
-  }
-
-  // 删除账户
-  const deleteAccount = async (accountName: string): Promise<boolean> => {
-    try {
-      const newAccounts = accounts.filter(a => a.name !== accountName)
-      // UI 优先：先立即更新状态
-      setAccounts(newAccounts)
-      // 后台异步保存
-      await StorageManager.saveAccounts(newAccounts)
+      const value = await vaultRequest('save', { accounts, revision: before.revision })
+      if (generation.current === id) apply(value)
       return true
-    } catch (error) {
+    } catch (e) {
+      await reload()
+      setError((e as Error).message)
       return false
-    }
+    } finally { saving.current = false }
   }
-
-  // 更新账户列表（用于导入）
-  const updateAccounts = async (newAccounts: Account[]): Promise<boolean> => {
-    try {
-      // 关键修复：先立即更新 React 状态
-      setAccounts(newAccounts)
-
-      // 然后异步保存到存储（不阻塞 UI）
-      await StorageManager.saveAccounts(newAccounts)
-      return true
-    } catch (error) {
-      return false
-    }
+  const validate = async (account: Account, original?: string) => {
+    if (current.current.accounts.some(a => a.name === account.name && a.name !== original)) return 'toast.account_exists'
+    try { await TOTP.generateTOTP(account.secret) } catch { return 'toast.invalid_secret' }
+    return undefined
   }
-
-  // 更新账户信息
-  const updateAccount = async (
-    originalName: string,
-    updatedAccount: Account
-  ): Promise<{ success: boolean; message?: string }> => {
-    try {
-      // 只有当名称改变时才检查重名
-      if (originalName !== updatedAccount.name &&
-          accounts.some(a => a.name === updatedAccount.name)) {
-        return {
-          success: false,
-          message: 'toast.account_exists'
-        }
-      }
-
-      // 验证密钥格式（无论是否修改都重新验证）
-      try {
-        await TOTP.generateTOTP(updatedAccount.secret)
-      } catch (error) {
-        return {
-          success: false,
-          message: 'toast.invalid_secret'
-        }
-      }
-
-      // 替换账户
-      const newAccounts = accounts.map(account =>
-        account.name === originalName ? updatedAccount : account
-      )
-
-      // 乐观 UI：先立即更新状态
-      setAccounts(newAccounts)
-      // 后台异步保存
-      await StorageManager.saveAccounts(newAccounts)
-
-      return { success: true }
-    } catch (error) {
-      return {
-        success: false,
-        message: 'error.init_failed'
-      }
-    }
+  const addAccount = async (account: Account) => {
+    const message = await validate(account)
+    if (message) return { success: false, message }
+    return { success: await updateAccounts([...current.current.accounts, account]) }
   }
-
-  return {
-    accounts,
-    loading,
-    addAccount,
-    deleteAccount,
-    updateAccounts,
-    updateAccount
+  const updateAccount = async (name: string, account: Account) => {
+    const message = await validate(account, name)
+    if (message) return { success: false, message }
+    return { success: await updateAccounts(current.current.accounts.map(a => a.name === name ? account : a)) }
   }
+  return { ...snapshot, loading, error, reload, addAccount, updateAccount, updateAccounts,
+    deleteAccount: (name: string) => updateAccounts(current.current.accounts.filter(a => a.name !== name)) }
 }

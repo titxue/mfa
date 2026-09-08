@@ -1,5 +1,6 @@
 import type { Account, ExportData } from '@/types'
 import { TOTP } from './totp'
+import { decryptAccounts, deriveKey, validateEncrypted } from './vault-crypto'
 
 /**
  * 导入导出管理工具
@@ -22,7 +23,8 @@ export class ImportExportManager {
       typeof account.name === 'string' &&
       typeof account.secret === 'string' &&
       account.name.trim() &&
-      account.secret.trim()
+      account.secret.trim() &&
+      (account.website === undefined || typeof account.website === 'string')
     )
   }
 
@@ -35,7 +37,8 @@ export class ImportExportManager {
       timestamp: new Date().toISOString(),
       accounts: accounts.map(account => ({
         name: account.name,
-        secret: account.secret
+        secret: account.secret,
+        website: account.website
       }))
     }
 
@@ -46,7 +49,10 @@ export class ImportExportManager {
    * 下载导出文件
    */
   static downloadExportFile(accounts: Account[]): void {
-    const dataStr = this.exportAccounts(accounts)
+    this.downloadJSON(this.exportAccounts(accounts))
+  }
+
+  static downloadJSON(dataStr: string): void {
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
 
     const url = URL.createObjectURL(dataBlob)
@@ -67,17 +73,24 @@ export class ImportExportManager {
    */
   static async importAccounts(
     file: File,
-    currentAccounts: Account[]
+    currentAccounts: Account[],
+    password = ''
   ): Promise<{
     newAccounts: Account[]
     duplicateCount: number
     invalidCount: number
   }> {
     const text = await file.text()
-    const importData = JSON.parse(text)
+    let importData: any
+    try { importData = JSON.parse(text) } catch { throw new Error('invalid') }
+    if (importData?.format === 'mfa-encrypted') {
+      validateEncrypted(importData)
+      const key = await deriveKey(password, importData.salt)
+      importData = { accounts: await decryptAccounts(importData, key) }
+    }
 
     if (!this.validateImportData(importData)) {
-      throw new Error('Invalid import data format')
+      throw new Error('invalid')
     }
 
     const newAccounts: Account[] = []
@@ -86,7 +99,7 @@ export class ImportExportManager {
 
     // 检查重复账户并验证密钥
     for (const account of importData.accounts) {
-      const exists = currentAccounts.find(
+      const exists = [...currentAccounts, ...newAccounts].find(
         existing => existing.name === account.name
       )
 

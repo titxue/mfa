@@ -1,4 +1,3 @@
-import type { Account, AppState } from '@/types'
 
 /**
  * 自动填充设置
@@ -74,35 +73,6 @@ export class StorageManager {
   }
 
   /**
-   * 获取账户列表
-   */
-  static async getAccounts(): Promise<Account[]> {
-    const accounts = await this.getFromStorage<Account[]>('accounts')
-    return accounts || []
-  }
-
-  /**
-   * 保存账户列表
-   */
-  static async saveAccounts(accounts: Account[]): Promise<void> {
-    await this.saveToStorage('accounts', accounts)
-  }
-
-  /**
-   * 获取应用状态
-   */
-  static async getState(): Promise<AppState | undefined> {
-    return await this.getFromStorage<AppState>('state')
-  }
-
-  /**
-   * 保存应用状态
-   */
-  static async saveState(state: AppState): Promise<void> {
-    await this.saveToStorage('state', state)
-  }
-
-  /**
    * 获取语言设置
    */
   static async getLanguage(): Promise<string> {
@@ -147,18 +117,4 @@ export class StorageManager {
     await this.saveToStorage('autofillSettings', settings)
   }
 
-  /**
-   * 清空所有数据
-   */
-  static async clear(): Promise<void> {
-    try {
-      if (this.isStorageAvailable()) {
-        await chrome.storage.sync.clear()
-      } else {
-        localStorage.clear()
-      }
-    } catch (error) {
-      // Failed to clear storage
-    }
-  }
 }

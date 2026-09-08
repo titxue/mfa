@@ -2,6 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Keep these dialogs stationary during their exit animation. */
+.password-protection-dialog[role='dialog'][data-state='closed'],
+.export-confirm-dialog[role='alertdialog'][data-state='closed'] {
+  animation: dialog-exit-fade 120ms ease-out both;
+}
+
+@keyframes dialog-exit-fade {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .password-protection-dialog[role='dialog'][data-state],
+  .export-confirm-dialog[role='alertdialog'][data-state] {
+    animation: none;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

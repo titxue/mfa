@@ -13,10 +13,12 @@ export function useTOTP(accounts: Account[]) {
   const [codes, setCodes] = useState<TOTPCodes>({})
   const [remaining, setRemaining] = useState(30)
   const timeoutRef = useRef<number | undefined>(undefined)
+  const generation = useRef(0)
   const lastStepRef = useRef<number>(-1)
 
   // 生成所有账户的验证码
   const generateCodes = useCallback(async () => {
+    const id = generation.current
     const newCodes: TOTPCodes = {}
 
     for (const account of accounts) {
@@ -28,7 +30,7 @@ export function useTOTP(accounts: Account[]) {
       }
     }
 
-    setCodes(newCodes)
+    if (id === generation.current) setCodes(newCodes)
   }, [accounts])
 
   // 调度到下一个整秒执行
@@ -54,12 +56,15 @@ export function useTOTP(accounts: Account[]) {
   // 自适应定时更新：只在每秒整点执行，零无用调用
   useEffect(() => {
     // 重置 step 标记，确保依赖变化时重新生成验证码
+    generation.current++
+    setCodes({})
     lastStepRef.current = -1
 
     // 立即执行一次初始化
     updateTimer()
 
     return () => {
+      generation.current++
       if (timeoutRef.current !== undefined) {
         clearTimeout(timeoutRef.current)
       }

@@ -33,3 +33,7 @@ Thumbs.db
 # Test files
 test_wrapping.html
 nul
+
+# Local browser QA artifacts and isolated test profiles
+.playwright-cli/
+output/playwright/

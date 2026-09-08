@@ -3,8 +3,9 @@
  * 编译为 IIFE：已授权网站动态注入；点击填充使用 activeTab 临时注入。
  */
 
-import type { Account } from '@/types'
-import { StorageManager, DEFAULT_AUTOFILL_SETTINGS, type AutofillSettings } from '@/utils/storage'
+import { vaultRequest, type AccountSummary } from '@/utils/vault-client'
+import { securityStrings } from '@/locales/security'
+import { DEFAULT_AUTOFILL_SETTINGS, type AutofillSettings } from '@/utils/storage'
 import { isOTPField, isSegmentedInput, findSegmentedGroupFor, findOTPField, findSegmentedGroup, fillCode } from '@/utils/otp-field'
 import { showInlineUI, hideInlineUI, showFilledFeedback, matchAccountsForSite, type MenuAccount, type MenuStrings } from '@/content-script-menu'
 
@@ -65,24 +66,14 @@ function detectMenuLanguage(): string {
   return 'en-US'
 }
 
-/** 获取已存储语言（区别于 StorageManager 的默认值） */
-function getStoredLanguage(): Promise<string | null> {
-  return new Promise((resolve) => {
-    try {
-      chrome.storage.sync.get('language', (result) => {
-        resolve(typeof result?.language === 'string' ? result.language : null)
-      })
-    } catch {
-      resolve(null)
-    }
-  })
-}
-
 /** 防止 executeScript 兜底注入时重复初始化 */
 if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
   ;(globalThis as typeof window).__MFA_CS_INITIALIZED__ = true
 
-  let accounts: Account[] = []
+  let accounts: AccountSummary[] = []
+  let vaultRevision = ''
+  let vaultGeneration = 0
+  let locked = true
   let settings: AutofillSettings = DEFAULT_AUTOFILL_SETTINGS
   let menuStrings: MenuStrings = MENU_STRINGS['en-US']
   let lastAnchor: HTMLInputElement | null = null
@@ -106,36 +97,35 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
 
   /** 重新加载状态（存储变化时调用） */
   async function reloadState(): Promise<void> {
+    const generation = ++vaultGeneration
     const allowed = await refreshAccess()
     try {
-      accounts = allowed ? await StorageManager.getAccounts() : []
-      if (!siteAllowed) accounts = []
+      if (!allowed) return
+      const result = await vaultRequest<{ accounts: AccountSummary[]; revision: string; locked: boolean; settings: AutofillSettings; language: string }>('summaries')
+      if (generation !== vaultGeneration || !siteAllowed) return
+      accounts = result.accounts
+      vaultRevision = result.revision
+      locked = result.locked
+      settings = result.settings
+      const language = result.language || detectMenuLanguage()
+      menuStrings = { ...(MENU_STRINGS[language] || MENU_STRINGS['en-US']) }
+      if (locked) menuStrings.noAccounts = securityStrings(language).lockedHint
     } catch {
+      if (generation !== vaultGeneration) return
       accounts = []
+      locked = true
     }
-    try {
-      settings = await StorageManager.getSettings()
-    } catch {
-      settings = DEFAULT_AUTOFILL_SETTINGS
-    }
-    const stored = await getStoredLanguage()
-    menuStrings = MENU_STRINGS[stored || detectMenuLanguage()] || MENU_STRINGS['en-US']
     if (!siteAllowed || !settings.autofillInlineMenu) hideInlineUI()
   }
-
-  // 存储变化时同步状态（popup 增删账户/修改设置后无需刷新页面）
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'sync' && (changes['accounts'] || changes['autofillSettings'] || changes['language'])) {
-      reloadState()
-    }
-  })
 
   // 消息处理：弹窗点击账户卡片时驱动填充
   chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     if (!message || typeof message !== 'object') return false
     const msg = message as Record<string, unknown>
 
-    if (msg.type === 'SITE_ACCESS_CHANGED') {
+    if (msg.type === 'SITE_ACCESS_CHANGED' || msg.type === 'VAULT_CHANGED') {
+      vaultGeneration++
+      locked = true
       siteAllowed = false
       accounts = []
       hideInlineUI()
@@ -185,7 +175,8 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
       const target = e.target
       if (!(target instanceof HTMLInputElement)) return
       if (!settings.autofillInlineMenu) return
-      if (!await refreshAccess()) return
+      await reloadState()
+      if (!siteAllowed) return
       if (document.activeElement !== target) return
       const isOtp = isOTPField(target)
       const segmentedGroup = isSegmentedInput(target) ? findSegmentedGroupFor(target) : null
@@ -193,7 +184,6 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
       lastAnchor = target
       const menuAccounts: MenuAccount[] = accounts.map((a) => ({
         name: a.name,
-        secret: a.secret,
         website: a.website,
       }))
       // 自动识别当前网站：过滤出匹配的账户
@@ -204,8 +194,16 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
         inputGroup: segmentedGroup ?? undefined,
         accounts: matches.length > 0 ? matches : menuAccounts,
         strings: menuStrings,
+        getCode: async (account) => {
+          const generation = vaultGeneration
+          if (locked) throw new Error('locked')
+          const code = await vaultRequest<string>('code', { name: account.name, revision: vaultRevision })
+          if (generation !== vaultGeneration || locked) throw new Error('locked')
+          return code
+        },
         onFill: async (account, code) => {
-          if (!await refreshAccess()) return
+          const generation = vaultGeneration
+          if (!await refreshAccess() || locked || generation !== vaultGeneration) return
           hideInlineUI()
           const result = fillCode(code, target)
           if (result.status === 'filled') {
