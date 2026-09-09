@@ -11,7 +11,9 @@
 **Modern Two-Factor Authentication (2FA) Solution**
 
 Time-based One-Time Password (TOTP) generator built with React 19 + TypeScript + Bun.
-QR code scanning, auto-fill, fully offline, local data storage, **12 languages**.
+Offline code generation, website filling, master password protection, encrypted backups, and **12 languages**. Accounts can sync through Chrome.
+
+[Official website](https://mfa.xuejy.com/)
 
 [Install](#installation) • [Features](#features) • [Usage](#usage) • [Development](#development) • [i18n](#internationalization)
 
@@ -26,12 +28,12 @@ QR code scanning, auto-fill, fully offline, local data storage, **12 languages**
 - 🔐 **TOTP Code Generation** - 30s interval, RFC 6238 standard, real-time countdown progress ring
 - 📷 **QR Code Scanning** - Image upload recognition, paste/drag upload, auto-fill, offline processing
 - 📤 **QR Code Export** - Double-click account card to generate QR code, download PNG images, easy cross-device migration
-- 🎯 **Smart Auto-Fill** - One-click fill to web pages, auto-copy to clipboard on failure
+- 🎯 **Smart Auto-Fill** - Fill web pages with optional clipboard fallback; grant site access to use the inline account menu
 - 🎨 **Drag & Drop Sorting** - Freely adjust account order, smooth animation effects
-- 💾 **Data Management** - Local/sync storage (Chrome account, fallback to local), JSON import/export, duplicate detection
+- 💾 **Data Management** - Chrome account sync, plain/encrypted JSON backups, import count preview, duplicate detection
 - 🌍 **12 Languages** - Simplified/Traditional Chinese, English, Spanish, French, Portuguese, German, Russian, Arabic, Japanese, Korean, Hindi
 - 🎨 **Modern UI** - shadcn/ui design system, smooth animations, responsive layout
-- 🔒 **Privacy & Security** - No third-party network requests, no data collection; if Chrome sync enabled, can enable "sync encryption passphrase" in browser settings
+- 🔒 **Privacy & Security** - Codes and QR images are processed locally; enable password protection to encrypt accounts before Chrome sync
 
 ---
 
@@ -61,7 +63,9 @@ bun run build
 1. Click "+" button
 2. Click "Scan QR Code"
 3. Upload image containing TOTP QR code
-4. Auto-recognize and save
+4. Review the recognized account details and click “Save”
+
+You can also paste/drag QR images or paste an `otpauth://totp/` URI. Only **SHA1, 6 digits, and a 30-second period** are supported; unsupported parameters are rejected.
 
 **Manual Input**
 1. Click "+" button
@@ -71,14 +75,23 @@ bun run build
 ### Use Verification Code
 
 - **Auto-Fill**: Left-click account card
-- **Manual Copy**: Auto-copy to clipboard on fill failure
+- **Clipboard fallback**: When enabled in settings, copy the code if filling fails
 - **Delete Account**: Right-click account card
 
 ### Data Management
 
-- **Export**: Settings → Export (JSON format)
-- **Import**: Settings → Import (auto-skip duplicates)
-- **Language**: Settings → Select from 12 languages (auto-detect browser language)
+- **Plain backup import**: Select JSON → preview the file account count → confirm. Duplicate accounts are skipped.
+- **Encrypted backup import**: Select JSON → enter the backup password → “Decrypt and preview” → check the count → confirm. Wrong passwords or damaged files prevent import.
+- **Export**: Protected accounts export encrypted backups by default. Plain export requires the current password.
+- **Language**: Choose from 12 languages in settings.
+
+### Password Protection and Sync
+
+Enable password protection in settings with a master password of at least 8 characters. Account names, secrets, and websites are encrypted together. Unlock state stays in the local browser session: closing the popup does not lock it, restarting the browser does, and you can lock manually.
+
+Another device needs the same password after receiving encrypted records. Offline or unsynced devices may retain old plaintext copies; enabling protection cannot immediately lock those copies remotely. Concurrent cross-device edits are not guaranteed to be conflict-free, so avoid editing on multiple devices at once.
+
+Changing the password or disabling protection requires the current password. Disabling protection restores plaintext sync. Forgotten passwords cannot be recovered, and old backups still require their export password. See [password protection and sync](docs/PASSWORD_PROTECTION.md) and [site access](docs/SITE_ACCESS.md) (Chinese).
 
 ---
 
@@ -89,7 +102,7 @@ bun run build
 | 🎨 UI Design | shadcn/ui + Radix UI | Modern component library |
 | 🌍 Languages | 12 languages | Multilingual support |
 | 📷 QR Code | Upload/Paste/Drag | Multiple methods |
-| 🚀 Build Speed | < 400ms | Super fast with Bun |
+| 🚀 Development | Bun + file watching | Rebuild on changes |
 | 📦 Tech Stack | React 19 + TypeScript | Latest technology |
 | 📝 Type Safety | 100% TypeScript | Compile-time checks |
 | 🔧 Extensibility | Automated architecture | Easy to add languages |
@@ -100,7 +113,7 @@ bun run build
 
 - **Frontend**: React 19 + TypeScript + Tailwind CSS
 - **UI Library**: shadcn/ui (based on Radix UI)
-- **Build Tool**: Bun (< 400ms)
+- **Build Tool**: Bun + Tailwind CSS
 - **Core Libraries**: jsQR, lucide-react, sonner
 - **Standard**: Chrome Extension Manifest V3
 
@@ -138,18 +151,14 @@ bun run build
 
 ### Add New Language
 
-We use an automated language registration mechanism. Adding a new language requires only 2 steps:
+Main UI languages are loaded through a registry:
 
 1. **Create translation file** `src/locales/xx-XX.ts`
 2. **Register language** Add configuration in `src/locales/index.ts`
 
 See: [Add New Language Guide](docs/ADD_NEW_LANGUAGE.md)
 
-**Architecture Benefits**:
-- Single configuration file
-- Auto-generated types
-- Auto-updated UI
-- Zero code duplication
+The language picker is generated from the registry. Security strings, inline-menu copy, and store metadata still need separate updates.
 
 ---
 
@@ -157,15 +166,16 @@ See: [Add New Language Guide](docs/ADD_NEW_LANGUAGE.md)
 
 ### Requirements
 - Bun 1.2+
-- Chrome 88+
+- Chrome 102+
 
 ### Commands
 
 ```bash
 bun install              # Install dependencies
-bun run dev              # Development mode
+bun run dev              # Watch source, public assets, and build configuration
 bun run build            # Production build
 bun run type-check       # Type checking
+bun run test             # Automated tests
 bun run generate-icons   # Generate icons
 ```
 
@@ -194,12 +204,20 @@ Detailed guide: [docs/ADD_NEW_LANGUAGE.md](docs/ADD_NEW_LANGUAGE.md)
 2. Register in `src/locales/index.ts` (7 lines of config)
 3. Run `bun run build`
 
-No need to modify other files, types and UI auto-update!
+Also update `src/locales/security.ts`, inline-menu strings, and store name/description mappings in `build.ts`.
+
+`bun run dev` batches file changes and rebuilds serially, continuing after build failures. Generated `src/version.ts` and `dist/` do not cause rebuild loops. Reload the extension in Chrome after rebuilding.
+
+The background `VaultService` owns account operations. The popup communicates through messages; authorized content scripts receive account summaries and codes, not secrets.
+
+The official site lives in `website/`: run `npm install`, then `npm run build`. Use `npm run deploy` from an authenticated Cloudflare environment to publish. Its version is synced from the root `package.json`.
 
 ### Permissions
 - `storage` - Local/sync storage
 - `activeTab` - Auto-fill
-- `scripting` - Page operations
+- `scripting` - Page script injection
+- `contextMenus` - Site access context menu
+- Optional `http://*/*` / `https://*/*` host permissions - User-granted access per site for inline filling
 
 ---
 
@@ -208,7 +226,7 @@ No need to modify other files, types and UI auto-update!
 <details>
 <summary><strong>How to backup data?</strong></summary>
 
-Settings → Export, download JSON file. ⚠️ File contains unencrypted keys, keep safe.
+With password protection enabled, JSON exports are encrypted by default; plain export requires the current password. Without protection, exports contain plaintext secrets. Encrypted backups require the password used when exported.
 </details>
 
 <details>
@@ -220,17 +238,18 @@ Check if system time is accurate (TOTP is time-based).
 <details>
 <summary><strong>Auto-fill failed?</strong></summary>
 
-Some websites use special input fields. Code will auto-copy to clipboard on fill failure.
+Some websites use unusual input fields. Enable clipboard fallback to copy when filling fails. The inline menu requires site access permission.
 </details>
 
 <details>
 <summary><strong>Does data sync with Google account?</strong></summary>
 
-Yes, uses chrome.storage.sync by default, syncs across devices with same Google account and sync enabled; falls back to local storage if not logged in or sync disabled.
-Note:
-- Store version and "developer mode loaded" unpacked version have different extension IDs, data won't sync
-- Can enable "encryption passphrase" in Chrome sync settings for end-to-end encryption
-- Sync has quotas (max ~8KB per key, ~10MB total), initial sync may have delays
+The extension uses `chrome.storage.sync`. Both devices need the same extension ID and Chrome account, with extension data sync enabled. Data stays local while offline or sync is disabled, and resumes syncing when connected with sync enabled.
+
+- Different extension IDs have separate data. Use the same manifest public key to keep a consistent development ID across different loading paths.
+- Without extension password protection, account records are not encrypted by the extension.
+- All accounts share one record, limited to about 8 KB; total sync capacity is about 100 KB. Oversized writes report an error rather than truncating accounts.
+- Sync can be delayed. A successful local save does not confirm delivery to other devices.
 </details>
 
 ---
@@ -249,7 +268,7 @@ Issues and Pull Requests welcome!
 
 1. **Translation** - Help add new languages or improve existing translations
    - See [Add New Language Guide](docs/ADD_NEW_LANGUAGE.md)
-   - Just create translation file and add config, very simple!
+   - Include security strings, inline-menu copy, and store metadata.
 
 2. **Feature Development** - Add new features or improve existing ones
    - Create Issue for discussion first
@@ -263,6 +282,15 @@ Issues and Pull Requests welcome!
 ---
 
 ## 📋 Changelog
+
+### v2.2.0
+
+- Master password protection, encrypted account storage, manual locking, and encrypted backups.
+- Per-site access and inline verification-code menus.
+- Account count previews for plain backups; decrypt and preview encrypted backups before confirming import.
+- Unsupported TOTP parameters are rejected instead of silently generating incorrect codes.
+- Failed settings writes restore prior values and show errors; development mode now watches files.
+- Updated the bilingual website and setup guides.
 
 ### v2.1.0 (2026-01-29)
 - ✨ **Major i18n Update** - Expanded from 2 to 12 languages

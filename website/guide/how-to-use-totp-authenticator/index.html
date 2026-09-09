@@ -180,12 +180,12 @@
           code. Paste it into the website's 2FA prompt before the countdown expires.
         </p>
 
-        <h2>4. Back up accounts safely</h2>
-        <p>
-          Exporting accounts is useful when moving devices, but the backup file contains
-          authenticator secrets. Store it only in a trusted location and remove old copies
-          after migration.
-        </p>
+        <h2>4. Password protection and backup import</h2>
+        <p>Enable password protection in settings with a master password of at least 8 characters. Account names, secrets, and websites are encrypted together. Lock manually or unlock after restarting the browser; closing the popup does not lock it.</p>
+        <p>Protected accounts export as encrypted JSON by default. Plain backups show the account count before import. For encrypted backups, enter the export password and choose “Decrypt and preview”, then check the count and confirm import. Duplicates are skipped; incorrect passwords or damaged files prevent import.</p>
+        <p>Plain backups expose secrets. Keep them safe. Forgotten passwords cannot be recovered, and changing the master password does not change passwords on old backups.</p>
+        <p>For cross-device sync, use the same extension and Chrome account with extension data sync enabled. Another device locks after receiving encrypted records; offline copies cannot be locked remotely immediately. Avoid editing accounts on multiple devices at once.</p>
+        <p>SHA1, 6 digits, and a 30-second period are supported. Unsupported QR parameters are rejected instead of silently using defaults.</p>
 
         <h2>5. Troubleshooting</h2>
         <ul>
