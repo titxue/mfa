@@ -104,6 +104,7 @@ export const arSA: Translations = {
   'toast.qr_scanning': 'جارٍ مسح رمز QR...',
   'toast.qr_success': 'تم التعرف على رمز QR بنجاح',
   'toast.qr_no_code': 'لم يتم العثور على رمز QR، يرجى المحاولة مرة أخرى',
+  'toast.unsupported_totp': 'إعدادات غير مدعومة. يُدعم فقط SHA1 ورمز من 6 أرقام وفترة 30 ثانية.',
   'toast.qr_invalid_format': 'تنسيق رمز QR غير صالح',
   'toast.qr_parse_failed': 'فشل تحليل رمز QR',
   'toast.qr_invalid_file_type': 'نوع ملف غير مدعوم، يرجى تحميل ملف صورة',
@@ -116,6 +117,8 @@ export const arSA: Translations = {
   // حوارات التأكيد
   'dialog.export_title': 'تأكيد التصدير',
   'dialog.export_message': 'سيتم تصدير بيانات {count} حسابات. يحتوي الملف المصدر على معلومات حساسة، يرجى حفظه بشكل آمن.',
+  'dialog.import_encrypted': "هذه النسخة الاحتياطية مشفرة. أدخل كلمة المرور لفك التشفير وعرض عدد الحسابات.",
+  'button.decrypt_preview': "فك التشفير والمعاينة",
   'dialog.import_title': 'تأكيد الاستيراد',
   'dialog.import_message': 'سيتم استيراد {count} حسابات. ستضيف عملية الاستيراد حسابات جديدة، سيتم تخطي الحسابات المكررة.',
   'dialog.delete_title': 'تأكيد الحذف',

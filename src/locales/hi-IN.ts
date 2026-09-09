@@ -104,6 +104,7 @@ export const hiIN: Translations = {
   'toast.qr_scanning': 'QR कोड स्कैन किया जा रहा है...',
   'toast.qr_success': 'QR कोड सफलतापूर्वक पहचाना गया',
   'toast.qr_no_code': 'QR कोड नहीं मिला, कृपया पुनः प्रयास करें',
+  'toast.unsupported_totp': 'यह सेटिंग समर्थित नहीं है। केवल SHA1, 6 अंक और 30 सेकंड की अवधि समर्थित है।',
   'toast.qr_invalid_format': 'अमान्य QR कोड प्रारूप',
   'toast.qr_parse_failed': 'QR कोड पार्स करने में विफल',
   'toast.qr_invalid_file_type': 'असमर्थित फ़ाइल प्रकार, कृपया एक छवि फ़ाइल अपलोड करें',
@@ -116,6 +117,8 @@ export const hiIN: Translations = {
   // पुष्टिकरण संवाद
   'dialog.export_title': 'निर्यात की पुष्टि करें',
   'dialog.export_message': '{count} खाते के डेटा को निर्यात किया जाएगा। निर्यात की गई फ़ाइल में संवेदनशील जानकारी होती है, कृपया इसे सुरक्षित रखें।',
+  'dialog.import_encrypted': "यह बैकअप एन्क्रिप्टेड है। डिक्रिप्ट करने और खातों की संख्या देखने के लिए पासवर्ड डालें।",
+  'button.decrypt_preview': "डिक्रिप्ट और पूर्वावलोकन",
   'dialog.import_title': 'आयात की पुष्टि करें',
   'dialog.import_message': '{count} खाते आयात किए जाएंगे। आयात ऑपरेशन नए खाते जोड़ेगा, डुप्लिकेट खाते छोड़ दिए जाएंगे।',
   'dialog.delete_title': 'हटाने की पुष्टि करें',

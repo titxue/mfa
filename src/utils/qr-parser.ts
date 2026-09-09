@@ -1,5 +1,9 @@
 import jsQR from 'jsqr'
 
+export class UnsupportedTOTPParametersError extends Error {
+  constructor() { super('Only SHA1, 6 digits and a 30-second period are supported') }
+}
+
 export interface ParsedQRData {
   name: string
   secret: string
@@ -93,6 +97,13 @@ export function parseOtpauthURI(uri: string): ParsedQRData {
   try {
     const url = new URL(uri)
 
+    const supported = { algorithm: 'SHA1', digits: '6', period: '30' }
+    for (const [parameter, expected] of Object.entries(supported)) {
+      if (url.searchParams.getAll(parameter).some(value => value.toUpperCase() !== expected)) {
+        throw new UnsupportedTOTPParametersError()
+      }
+    }
+
     // 提取 secret (必需)
     const secret = url.searchParams.get('secret')
     if (!secret) {
@@ -117,6 +128,7 @@ export function parseOtpauthURI(uri: string): ParsedQRData {
       issuer: issuer?.trim()
     }
   } catch (error) {
+    if (error instanceof UnsupportedTOTPParametersError) throw error
     throw new Error('Failed to parse otpauth URI')
   }
 }

@@ -3,7 +3,12 @@ import { copyFile, mkdir, readFile, writeFile } from 'fs/promises'
 import { existsSync, readdirSync } from 'fs'
 import { LANGUAGE_CONFIGS } from './src/locales'
 
-const isDev = Bun.argv.includes('--watch')
+if (Bun.argv.includes('--watch')) {
+  const { watchBuild } = await import('./scripts/watch')
+  await watchBuild()
+}
+
+const isDev = Bun.argv.includes('--development')
 
 console.log(`🚀 Building TOTP Generator (${isDev ? 'development' : 'production'})...`)
 
@@ -203,11 +208,6 @@ console.log(`✅ Generated ${LANGUAGE_CONFIGS.length} locale directories`)
 console.log('✅ Build completed successfully!')
 console.log('📦 Output directory: ./dist')
 
-if (isDev) {
-  console.log('👀 Watching for changes...')
-  // 注意：这里只是示意，实际的 watch 模式需要更复杂的实现
-  // 可以使用 chokidar 或其他 file watcher
-}
 
 // 辅助函数：递归复制目录
 async function copyDirectory(src: string, dest: string) {

@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Github, Tag, ExternalLink, ChevronDown } from 'lucide-react'
 import { useI18n } from '@/contexts/I18nContext'
-import { ImportExportManager } from '@/utils/import-export'
+import { ImportExportManager, type ImportBackup } from '@/utils/import-export'
 import { VERSION } from '@/version'
 import type { Account, Language } from '@/types'
 import { toast } from 'sonner'
@@ -57,21 +57,24 @@ export function SettingsModal({
   reload
 }: SettingsModalProps) {
   const { t, locale, setLocale, resetLanguage } = useI18n()
-  const { settings, updateSettings } = useSettings()
+  const { settings, loading: settingsLoading, saving: settingsSaving, updateSettings } = useSettings()
+  const [languageSaving, setLanguageSaving] = React.useState(false)
   const s = securityStrings(locale)
   const [plainExport, setPlainExport] = React.useState(false)
   const [backupPassword, setBackupPassword] = React.useState('')
   const [busy, setBusy] = React.useState(false)
   const alive = useRef(true)
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
-  useEffect(() => { if (!open) { setBackupPassword(''); setImportFile(null); setImportDialog(false); setExportDialog(false) } }, [open])
+  useEffect(() => { if (!open) { importGeneration.current++; setBusy(false); setBackupPassword(''); setImportBackup(null); setImportDialog(false); setExportDialog(false) } }, [open])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const clickCountRef = useRef(0)
   const lastClickTimeRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [exportDialog, setExportDialog] = React.useState(false)
   const [importDialog, setImportDialog] = React.useState(false)
-  const [importFile, setImportFile] = React.useState<File | null>(null)
+  const [importBackup, setImportBackup] = React.useState<ImportBackup | null>(null)
+  const [importError, setImportError] = React.useState('')
+  const importGeneration = useRef(0)
 
   // 导出账户
   const handleExport = () => {
@@ -102,26 +105,51 @@ export function SettingsModal({
     fileInputRef.current?.click()
   }
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      setBackupPassword('')
-      setImportFile(file)
-      setImportDialog(true)
+    e.target.value = ''
+    if (!file || busy) return
+    const generation = ++importGeneration.current
+    setBackupPassword('')
+    setImportBackup(null)
+    setImportError('')
+    setImportDialog(true)
+    setBusy(true)
+    try {
+      const backup = await ImportExportManager.readBackup(file)
+      if (alive.current && generation === importGeneration.current) setImportBackup(backup)
+    } catch (error) {
+      if (alive.current && generation === importGeneration.current) setImportError(securityError(locale, error))
+    } finally {
+      if (generation === importGeneration.current) setBusy(false)
     }
-    // 重置文件输入
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+  }
+
+  const decryptImport = async () => {
+    if (!importBackup || busy) return
+    const generation = importGeneration.current
+    setBusy(true)
+    setImportError('')
+    try {
+      const decrypted = await ImportExportManager.unlockBackup(importBackup, backupPassword)
+      if (alive.current && generation === importGeneration.current) {
+        setImportBackup({ kind: 'plain', accounts: decrypted })
+      }
+    } catch (error) {
+      if (alive.current && generation === importGeneration.current) setImportError(securityError(locale, error))
+    } finally {
+      if (generation === importGeneration.current) { setBusy(false); setBackupPassword('') }
     }
   }
 
   const confirmImport = async () => {
-    if (!importFile || busy) return
+    if (importBackup?.kind !== 'plain' || busy) return
+    const generation = importGeneration.current
     setBusy(true)
 
     try {
-      const result = await ImportExportManager.importAccounts(importFile, accounts, backupPassword)
-      if (!alive.current) return
+      const result = await ImportExportManager.prepareAccounts(importBackup.accounts, accounts)
+      if (!alive.current || generation !== importGeneration.current) return
 
       if (result.newAccounts.length === 0) {
         if (result.duplicateCount > 0) {
@@ -156,17 +184,23 @@ export function SettingsModal({
     setBusy(false)
     setBackupPassword('')
     setImportDialog(false)
-    setImportFile(null)
+    setImportBackup(null)
   }
 
   // 切换语言
   const handleLanguageChange = async (newLocale: Language) => {
-    await setLocale(newLocale)
-    toast.success(t('toast.language_changed'))
+    if (languageSaving) return
+    setLanguageSaving(true)
+    try {
+      await setLocale(newLocale)
+      toast.success(t('toast.language_changed'))
+    } catch { toast.error(securityError(locale, new Error('storageError'))) }
+    finally { setLanguageSaving(false) }
   }
 
   // 连续点击重置语言（隐藏功能）
   const handleLanguageTitleClick = () => {
+    if (languageSaving) return
     const now = Date.now()
     const timeSinceLastClick = now - lastClickTimeRef.current
 
@@ -179,8 +213,11 @@ export function SettingsModal({
     lastClickTimeRef.current = now
 
     if (clickCountRef.current === 3) {
-      resetLanguage()
-      toast.success(t('toast.language_reset'))
+      setLanguageSaving(true)
+      void resetLanguage()
+        .then(() => toast.success(t('toast.language_reset')))
+        .catch(() => toast.error(securityError(locale, new Error('storageError'))))
+        .finally(() => setLanguageSaving(false))
       clickCountRef.current = 0
       lastClickTimeRef.current = 0
     }
@@ -228,6 +265,7 @@ export function SettingsModal({
                 <Label htmlFor="language">{t('settings.languageTitle')}</Label>
                 <div className="relative">
                   <select
+                    disabled={languageSaving}
                     id="language"
                     value={locale}
                     onChange={(event) => {
@@ -268,9 +306,10 @@ export function SettingsModal({
                   </div>
                   <Switch
                     className="flex-shrink-0"
+                    disabled={settingsLoading || settingsSaving}
                     checked={settings.autofillInlineMenu}
                     onCheckedChange={(value) =>
-                      updateSettings({ autofillInlineMenu: value })
+                      updateSettings({ autofillInlineMenu: value }).catch(() => toast.error(securityError(locale, new Error('storageError'))))
                     }
                   />
                 </div>
@@ -283,9 +322,10 @@ export function SettingsModal({
                   </div>
                   <Switch
                     className="flex-shrink-0"
+                    disabled={settingsLoading || settingsSaving}
                     checked={settings.clipboardFallback}
                     onCheckedChange={(value) =>
-                      updateSettings({ clipboardFallback: value })
+                      updateSettings({ clipboardFallback: value }).catch(() => toast.error(securityError(locale, new Error('storageError'))))
                     }
                   />
                 </div>
@@ -389,20 +429,25 @@ export function SettingsModal({
       </AlertDialog>
 
       {/* 导入确认对话框 */}
-      <AlertDialog open={importDialog} onOpenChange={value => { if (!busy) { setImportDialog(value); setBackupPassword('') } }}>
+      <AlertDialog open={importDialog} onOpenChange={value => { if (!busy) { setImportDialog(value); setBackupPassword(''); if (!value) { importGeneration.current++; setImportBackup(null); setImportError('') } } }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('dialog.import_title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t('dialog.import_message', { count: '?' })}
+              {importBackup?.kind === 'plain'
+                ? t('dialog.import_message', { count: importBackup.accounts.length })
+                : importBackup?.kind === 'encrypted' ? t('dialog.import_encrypted') : busy ? s.loading : importError}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <Label htmlFor="import-password">{s.backupPassword}</Label>
-          <Input id="import-password" type="password" autoComplete="off" value={backupPassword} disabled={busy} onChange={e => setBackupPassword(e.target.value)} />
+          {importBackup?.kind === 'encrypted' && <>
+            <Label htmlFor="import-password">{s.backupPassword}</Label>
+            <Input id="import-password" type="password" autoComplete="off" value={backupPassword} disabled={busy} onChange={e => setBackupPassword(e.target.value)} />
+          </>}
+          {importBackup && importError && <p role="alert" className="text-xs text-destructive">{importError}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>{t('button.cancel')}</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={e => { e.preventDefault(); void confirmImport() }}>
-              {t('button.import')}
+            <AlertDialogAction disabled={busy || !importBackup || (importBackup.kind === 'encrypted' && !backupPassword)} onClick={e => { e.preventDefault(); void (importBackup?.kind === 'encrypted' ? decryptImport() : confirmImport()) }}>
+              {busy ? s.loading : importBackup?.kind === 'encrypted' ? t('button.decrypt_preview') : t('button.import')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -57,8 +57,9 @@ bun run generate-icons
 
 ### 开发模式注意事项
 
-- `--watch` 标志会传递给构建脚本，但当前实现仅标记为开发模式（禁用 minify）
-- 完整的 watch 功能需要额外实现（如使用 chokidar）
+- `bun run dev` 监听 `src/`、`public/` 和根目录构建配置，变更后串行重建（禁用 minify）
+- 连续变更合并处理；构建失败后继续监听。生成的 `src/version.ts` 和 `dist/` 不触发重建
+- 重建完成后仍需在 Chrome 扩展管理页手动重新加载扩展
 
 ## 应用架构
 
@@ -87,7 +88,7 @@ AccountList → AccountItem (显示验证码 + 倒计时)
 - `parseOtpauthURI(uri)` - 解析 otpauth://totp/ URI 格式
 - 工作流程：File → FileReader.readAsDataURL → Image → Canvas → jsQR → 提取 otpauth URI
 - 支持的 URI 格式：`otpauth://totp/Issuer:Account?secret=SECRET&issuer=Issuer&algorithm=SHA1&digits=6&period=30`
-- 注意：当前仅使用 `secret`、`issuer`、`name`，忽略高级参数（algorithm、digits、period）
+- 参数缺省时使用 SHA1 / 6 位 / 30 秒；显式指定不支持的 algorithm、digits、period 时拒绝导入并提示
 
 **存储管理（src/utils/storage.ts）**
 - `StorageManager.getAccounts()` / `saveAccounts()` - Chrome Storage 操作

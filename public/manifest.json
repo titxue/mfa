@@ -25,6 +25,13 @@
     "128": "icons/icon128.png"
   },
   "minimum_chrome_version": "102",
-  "optional_host_permissions": ["https://*/*", "http://*/*"],
-  "background": { "service_worker": "background.js", "type": "module" }
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtepivPRW79VMX/LE/xZKVKSaEYU80J9n4XXReFsl+zggZQUXbeCLr+u+BtmRs8lKpdg18jwxidIzsmD7LWdNEFdTfuLtT1cvWQ/t/NtVj2TkJs2f70COv7jDnyOOHkd26K+DBwVCcgMQMHzCxm3fGpMPiZzCzY9WbfE+zK8seK2Pxe2W6mGPJQ7vux9oUcaHQxI09db8nONgbg+PbN8midRRMKXqBVqoPdpLiuB8f2oHf040eQGSheDYQ2LkINrJHfU7z7nZc+a0SC207t48H2P+4JV4EtDcwFCu2NwaQUSyy/nKe/syoyrRoLJ1YnSIeeI9yeYrGZbG/gtAd+RJowIDAQAB"
 }

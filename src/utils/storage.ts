@@ -60,15 +60,10 @@ export class StorageManager {
     value: T,
     storageType: 'sync' | 'local' = 'sync'
   ): Promise<void> {
-    try {
-      if (this.isStorageAvailable()) {
-        await chrome.storage[storageType].set({ [key]: value })
-      } else {
-        // 在非扩展环境中使用 localStorage 作为 fallback
-        localStorage.setItem(key, JSON.stringify(value))
-      }
-    } catch (error) {
-      // Failed to save
+    if (this.isStorageAvailable()) {
+      await chrome.storage[storageType].set({ [key]: value })
+    } else {
+      localStorage.setItem(key, JSON.stringify(value))
     }
   }
 
@@ -91,14 +86,10 @@ export class StorageManager {
    * 移除语言设置（清除持久化）
    */
   static async removeLanguage(): Promise<void> {
-    try {
-      if (this.isStorageAvailable()) {
-        await chrome.storage.sync.remove('language')
-      } else {
-        localStorage.removeItem('language')
-      }
-    } catch (error) {
-      // Failed to remove language
+    if (this.isStorageAvailable()) {
+      await chrome.storage.sync.remove('language')
+    } else {
+      localStorage.removeItem('language')
     }
   }
 

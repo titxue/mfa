@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button'
 import { QrCode } from 'lucide-react'
 import { useI18n } from '@/contexts/I18nContext'
 import { toast } from 'sonner'
-import { parseQRCodeFromFile, parseOtpauthURI } from '@/utils/qr-parser'
+import { parseQRCodeFromFile, parseOtpauthURI, UnsupportedTOTPParametersError } from '@/utils/qr-parser'
 import { cn } from '@/utils/cn'
 import type { Account } from '@/types'
 
@@ -86,7 +86,9 @@ export function AddAccountModal({
       toast.dismiss()
       const errorMessage = (error as Error).message
 
-      if (errorMessage.includes('No QR code found')) {
+      if (error instanceof UnsupportedTOTPParametersError) {
+        toast.error(t('toast.unsupported_totp'))
+      } else if (errorMessage.includes('No QR code found')) {
         toast.error(t('toast.qr_no_code'))
       } else if (errorMessage.includes('Invalid otpauth')) {
         toast.error(t('toast.qr_invalid_format'))
@@ -265,7 +267,9 @@ export function AddAccountModal({
               } catch (error) {
                 const errorMessage = (error as Error).message
 
-                if (errorMessage.includes('Invalid otpauth')) {
+                if (error instanceof UnsupportedTOTPParametersError) {
+                  toast.error(t('toast.unsupported_totp'))
+                } else if (errorMessage.includes('Invalid otpauth')) {
                   toast.error(t('toast.qr_invalid_format'))
                 } else {
                   toast.error(t('toast.qr_parse_failed'))
