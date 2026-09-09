@@ -2,7 +2,7 @@
 
 测试扩展 ID：`hfccbmdakfihnkmoocmnghmijieijboh`。
 
-`public/manifest.json` 中的 `key` 是固定测试公钥，后续构建会保留。不要重新生成，否则 ID 会改变。此 ID 与商店版本和此前本地版本可能不同，存储数据也相互独立。
+测试公钥已从当前源码移除，当前构建用于商店发布。此前生成的 `mfa-2.2.0-fixed-id-test.zip` 仍保留固定测试公钥；以下步骤仅适用于该测试包。此 ID 与商店版本和此前本地版本可能不同，存储数据也相互独立。
 
 1. 将同一份 `mfa-2.2.0-fixed-id-test.zip` 复制到两台设备并解压。
 2. 打开 `chrome://extensions`，开启开发者模式，选择“加载已解压的扩展程序”，选中包含 manifest.json 的目录。
