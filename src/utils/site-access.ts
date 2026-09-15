@@ -16,7 +16,8 @@ export function exactSitePatterns(origins: string[]): string[] {
 }
 
 export async function grantedSites(): Promise<string[]> {
-  return exactSitePatterns((await chrome.permissions.getAll()).origins ?? [])
+  // Steam API permission is for the trusted binding page, not a webpage autofill grant.
+  return exactSitePatterns((await chrome.permissions.getAll()).origins ?? []).filter(origin => origin !== 'https://api.steampowered.com/*')
 }
 
 export const SITE_SCRIPT_ID = 'mfa-authorized-sites'

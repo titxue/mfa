@@ -12,9 +12,13 @@ import { Button } from '@/components/ui/button'
 import { QrCode } from 'lucide-react'
 import { useI18n } from '@/contexts/I18nContext'
 import { toast } from 'sonner'
-import { parseQRCodeFromFile, parseOtpauthURI } from '@/utils/qr-parser'
+import { parseQRCodeFromFile } from '@/utils/qr-parser'
+import { parseImportText, parseManualSecret, type ImportChunk } from '@/utils/otp-import'
+import { importStrings } from '@/locales/import'
 import { cn } from '@/utils/cn'
 import type { Account } from '@/types'
+import { TOTP } from '@/utils/totp'
+import { steamStrings } from '@/locales/steam'
 
 type ModalMode = 'add' | 'edit'
 
@@ -24,6 +28,7 @@ interface AddAccountModalProps {
   mode: ModalMode
   onAdd?: (account: Account) => Promise<{ success: boolean; message?: string }>
   onEdit?: (originalName: string, account: Account) => Promise<{ success: boolean; message?: string }>
+  onImportData?: (chunks: ImportChunk[]) => void
   initialData?: Account
 }
 
@@ -36,28 +41,42 @@ export function AddAccountModal({
   mode,
   onAdd,
   onEdit,
-  initialData
+  initialData,
+  onImportData
 }: AddAccountModalProps) {
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
+  const strings = importStrings(locale)
+  const steam = steamStrings(locale)
+  const [sourceType, setSourceType] = useState<Account['type']>()
   const [name, setName] = useState('')
   const [website, setWebsite] = useState('')
   const [secret, setSecret] = useState('')
+  let detected: ReturnType<typeof parseManualSecret> | undefined
+  try { if (mode === 'add' && secret.trim()) detected = parseManualSecret(secret, sourceType) } catch { /* Validate on submission. */ }
+  const type = mode === 'edit' ? initialData?.type : detected?.type
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const qrInputRef = useRef<HTMLInputElement>(null)
   const dragCounterRef = useRef(0)
+  const working = useRef(false)
+  const generation = useRef(0)
+  useEffect(() => { generation.current++; return () => { generation.current++ } }, [open])
 
   // 当模态框打开时填充初始值
   useEffect(() => {
-    if (open && mode === 'edit' && initialData) {
+    if (!open) {
+      setName(''); setSecret(''); setWebsite(''); setScanning(false); setSourceType(undefined)
+    } else if (mode === 'edit' && initialData) {
       setName(initialData.name)
       setWebsite(initialData.website || '')
       setSecret(initialData.secret)
+      setSourceType(initialData.type)
     } else if (open && mode === 'add') {
       setName('')
       setWebsite('')
       setSecret('')
+      setSourceType(undefined)
     }
   }, [open, mode, initialData])
 
@@ -66,48 +85,38 @@ export function AddAccountModal({
     qrInputRef.current?.click()
   }
 
-  // 统一的 QR 图片处理函数
-  const processQRImage = async (file: File) => {
-    if (scanning) return  // 防止重复处理
-
-    setScanning(true)
-    toast.loading(t('toast.qr_scanning'))
-
-    try {
-      const result = await parseQRCodeFromFile(file)
-
-      // 自动填充表单
-      setName(result.issuer ? `${result.issuer} ${result.name}` : result.name)
-      setSecret(result.secret)
-
-      toast.dismiss()
+  const receive = (chunks: ImportChunk[]) => {
+    if (chunks.length === 1 && chunks[0].kind === 'standard' && chunks[0].accounts.length === 1 && !chunks[0].issues.length) {
+      const account = chunks[0].accounts[0]
+      if (mode === 'edit' && (account.type ?? 'totp') !== (initialData?.type ?? 'totp')) { toast.error(strings.useImport); return }
+      setName(account.name)
+      setSourceType(account.type ?? 'totp')
+      setSecret(account.type === 'steam' ? TOTP.steamSecretToBase64(account.secret) : account.secret)
       toast.success(t('toast.qr_success'))
-    } catch (error) {
-      toast.dismiss()
-      const errorMessage = (error as Error).message
-
-      if (errorMessage.includes('No QR code found')) {
-        toast.error(t('toast.qr_no_code'))
-      } else if (errorMessage.includes('Invalid otpauth')) {
-        toast.error(t('toast.qr_invalid_format'))
-      } else {
-        toast.error(t('toast.qr_parse_failed'))
-      }
-    } finally {
-      setScanning(false)
-    }
+    } else if (mode === 'edit') toast.error(strings.useImport)
+    else onImportData?.(chunks)
   }
 
-  const handleQRFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const processInput = async (input: File[] | string) => {
+    if (working.current) return
+    working.current = true; setScanning(true)
+    const id = generation.current
+    try {
+      const chunks: ImportChunk[] = []
+      if (typeof input === 'string') chunks.push(...await parseImportText(input))
+      else for (const file of input) {
+        try { chunks.push(await parseQRCodeFromFile(file)) }
+        catch (error) { chunks.push({ kind: 'standard', accounts: [], issues: [{ reason: (error as Error).message === 'noQr' ? 'noQr' : 'invalid' }] }) }
+      }
+      if (generation.current === id) receive(chunks)
+    } catch { if (generation.current === id) toast.error(strings.invalid) }
+    finally { working.current = false; if (generation.current === id) setScanning(false) }
+  }
 
-    await processQRImage(file)
-
-    // 重置文件输入
-    if (qrInputRef.current) {
-      qrInputRef.current.value = ''
-    }
+  const handleQRFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    e.target.value = ''
+    if (files.length) void processInput(files)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -121,12 +130,19 @@ export function AddAccountModal({
     setLoading(true)
 
     try {
-      const processedAccount = {
+      let accountType = initialData?.type
+      let accountSecret = initialData?.secret ?? ''
+      if (mode === 'add') {
+        try {
+          const parsed = parseManualSecret(secret, sourceType)
+          accountSecret = parsed.secret; accountType = parsed.type
+        } catch { toast.error(t('toast.invalid_secret')); return }
+      }
+      const processedAccount: Account = {
         name: name.trim(),
         website: website.trim() || undefined,
-        secret: mode === 'edit' && initialData
-          ? initialData.secret  // 编辑模式保持原密钥
-          : secret.trim().toUpperCase().replace(/\s/g, '')
+        secret: accountSecret,
+        ...(accountType === 'steam' ? { type: 'steam' } : {})
       }
 
       let result: { success: boolean; message?: string }
@@ -200,18 +216,8 @@ export function AddAccountModal({
     setIsDragging(false)
     dragCounterRef.current = 0
 
-    const files = e.dataTransfer.files
-    if (files.length === 0) return
-
-    const file = files[0]
-
-    // 验证文件类型
-    if (!file.type.startsWith('image/')) {
-      toast.error(t('toast.qr_invalid_file_type'))
-      return
-    }
-
-    await processQRImage(file)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length) await processInput(files)
   }
 
   // 模态框关闭处理
@@ -224,97 +230,28 @@ export function AddAccountModal({
     }
   }
 
-  // 监听粘贴事件
-  useEffect(() => {
-    if (!open) return  // 仅在模态框打开时监听
-
-    const handlePaste = async (e: ClipboardEvent) => {
-      // 排除 Input/Textarea 中的粘贴操作
-      const target = e.target as HTMLElement
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-        return
-      }
-
-      const items = e.clipboardData?.items
-      if (!items) return
-
-      // 优先检查文本类型（otpauth:// URI）
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-
-        if (item.type === 'text/plain') {
-          e.preventDefault()
-
-          item.getAsString(async (text) => {
-            const trimmedText = text.trim()
-
-            // 检查是否是 otpauth:// URI
-            if (trimmedText.startsWith('otpauth://totp/')) {
-              if (scanning) return  // 防止重复处理
-
-              setScanning(true)
-
-              try {
-                const result = parseOtpauthURI(trimmedText)
-
-                // 自动填充表单
-                setName(result.issuer ? `${result.issuer} ${result.name}` : result.name)
-                setSecret(result.secret)
-
-                toast.success(t('toast.token_parse_success'))
-              } catch (error) {
-                const errorMessage = (error as Error).message
-
-                if (errorMessage.includes('Invalid otpauth')) {
-                  toast.error(t('toast.qr_invalid_format'))
-                } else {
-                  toast.error(t('toast.qr_parse_failed'))
-                }
-              } finally {
-                setScanning(false)
-              }
-            }
-          })
-          return
-        }
-      }
-
-      // 查找图片类型
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-
-        if (item.type.startsWith('image/')) {
-          e.preventDefault()
-
-          const blob = item.getAsFile()
-          if (!blob) continue
-
-          // 转换为 File 对象
-          const file = new File([blob], 'pasted-image.png', {
-            type: blob.type
-          })
-
-          await processQRImage(file)
-          break
-        }
-      }
+  const handlePaste = (e: React.ClipboardEvent) => {
+    if (working.current) return
+    const files = Array.from(e.clipboardData.files)
+    if (files.length) { e.preventDefault(); void processInput(files); return }
+    const target = e.target as HTMLElement
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return
+    const text = e.clipboardData.getData('text/plain').trim()
+    if (/^(otpauth(?:-migration)?:\/\/|[\[{])/.test(text)) {
+      e.preventDefault(); void processInput(text)
     }
-
-    window.addEventListener('paste', handlePaste)
-
-    return () => {
-      window.removeEventListener('paste', handlePaste)
-    }
-  }, [open, scanning])
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
+        onPaste={handlePaste}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
+          "max-h-[calc(100dvh-1rem)] overflow-y-auto",
           isDragging && "ring-2 ring-primary ring-offset-2 bg-primary/5"
         )}
       >
@@ -338,6 +275,7 @@ export function AddAccountModal({
         </Button>
         <div className="text-xs text-muted-foreground text-center -mt-2 space-y-0.5">
           <p>{t('form.scanQRCodeDesc')}</p>
+          {mode === 'add' && <p>Google Authenticator · otpauth</p>}
           <p className="text-muted-foreground/70">{t('form.pasteQRCodeHint')}</p>
         </div>
 
@@ -372,16 +310,18 @@ export function AddAccountModal({
 
           {mode === 'add' && (
             <div>
-              <Label htmlFor="secret">{t('form.secretKey')}</Label>
+              <Label htmlFor="secret">{type === 'steam' ? steam.secret : t('form.secretKey')}</Label>
               <Input
                 id="secret"
                 value={secret}
-                onChange={(e) => setSecret(e.target.value)}
-                placeholder={t('form.secretKeyPlaceholder')}
+                onChange={(e) => { setSecret(e.target.value); setSourceType(undefined) }}
+                placeholder={type === 'steam' ? steam.secret : 'Base32 / Steam shared_secret'}
+                autoComplete="off"
+                spellCheck={false}
                 className="mt-2 font-mono"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {t('form.secretKeyDesc')}
+                {type === 'steam' ? steam.hint : steam.autoHint}
               </p>
             </div>
           )}
@@ -406,6 +346,7 @@ export function AddAccountModal({
           ref={qrInputRef}
           type="file"
           accept="image/*"
+          multiple
           className="hidden"
           onChange={handleQRFileSelect}
         />

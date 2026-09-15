@@ -1,0 +1,10 @@
+{
+  "name": "mfa-steam-link-helper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@doctormckay/stdlib": "2.10.0",
+    "steam-session": "1.9.4"
+  }
+}

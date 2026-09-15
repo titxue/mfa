@@ -22,20 +22,23 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { QRCodeModal } from './QRCodeModal'
+import type { Account } from '@/types'
 
 interface AccountItemProps {
   name: string
   code: string
   remaining: number
   secret: string
-  onDelete: (name: string) => void
+  type?: Account['type']
+  saving?: boolean
+  onDelete: (name: string) => Promise<boolean>
   onEdit: (name: string) => void
 }
 
 /**
  * 账户卡片组件
  */
-export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }: AccountItemProps) {
+export function AccountItem({ name, code, remaining, secret, type, onDelete, onEdit, saving = false }: AccountItemProps) {
   const { t } = useI18n()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
@@ -55,11 +58,6 @@ export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }:
     }
   }
 
-  // 双击显示二维码
-  const handleDoubleClick = () => {
-    setShowQRModal(true)
-  }
-
   // 点击编辑菜单项
   const handleEditClick = () => {
     onEdit(name)
@@ -71,19 +69,18 @@ export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }:
   }
 
   // 确认删除
-  const handleDelete = () => {
-    onDelete(name)
-    setShowDeleteDialog(false)
+  const handleDelete = async () => {
+    if (await onDelete(name)) setShowDeleteDialog(false)
   }
 
   return (
     <>
-      <ContextMenu>
+      {/* The following dialogs own the modal pointer lock, not the transient menu. */}
+      <ContextMenu modal={false}>
         <ContextMenuTrigger>
           <Card
             className="cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
             onClick={handleClick}
-            onDoubleClick={handleDoubleClick}
           >
             <CardContent className="p-6 flex items-center gap-4">
               <div className="flex-1 min-w-0 max-w-[220px]">
@@ -101,10 +98,11 @@ export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }:
           </Card>
         </ContextMenuTrigger>
         <ContextMenuContent>
-          <ContextMenuItem onClick={handleEditClick}>
+          <ContextMenuItem onClick={() => setShowQRModal(true)}>{t('qr.modal_title')}</ContextMenuItem>
+          <ContextMenuItem disabled={saving} onClick={handleEditClick}>
             {t('button.edit')}
           </ContextMenuItem>
-          <ContextMenuItem onClick={handleDeleteClick} className="text-destructive">
+          <ContextMenuItem disabled={saving} onClick={handleDeleteClick} className="text-destructive">
             {t('button.delete')}
           </ContextMenuItem>
         </ContextMenuContent>
@@ -116,6 +114,7 @@ export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }:
         onOpenChange={setShowQRModal}
         accountName={name}
         accountSecret={secret}
+        accountType={type}
       />
 
       {/* 删除确认对话框 */}
@@ -129,7 +128,7 @@ export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }:
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('button.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
+            <AlertDialogAction disabled={saving} onClick={event => { event.preventDefault(); void handleDelete() }}>
               {t('button.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>

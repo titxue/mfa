@@ -13,7 +13,8 @@ export const toBase64 = (bytes: Uint8Array): string => btoa(String.fromCharCode(
 export const fromBase64 = (value: string): Uint8Array<ArrayBuffer> => Uint8Array.from(atob(value), c => c.charCodeAt(0))
 export function validateAccounts(value: unknown): asserts value is Account[] {
   if (!Array.isArray(value) || !value.every(a => a && typeof a.name === 'string' && a.name.trim() &&
-    typeof a.secret === 'string' && a.secret.trim() && (a.website === undefined || typeof a.website === 'string')) ||
+    typeof a.secret === 'string' && a.secret.trim() && (a.website === undefined || typeof a.website === 'string') &&
+    (a.type === undefined || a.type === 'totp' || a.type === 'steam')) ||
     new Set(value.map(a => a.name)).size !== value.length) throw new Error('invalid')
 }
 export function validateEncrypted(value: unknown): asserts value is EncryptedData {

@@ -45,6 +45,11 @@ if (!popupBuild.success) {
 
 console.log('✅ Popup built successfully')
 
+const steamBuild = await Bun.build({ entrypoints: ['./src/steam-link/page.tsx'], outdir: './dist',
+  naming: 'steam-link.js', target: 'browser', minify: !isDev, format: 'esm' })
+if (!steamBuild.success) { console.error(steamBuild.logs); process.exit(1) }
+await copyFile('./src/steam-link/index.html', './dist/steam-link.html')
+
 // 构建 content-script
 const contentBuild = await Bun.build({
   entrypoints: ['./src/content-script.ts'],

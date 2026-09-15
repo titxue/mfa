@@ -1,4 +1,5 @@
 import QRCode from 'qrcode'
+import type { Account } from '@/types'
 
 /**
  * 从账户信息生成 otpauth:// URI
@@ -9,8 +10,15 @@ import QRCode from 'qrcode'
  */
 export function generateOtpauthURI(
   name: string,
-  secret: string
+  secret: string,
+  type: Account['type'] = 'totp'
 ): string {
+  if (type !== 'totp' && type !== 'steam') throw new Error('invalid')
+  if (type === 'steam') {
+    // Explicit encoder is understood by Steam-aware OTP apps; do not export as numeric TOTP.
+    const params = new URLSearchParams({ secret: secret.toUpperCase(), algorithm: 'SHA1', digits: '5', period: '30', encoder: 'steam' })
+    return `otpauth://totp/${encodeURIComponent(name.trim())}?${params}`
+  }
   // 尝试从 name 中提取 issuer（如果包含空格，第一部分作为 issuer）
   const parts = name.trim().split(/\s+/)
   const issuer = parts.length > 1 ? parts[0] : undefined

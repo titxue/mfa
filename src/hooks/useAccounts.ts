@@ -11,6 +11,7 @@ export function useAccounts() {
   const current = useRef(snapshot)
   const generation = useRef(0)
   const saving = useRef(false)
+  const [isSaving, setIsSaving] = useState(false)
   const apply = (value: VaultSnapshot) => { current.current = value; setSnapshot(value) }
   const reload = useCallback(async () => {
     const id = ++generation.current
@@ -30,9 +31,11 @@ export function useAccounts() {
     return () => { generation.current++; unsubscribe() }
   }, [reload])
   const updateAccounts = async (accounts: Account[]): Promise<boolean> => {
-    if (saving.current || current.current.locked) return false
+    if (saving.current || current.current.locked) { setError(current.current.locked ? 'locked' : 'conflict'); return false }
     if (snapshot.revision !== current.current.revision) { setError('conflict'); return false }
     saving.current = true
+    setIsSaving(true)
+    setError('')
     const before = current.current
     const id = ++generation.current
     apply({ ...before, accounts })
@@ -44,11 +47,11 @@ export function useAccounts() {
       await reload()
       setError((e as Error).message)
       return false
-    } finally { saving.current = false }
+    } finally { saving.current = false; setIsSaving(false) }
   }
   const validate = async (account: Account, original?: string) => {
     if (current.current.accounts.some(a => a.name === account.name && a.name !== original)) return 'toast.account_exists'
-    try { await TOTP.generateTOTP(account.secret) } catch { return 'toast.invalid_secret' }
+    try { await TOTP.generateTOTP(account.secret, 30, account.type) } catch { return 'toast.invalid_secret' }
     return undefined
   }
   const addAccount = async (account: Account) => {
@@ -61,6 +64,6 @@ export function useAccounts() {
     if (message) return { success: false, message }
     return { success: await updateAccounts(current.current.accounts.map(a => a.name === name ? account : a)) }
   }
-  return { ...snapshot, loading, error, reload, addAccount, updateAccount, updateAccounts,
+  return { ...snapshot, loading, isSaving, error, reload, addAccount, updateAccount, updateAccounts,
     deleteAccount: (name: string) => updateAccounts(current.current.accounts.filter(a => a.name !== name)) }
 }

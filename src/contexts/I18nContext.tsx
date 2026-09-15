@@ -58,7 +58,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    void initLanguage()
+    void initLanguage().catch(() => {})
 
     return () => {
       cancelled = true
@@ -76,7 +76,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const setLocale = async (newLocale: Language) => {
     hasUserChangedLocaleRef.current = true
     setLocaleState(newLocale)
-    await StorageManager.saveLanguage(newLocale)
+    try { await StorageManager.saveLanguage(newLocale) }
+    catch (error) { setLocaleState(locale); throw error }
   }
 
   const resetLanguage = async () => {

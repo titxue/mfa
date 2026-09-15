@@ -1,6 +1,6 @@
 import type { Account, ExportData } from '@/types'
-import { TOTP } from './totp'
-import { decryptAccounts, deriveKey, validateEncrypted } from './vault-crypto'
+import { importPreview, mergeImportChunks, parseImportText, type ImportChunk } from './otp-import'
+import { parseQRCodeFromFile } from './qr-parser'
 
 /**
  * 导入导出管理工具
@@ -24,7 +24,8 @@ export class ImportExportManager {
       typeof account.secret === 'string' &&
       account.name.trim() &&
       account.secret.trim() &&
-      (account.website === undefined || typeof account.website === 'string')
+      (account.website === undefined || typeof account.website === 'string') &&
+      (account.type === undefined || account.type === 'totp' || account.type === 'steam')
     )
   }
 
@@ -38,7 +39,8 @@ export class ImportExportManager {
       accounts: accounts.map(account => ({
         name: account.name,
         secret: account.secret,
-        website: account.website
+        website: account.website,
+        ...(account.type === undefined ? {} : { type: account.type })
       }))
     }
 
@@ -67,56 +69,30 @@ export class ImportExportManager {
 
   /**
    * 导入账户数据
-   * @param file - JSON 文件
+   * @param file - JSON / maFile / TXT 文件或二维码图片
    * @param currentAccounts - 当前已有的账户列表
    * @returns 导入结果 { newAccounts, duplicateCount, invalidCount }
    */
   static async importAccounts(
     file: File,
     currentAccounts: Account[],
-    password = ''
+    password?: string
   ): Promise<{
     newAccounts: Account[]
     duplicateCount: number
     invalidCount: number
   }> {
-    const text = await file.text()
-    let importData: any
-    try { importData = JSON.parse(text) } catch { throw new Error('invalid') }
-    if (importData?.format === 'mfa-encrypted') {
-      validateEncrypted(importData)
-      const key = await deriveKey(password, importData.salt)
-      importData = { accounts: await decryptAccounts(importData, key) }
+    const preview = importPreview(mergeImportChunks([], await this.parseFile(file, password)), currentAccounts)
+    if (!preview.complete) throw new Error('incompleteBatch')
+    return { newAccounts: preview.accounts, duplicateCount: preview.duplicates.length, invalidCount: preview.issues.length }
+  }
+
+  static async parseFile(file: File, password?: string): Promise<ImportChunk[]> {
+    if (file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif|bmp|avif)$/i.test(file.name)) {
+      return [await parseQRCodeFromFile(file)]
     }
-
-    if (!this.validateImportData(importData)) {
-      throw new Error('invalid')
-    }
-
-    const newAccounts: Account[] = []
-    let duplicateCount = 0
-    let invalidCount = 0
-
-    // 检查重复账户并验证密钥
-    for (const account of importData.accounts) {
-      const exists = [...currentAccounts, ...newAccounts].find(
-        existing => existing.name === account.name
-      )
-
-      if (exists) {
-        duplicateCount++
-      } else {
-        // 验证密钥格式
-        try {
-          await TOTP.generateTOTP(account.secret)
-          newAccounts.push(account)
-        } catch (error) {
-          invalidCount++
-        }
-      }
-    }
-
-    return { newAccounts, duplicateCount, invalidCount }
+    if (file.size > 2 * 1024 * 1024) throw new Error('invalid')
+    return parseImportText(await file.text(), password)
   }
 
   /**

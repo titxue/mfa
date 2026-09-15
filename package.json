@@ -1,6 +1,6 @@
 {
   "name": "mfa",
-  "version": "2.2.0",
+  "version": "2.3.3",
   "description": "TOTP 生成器 Chrome 扩展 - 基于 React + TypeScript + Bun",
   "repository": {
     "type": "git",
@@ -15,7 +15,10 @@
     "build": "bun run build.ts",
     "type-check": "tsc --noEmit",
     "generate-icons": "bun run generate-icons.ts",
-    "test": "bun test tests"
+    "test": "bun test tests",
+    "steam:link": "bun tools/steam-link/launch.ts",
+    "steam:link:test": "bun test tools/steam-link/tests",
+    "steam:link:check": "tsc --noEmit -p tools/steam-link/tsconfig.json"
   },
   "keywords": [
     "totp",

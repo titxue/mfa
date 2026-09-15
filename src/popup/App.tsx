@@ -3,6 +3,8 @@ import { Header } from '@/components/Header'
 import { AccountList } from '@/components/AccountList'
 import { AddAccountModal } from '@/components/AddAccountModal'
 import { SettingsModal } from '@/components/SettingsModal'
+import { ImportAccountsDialog } from '@/components/ImportAccountsDialog'
+import type { ImportChunk } from '@/utils/otp-import'
 import { useAccounts } from '@/hooks/useAccounts'
 import { useTOTP } from '@/hooks/useTOTP'
 import type { Account } from '@/types'
@@ -28,6 +30,7 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [importChunks, setImportChunks] = useState<ImportChunk[] | null>(null)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   useEffect(() => {
     setShowEditModal(false)
@@ -46,6 +49,7 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
   return (
     <div className="flex flex-col h-[600px] w-[380px] bg-background">
       <Header
+        saving={state.isSaving}
         onAddAccount={() => setShowAddModal(true)}
         onOpenSettings={() => setShowSettings(true)}
         onLock={state.protected ? async () => {
@@ -58,6 +62,7 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
 
       <div className="flex-1">
         <AccountList
+          saving={state.isSaving}
           accounts={accounts}
           codes={codes}
           remaining={remaining}
@@ -72,6 +77,7 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
         onOpenChange={setShowAddModal}
         mode="add"
         onAdd={addAccount}
+        onImportData={chunks => { setShowAddModal(false); setImportChunks(chunks) }}
       />
 
       <AddAccountModal
@@ -89,8 +95,10 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
         open={showSettings}
         onOpenChange={setShowSettings}
         accounts={accounts}
-        onImport={updateAccounts}
+        onOpenImport={() => { setShowSettings(false); setImportChunks([]) }}
       />
+      {importChunks !== null && <ImportAccountsDialog initialChunks={importChunks} accounts={accounts}
+        onImport={updateAccounts} onClose={() => setImportChunks(null)} />}
     </div>
   )
 }

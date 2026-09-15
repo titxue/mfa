@@ -23,10 +23,10 @@ export function useTOTP(accounts: Account[]) {
 
     for (const account of accounts) {
       try {
-        const code = await TOTP.generateTOTP(account.secret)
+        const code = await TOTP.generateTOTP(account.secret, 30, account.type)
         newCodes[account.name] = code
       } catch (error) {
-        newCodes[account.name] = '------'
+        newCodes[account.name] = account.type === 'steam' ? '-----' : '------'
       }
     }
 

@@ -37,3 +37,7 @@ nul
 # Local browser QA artifacts and isolated test profiles
 .playwright-cli/
 output/playwright/
+
+# Local Steam linking checkpoints and generated account backups
+.steam-link/
+tools/steam-link/runtime.mjs

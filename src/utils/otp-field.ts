@@ -127,6 +127,8 @@ function scoreInput(input: HTMLInputElement): number {
   // 标准信号：autocomplete="one-time-code"
   if (autocomplete === 'one-time-code') return 100
 
+  if (input.maxLength === 1 || input.getAttribute('size') === '1') return 0
+
   const attrs = getAttributeText(input)
   const labels = getLabelText(input)
   const maxLen = input.maxLength
@@ -199,14 +201,20 @@ function sortByDomOrder(elements: HTMLInputElement[]): HTMLInputElement[] {
  * @returns 按 DOM 顺序排列的组，或 null
  */
 export function findSegmentedGroupFor(anchor: HTMLInputElement): HTMLInputElement[] | null {
+  if (!isSegmentedInput(anchor)) return null
   const all = Array.from(document.querySelectorAll('input')).filter(isSegmentedInput)
   let node: HTMLElement | null = anchor.parentElement
   for (let depth = 0; depth < 3 && node; depth++) {
     const group = all.filter(
       (i) => i.parentElement === node || i.parentElement?.parentElement === node
     )
-    if (group.length >= 4 && group.length <= 8) {
-      return sortByDomOrder(group)
+    if (group.includes(anchor) && group.length >= 4 && group.length <= 8) {
+      const fieldSignal = group.some(input => matchesKeyword(getAttributeText(input)) || matchesKeyword(getLabelText(input)))
+      const groupSignal = matchesKeyword([node.id, node.className, node.getAttribute('aria-label'),
+        ...(node.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean)
+          .map(id => node!.ownerDocument.getElementById(id)?.textContent),
+        ...Array.from(node.querySelectorAll('label, legend, [role=heading]')).map(el => el.textContent)].filter(Boolean).join(' '))
+      if (fieldSignal || groupSignal) return sortByDomOrder(group)
     }
     node = node.parentElement
   }
@@ -247,6 +255,9 @@ function markFilled(input: HTMLInputElement): void {
 }
 
 function fillSingle(code: string, input: HTMLInputElement): FillResult {
+  if ((input.type === 'number' && !/^\d+$/.test(code)) || (input.maxLength > 0 && code.length > input.maxLength)) {
+    return { status: 'no-field', mode: 'single' }
+  }
   setInputValue(input, code)
   dispatchInputEvents(input)
   input.focus()
@@ -255,10 +266,13 @@ function fillSingle(code: string, input: HTMLInputElement): FillResult {
 }
 
 function fillSegmented(code: string, group: HTMLInputElement[]): FillResult {
-  const digits = code.replace(/\D/g, '')
+  const characters = code.replace(/\s/g, '')
+  // Steam Guard includes letters. Never strip them or partially fill a different-length group.
+  if (!/^[A-Z0-9]+$/i.test(characters) || group.length !== characters.length ||
+      (/[A-Z]/i.test(characters) && group.some(box => box.type === 'number'))) return { status: 'no-field', mode: 'segmented' }
   group.forEach((box, i) => {
-    if (i < digits.length) {
-      setInputValue(box, digits[i])
+    if (i < characters.length) {
+      setInputValue(box, characters[i])
       dispatchInputEvents(box)
       markFilled(box)
     }

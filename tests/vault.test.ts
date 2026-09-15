@@ -36,6 +36,19 @@ const protect = async (service: VaultService) => {
 }
 
 describe('vault encryption and lifecycle', () => {
+  test('Steam type survives save, encryption, lock/unlock and backup restore', async () => {
+    const { service } = await setup()
+    const steam = { name: 'Steam demo', secret: 'AAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQT', type: 'steam' as const }
+    const mixed = [...accounts, steam]
+    await service.save(mixed, (await service.snapshot()).revision)
+    await protect(service)
+    await service.lock()
+    await service.unlock(password)
+    expect((await service.snapshot()).accounts).toEqual(mixed)
+    const backup = await service.backup(false, '')
+    const restored = await ImportExportManager.importAccounts(new File([backup], 'steam-backup.json'), [], password)
+    expect(restored.newAccounts).toEqual(mixed)
+  })
   test('migrates the legacy accounts and clears secret-bearing form state', async () => {
     const { storage, service } = await setup()
     expect(await service.snapshot()).toMatchObject({ accounts, protected: false, locked: false })

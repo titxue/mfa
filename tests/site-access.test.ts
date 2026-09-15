@@ -31,6 +31,11 @@ test('no host grant (including activeTab only) does not register automatic scrip
   await reconcileSiteScripts()
   expect(operations).toEqual([])
 })
+test('Steam API permission never registers webpage autofill scripts', async () => {
+  const operations = mockSites(['https://api.steampowered.com/*'], false)
+  await reconcileSiteScripts()
+  expect(operations).toEqual([])
+})
 
 test('registers only granted sites and persists across sessions', async () => {
   const operations = mockSites(['https://example.com/*'], false)

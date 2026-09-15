@@ -8,12 +8,13 @@ interface HeaderProps {
   onAddAccount: () => void
   onOpenSettings: () => void
   onLock?: () => void
+  saving?: boolean
 }
 
 /**
  * 顶栏组件
  */
-export function Header({ onAddAccount, onOpenSettings, onLock }: HeaderProps) {
+export function Header({ onAddAccount, onOpenSettings, onLock, saving = false }: HeaderProps) {
   const { t, locale } = useI18n()
   const lockLabel = securityStrings(locale).lock
 
@@ -24,10 +25,10 @@ export function Header({ onAddAccount, onOpenSettings, onLock }: HeaderProps) {
         {onLock && <Button variant="outline" size="icon" onClick={onLock} aria-label={lockLabel} title={lockLabel}>
           <LockKeyhole className="h-4 w-4" aria-hidden="true" />
         </Button>}
-        <Button variant="outline" size="icon" onClick={onOpenSettings} aria-label={t('settings.title')} title={t('settings.title')}>
+        <Button variant="outline" size="icon" disabled={saving} onClick={onOpenSettings} aria-label={t('settings.title')} title={t('settings.title')}>
           <Settings className="h-4 w-4" />
         </Button>
-        <Button className="gap-1.5 px-3" onClick={onAddAccount}>
+        <Button className="gap-1.5 px-3" disabled={saving} onClick={onAddAccount}>
           <Plus className="h-4 w-4" />
           {t('addAccount')}
         </Button>

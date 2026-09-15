@@ -289,12 +289,12 @@ export function showFilledFeedback(anchor: HTMLInputElement, label = '✓'): voi
   shadow.appendChild(badgeEl)
   const rect = anchor.getBoundingClientRect()
   doc.documentElement.appendChild(feedbackBadge)
-  const width = feedbackBadge.getBoundingClientRect().width
-  const left = Math.min(Math.max(rect.left, 4), Math.max(4, window.innerWidth - width - 4))
-  const top = rect.bottom + 6 + 28 > window.innerHeight ? Math.max(4, rect.top - 34) : rect.bottom + 6
+  const { width, height } = feedbackBadge.getBoundingClientRect()
+  const fitsRight = rect.right + 6 + width <= window.innerWidth - 4
+  const left = fitsRight ? rect.right + 6 : Math.min(Math.max(rect.left, 4), Math.max(4, window.innerWidth - width - 4))
+  const top = fitsRight ? Math.max(4, rect.top + (rect.height - height) / 2) : Math.max(4, rect.top - height - 6)
   feedbackBadge.style.left = Math.round(left) + 'px'
   feedbackBadge.style.top = Math.round(top) + 'px'
-  doc.documentElement.appendChild(feedbackBadge)
 
   feedbackTimer = window.setTimeout(() => {
     if (feedbackBadge && feedbackBadge.parentNode) {
@@ -507,8 +507,13 @@ function openMenu(): void {
   doc.documentElement.appendChild(menuHost)
   menuRefresh = renderMenu(menuEl, options)
   positionMenu(menuEl)
+  let lastStep = Math.floor(Date.now() / 30000)
   refreshTimer = window.setInterval(() => {
-    if (menuRefresh) menuRefresh()
+    const step = Math.floor(Date.now() / 30000)
+    if (step !== lastStep) {
+      lastStep = step
+      if (menuRefresh) menuRefresh()
+    }
   }, 1000)
 }
 

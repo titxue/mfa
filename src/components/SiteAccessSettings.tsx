@@ -113,7 +113,8 @@ export function SiteAccessSettings() {
     <div className="space-y-2">
       <p className="text-sm font-medium">{text[0]}</p>
       {(current || sites.length > 0) && (
-        <div className="divide-y rounded-md border">
+        <div className="max-h-44 overflow-y-auto overscroll-contain divide-y rounded-md border"
+          role="region" aria-label={text[0]} tabIndex={0}>
           {[...(current ? [current.pattern] : []), ...sites.filter(pattern => pattern !== current?.pattern)].map(pattern => {
             const allowed = sites.includes(pattern)
             return (

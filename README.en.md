@@ -25,7 +25,7 @@ QR code scanning, auto-fill, fully offline, local data storage, **12 languages**
 
 - 🔐 **TOTP Code Generation** - 30s interval, RFC 6238 standard, real-time countdown progress ring
 - 📷 **QR Code Scanning** - Image upload recognition, paste/drag upload, auto-fill, offline processing
-- 📤 **QR Code Export** - Double-click account card to generate QR code, download PNG images, easy cross-device migration
+- 📤 **QR Code Export** - Right-click an account card and select the QR code menu item, download PNG images, easy cross-device migration
 - 🎯 **Smart Auto-Fill** - One-click fill to web pages, auto-copy to clipboard on failure
 - 🎨 **Drag & Drop Sorting** - Freely adjust account order, smooth animation effects
 - 💾 **Data Management** - Local/sync storage (Chrome account, fallback to local), JSON import/export, duplicate detection
@@ -61,7 +61,7 @@ bun run build
 1. Click "+" button
 2. Click "Scan QR Code"
 3. Upload image containing TOTP QR code
-4. Auto-recognize and save
+4. Standard QR codes fill the form for confirmation; Google migration QR codes open the bulk import preview
 
 **Manual Input**
 1. Click "+" button
@@ -79,6 +79,36 @@ bun run build
 - **Export**: Settings → Export (JSON format)
 - **Import**: Settings → Import (auto-skip duplicates)
 - **Language**: Settings → Select from 12 languages (auto-detect browser language)
+
+### Steam Guard codes
+
+**In-extension enrollment**: Settings → **Set up Steam Guard** opens a dedicated tab for password login, email/mobile verification, status checks, key initialization, phone-code verification and direct vault saving. QR login is not included. The new wizard uses Chinese or English (English fallback for other locales).
+
+Steam API access is requested when needed and does not grant webpage autofill access. Existing authenticators are never automatically revoked or transferred. Pending keys are encrypted in local storage; session tokens and unlock keys are restricted to trusted extension session storage. After a browser restart, sign in again and unlock the checkpoint. CLI checkpoints can also be restored from this page.
+
+Download a recovery checkpoint before phone activation if needed. Only verified keys can be saved or exported as an importable encrypted backup. Existing names are not overwritten. The browser enrollment path still needs live-account verification; the CLI joint-enrollment flow has been tested by the user.
+
+- **Manual entry**: Add Account → enter the name and paste the **case-sensitive Base64 `shared_secret`** from your `.maFile`. Steam is detected automatically. Standard Base32 remains ordinary TOTP; QR and file metadata determine their account type.
+- **Import**: Settings → Import accepts one or more unencrypted `.maFile` / JSON files. Only `account_name` and `shared_secret` are imported; Session, login tokens, `identity_secret` and recovery codes are discarded.
+- Steam uses **5 alphanumeric characters refreshed every 30 seconds**, with copy and single-field/five-box autofill support. Generation uses the system clock, so keep it accurate.
+- Steam type survives plain/encrypted backups and QR export (`encoder=steam`). The receiving app must support Steam; update this extension on other synced devices to recognize the new account type.
+
+Code generation stays offline; online enrollment connects only to Steam APIs. Trade confirmations are not included. Steam login QR codes are not shared-secret export QR codes.
+
+An experimental [local Steam linking helper](tools/steam-link/README.md) is available to investigate joint enrollment with the iPhone app. It is separate from the extension, can keep the login session while the owner prepares enrollment and requests another status check, and never revokes an active authenticator. Live account enrollment still requires owner verification.
+
+### Migrate from Google Authenticator and other apps
+
+1. Use Google Authenticator's transfer/export accounts feature to obtain export QR images.
+2. Open **Settings → Import** and choose one or more QR images, paste an image, or drop files. The Add Account QR input also accepts migration images.
+3. If an export contains several QR codes, add every image from that export. The preview tracks progress and ignores repeated scans; import becomes available once all parts are present.
+4. Review and select accounts, then confirm. Accounts with existing names are skipped, never overwritten. Closing the dialog clears unsaved preview data.
+
+Supported inputs: standard `otpauth://totp/` links and QR codes, Google `otpauth-migration://offline?data=…`, TXT with one link per line (blank lines and `#` comments ignored), JSON arrays exported by [extract_otp_secrets](https://github.com/scito/extract_otp_secrets), and this extension's plain/encrypted JSON backups. Links or JSON can also be pasted into the import dialog. Only encrypted backups request a backup password.
+
+Standard accounts support **SHA1, 6-digit, 30-second TOTP**; explicitly marked Steam accounts use five-character Steam Guard codes. HOTP, other algorithms/digits/periods, unknown enum values and damaged entries are skipped with a reason. Embedded JSON `url` parameters are also checked; parameters already discarded by another tool cannot be recovered from a secret. Other authenticator apps must supply standard otpauth data. Proprietary backups other than Steam .maFile, CSV, camera scanning and multiple independent QR symbols in one image are not supported.
+
+Parsing is local to the extension; QR images, links and secrets are never uploaded for recognition. Imported accounts use the existing Chrome sync and optional password protection.
 
 ---
 

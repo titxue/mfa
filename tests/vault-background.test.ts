@@ -3,7 +3,10 @@ import { test, expect } from 'bun:test'
 test('background rejects untrusted senders and serves only summaries/codes to authorized pages', async () => {
   const previous = globalThis.chrome
   let handler: (message: unknown, sender: unknown, respond: (result: any) => void) => boolean
-  const sync: Record<string, any> = { accounts: [{ name: 'Example', secret: 'JBSWY3DPEHPK3PXP', website: 'example.test' }] }
+  const sync: Record<string, any> = { accounts: [
+    { name: 'Example', secret: 'JBSWY3DPEHPK3PXP', website: 'example.test' },
+    { name: 'Steam demo', secret: 'AAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQT', type: 'steam', website: 'steamcommunity.com' },
+  ] }
   const session: Record<string, any> = {}
   let origins = ['https://example.test/*']
   const area = (data: Record<string, any>) => ({
@@ -33,10 +36,13 @@ test('background rejects untrusted senders and serves only summaries/codes to au
     const summary = await request('summaries', page)
     expect(await request('snapshot', { ...popup, tab: { id: 2 } })).toMatchObject({ ok: true })
     expect(summary.ok).toBe(true)
-    expect(summary.value.accounts).toEqual([{ name: 'Example', website: 'example.test' }])
+    expect(summary.value.accounts).toEqual([{ name: 'Example', website: 'example.test' }, { name: 'Steam demo', website: 'steamcommunity.com' }])
     expect(JSON.stringify(summary)).not.toContain('JBSWY3DPEHPK3PXP')
     const code = await request('code', page, { revision: summary.value.revision, name: 'Example' })
     expect(code.value).toMatch(/^\d{6}$/)
+    const steamCode = await request('code', page, { revision: summary.value.revision, name: 'Steam demo' })
+    expect(steamCode.value).toMatch(/^[23456789BCDFGHJKMNPQRTVWXY]{5}$/)
+    expect(JSON.stringify(summary)).not.toContain('AAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQT')
     origins = []
     expect(await request('code', page, { revision: summary.value.revision, name: 'Example' })).toMatchObject({ ok: false, error: 'denied' })
     origins = ['https://example.test/*']

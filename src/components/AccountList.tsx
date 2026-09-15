@@ -28,7 +28,8 @@ interface AccountListProps {
   accounts: Account[]
   codes: { [key: string]: string }
   remaining: number
-  onDeleteAccount: (name: string) => void
+  saving?: boolean
+  onDeleteAccount: (name: string) => Promise<boolean>
   onEditAccount: (name: string) => void
   onReorder: (newAccounts: Account[]) => void
 }
@@ -40,7 +41,8 @@ interface SortableAccountItemProps {
   account: Account
   code: string
   remaining: number
-  onDelete: (name: string) => void
+  saving?: boolean
+  onDelete: (name: string) => Promise<boolean>
   onEdit: (name: string) => void
 }
 
@@ -49,7 +51,8 @@ function SortableAccountItem({
   code,
   remaining,
   onDelete,
-  onEdit
+  onEdit,
+  saving
 }: SortableAccountItemProps) {
   const {
     attributes,
@@ -60,6 +63,7 @@ function SortableAccountItem({
     isDragging
   } = useSortable({
     id: account.name,
+    disabled: saving,
     animateLayoutChanges: defaultAnimateLayoutChanges
   })
 
@@ -74,8 +78,10 @@ function SortableAccountItem({
       <AccountItem
         name={account.name}
         secret={account.secret}
+        type={account.type}
         code={code}
         remaining={remaining}
+        saving={saving}
         onDelete={onDelete}
         onEdit={onEdit}
       />
@@ -92,7 +98,8 @@ export function AccountList({
   remaining,
   onDeleteAccount,
   onEditAccount,
-  onReorder
+  onReorder,
+  saving = false
 }: AccountListProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -114,7 +121,7 @@ export function AccountList({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
-    if (!over || active.id === over.id) {
+    if (saving || !over || active.id === over.id) {
       setActiveId(null)
       return
     }
@@ -147,6 +154,7 @@ export function AccountList({
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveId(null)}
     >
       <ScrollArea className="h-full">
         <div className="p-4 space-y-3">
@@ -158,8 +166,9 @@ export function AccountList({
               <SortableAccountItem
                 key={account.name}
                 account={account}
-                code={codes[account.name] || '------'}
+                code={codes[account.name] || (account.type === 'steam' ? '-----' : '------')}
                 remaining={remaining}
+                saving={saving}
                 onDelete={onDeleteAccount}
                 onEdit={onEditAccount}
               />
@@ -173,8 +182,10 @@ export function AccountList({
           <AccountItem
             name={activeAccount.name}
             secret={activeAccount.secret}
-            code={codes[activeAccount.name] || '------'}
+            type={activeAccount.type}
+            code={codes[activeAccount.name] || (activeAccount.type === 'steam' ? '-----' : '------')}
             remaining={remaining}
+            saving={saving}
             onDelete={onDeleteAccount}
             onEdit={onEditAccount}
           />

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { StorageManager, DEFAULT_AUTOFILL_SETTINGS, type AutofillSettings } from '@/utils/storage'
 
 /**
@@ -8,6 +8,8 @@ import { StorageManager, DEFAULT_AUTOFILL_SETTINGS, type AutofillSettings } from
 export function useSettings() {
   const [settings, setSettings] = useState<AutofillSettings>(DEFAULT_AUTOFILL_SETTINGS)
   const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const pending = useRef(false)
 
   useEffect(() => {
     let mounted = true
@@ -28,14 +30,17 @@ export function useSettings() {
 
   const updateSettings = useCallback(
     async (patch: Partial<AutofillSettings>) => {
+      if (pending.current || loading) throw new Error('conflict')
+      pending.current = true
+      setSaving(true)
       const next = { ...settings, ...patch }
-      // UI 优先：立即更新状态
       setSettings(next)
-      // 后台异步保存
-      await StorageManager.saveSettings(next)
+      try { await StorageManager.saveSettings(next) }
+      catch (error) { setSettings(settings); throw error }
+      finally { pending.current = false; setSaving(false) }
     },
-    [settings]
+    [settings, loading]
   )
 
-  return { settings, loading, updateSettings }
+  return { settings, loading, saving, updateSettings }
 }

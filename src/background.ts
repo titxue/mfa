@@ -52,3 +52,4 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
 })
 refresh()
 import './vault-background'
+import './steam-link/background'

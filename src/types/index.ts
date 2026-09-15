@@ -5,6 +5,8 @@ export interface Account {
   name: string
   secret: string
   website?: string
+  /** Missing on older accounts; defaults to standard six-digit TOTP. Secrets stay Base32. */
+  type?: 'totp' | 'steam'
 }
 
 /**

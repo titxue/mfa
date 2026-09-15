@@ -33,12 +33,14 @@ import { PasswordProtection } from './PasswordProtection'
 import { Input } from './ui/input'
 import { securityStrings, securityError } from '@/locales/security'
 import { vaultRequest } from '@/utils/vault-client'
+import { importStrings } from '@/locales/import'
+import { bindingStrings } from '@/steam-link/strings'
 
 interface SettingsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   accounts: Account[]
-  onImport: (newAccounts: Account[]) => Promise<boolean>
+  onOpenImport: () => void
   protected: boolean
   revision: string
   reload: () => Promise<void>
@@ -51,27 +53,24 @@ export function SettingsModal({
   open,
   onOpenChange,
   accounts,
-  onImport,
+  onOpenImport,
   protected: protectedMode,
   revision,
   reload
 }: SettingsModalProps) {
   const { t, locale, setLocale, resetLanguage } = useI18n()
-  const { settings, updateSettings } = useSettings()
+  const { settings, loading: settingsLoading, saving: settingsSaving, updateSettings } = useSettings()
   const s = securityStrings(locale)
   const [plainExport, setPlainExport] = React.useState(false)
   const [backupPassword, setBackupPassword] = React.useState('')
   const [busy, setBusy] = React.useState(false)
   const alive = useRef(true)
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
-  useEffect(() => { if (!open) { setBackupPassword(''); setImportFile(null); setImportDialog(false); setExportDialog(false) } }, [open])
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  useEffect(() => { if (!open) { setBackupPassword(''); setExportDialog(false) } }, [open])
   const clickCountRef = useRef(0)
   const lastClickTimeRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [exportDialog, setExportDialog] = React.useState(false)
-  const [importDialog, setImportDialog] = React.useState(false)
-  const [importFile, setImportFile] = React.useState<File | null>(null)
 
   // 导出账户
   const handleExport = () => {
@@ -97,72 +96,10 @@ export function SettingsModal({
     finally { setBusy(false); setBackupPassword('') }
   }
 
-  // 导入账户
-  const handleImportClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setBackupPassword('')
-      setImportFile(file)
-      setImportDialog(true)
-    }
-    // 重置文件输入
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
-  const confirmImport = async () => {
-    if (!importFile || busy) return
-    setBusy(true)
-
-    try {
-      const result = await ImportExportManager.importAccounts(importFile, accounts, backupPassword)
-      if (!alive.current) return
-
-      if (result.newAccounts.length === 0) {
-        if (result.duplicateCount > 0) {
-          toast.warning(t('toast.import_all_duplicates'))
-        } else {
-          toast.error(t('toast.import_no_valid'))
-        }
-      } else {
-        if (!await onImport([...accounts, ...result.newAccounts])) throw new Error('storageError')
-
-        if (result.duplicateCount > 0) {
-          toast.success(
-            t('toast.import_success_with_skip', {
-              imported: result.newAccounts.length,
-              skipped: result.duplicateCount
-            })
-          )
-        } else {
-          toast.success(
-            t('toast.import_success', {
-              imported: result.newAccounts.length
-            })
-          )
-        }
-      }
-    } catch (error) {
-      if (alive.current) toast.error(securityError(locale, error))
-      setBusy(false)
-      return
-    }
-
-    setBusy(false)
-    setBackupPassword('')
-    setImportDialog(false)
-    setImportFile(null)
-  }
-
   // 切换语言
   const handleLanguageChange = async (newLocale: Language) => {
-    await setLocale(newLocale)
-    toast.success(t('toast.language_changed'))
+    try { await setLocale(newLocale); toast.success(t('toast.language_changed')) }
+    catch (error) { toast.error(securityError(locale, error)) }
   }
 
   // 连续点击重置语言（隐藏功能）
@@ -179,8 +116,8 @@ export function SettingsModal({
     lastClickTimeRef.current = now
 
     if (clickCountRef.current === 3) {
-      resetLanguage()
-      toast.success(t('toast.language_reset'))
+      void resetLanguage().then(() => toast.success(t('toast.language_reset')))
+        .catch(error => toast.error(securityError(locale, error)))
       clickCountRef.current = 0
       lastClickTimeRef.current = 0
     }
@@ -268,9 +205,10 @@ export function SettingsModal({
                   </div>
                   <Switch
                     className="flex-shrink-0"
+                    disabled={settingsLoading || settingsSaving}
                     checked={settings.autofillInlineMenu}
                     onCheckedChange={(value) =>
-                      updateSettings({ autofillInlineMenu: value })
+                      void updateSettings({ autofillInlineMenu: value }).catch(error => toast.error(securityError(locale, error)))
                     }
                   />
                 </div>
@@ -283,9 +221,10 @@ export function SettingsModal({
                   </div>
                   <Switch
                     className="flex-shrink-0"
+                    disabled={settingsLoading || settingsSaving}
                     checked={settings.clipboardFallback}
                     onCheckedChange={(value) =>
-                      updateSettings({ clipboardFallback: value })
+                      void updateSettings({ clipboardFallback: value }).catch(error => toast.error(securityError(locale, error)))
                     }
                   />
                 </div>
@@ -303,12 +242,19 @@ export function SettingsModal({
                   {t('settings.exportDesc')}
                 </p>
 
-                <Button variant="outline" className="w-full" onClick={handleImportClick}>
+                <Button variant="outline" className="w-full" onClick={onOpenImport}>
                   {t('settings.import')}
                 </Button>
                 <p className="text-xs text-muted-foreground">
-                  {t('settings.importDesc')}
+                  {importStrings(locale).description}
                 </p>
+                <Button variant="outline" className="w-full" disabled={typeof chrome === 'undefined' || !chrome.runtime?.id} onClick={() => {
+                  const url = chrome.runtime.getURL('steam-link.html')
+                  void chrome.tabs.query({ url }).then(tabs => {
+                    if (tabs[0]?.id !== undefined) return chrome.tabs.update(tabs[0].id, { active: true })
+                    return chrome.tabs.create({ url })
+                  })
+                }}>{bindingStrings(locale).title}</Button>
               </div>
             </div>
 
@@ -354,15 +300,6 @@ export function SettingsModal({
         </DialogContent>
       </Dialog>
 
-      {/* 隐藏的文件输入 */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        className="hidden"
-        onChange={handleFileSelect}
-      />
-
       {/* 导出确认对话框 */}
       <AlertDialog open={exportDialog} onOpenChange={value => { if (!busy) { setExportDialog(value); setBackupPassword('') } }}>
         <AlertDialogContent className="export-confirm-dialog">
@@ -388,25 +325,6 @@ export function SettingsModal({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 导入确认对话框 */}
-      <AlertDialog open={importDialog} onOpenChange={value => { if (!busy) { setImportDialog(value); setBackupPassword('') } }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('dialog.import_title')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('dialog.import_message', { count: '?' })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Label htmlFor="import-password">{s.backupPassword}</Label>
-          <Input id="import-password" type="password" autoComplete="off" value={backupPassword} disabled={busy} onChange={e => setBackupPassword(e.target.value)} />
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>{t('button.cancel')}</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={e => { e.preventDefault(); void confirmImport() }}>
-              {t('button.import')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   )
 }
