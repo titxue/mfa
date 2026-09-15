@@ -9,6 +9,14 @@ test('background rejects untrusted senders and serves only summaries/codes to au
   ] }
   const session: Record<string, any> = {}
   let origins = ['https://example.test/*']
+  const tabs = [
+    { id: 1, url: 'https://example.test/login' },
+    { id: 2, url: 'https://example.test/already-injected' },
+    { id: 3, url: 'https://unapproved.test/login' },
+  ]
+  const injected = new Set([2])
+  const injectionTargets: { tabId: number; allFrames?: boolean }[] = []
+  const notifications: number[] = []
   const area = (data: Record<string, any>) => ({
     setAccessLevel: async () => {},
     get: async (keys: string | string[]) => Object.fromEntries((typeof keys === 'string' ? [keys] : keys).filter(k => k in data).map(k => [k, data[k]])),
@@ -20,7 +28,16 @@ test('background rejects untrusted senders and serves only summaries/codes to au
     runtime: { id: 'test', getURL: (path: string) => `chrome-extension://test/${path}`,
       onMessage: { addListener: (fn: typeof handler) => { handler = fn } }, sendMessage: async () => {} },
     permissions: { getAll: async () => ({ origins }) },
-    tabs: { query: async () => [], sendMessage: async () => {} },
+    tabs: { query: async () => tabs, sendMessage: async (tabId: number, message: { type: string }) => {
+      if (!injected.has(tabId)) throw new Error('Receiving end does not exist')
+      if (message.type === 'PING') return { ok: true }
+      notifications.push(tabId)
+    } },
+    scripting: { executeScript: async ({ target }: { target: { tabId: number; allFrames?: boolean } }) => {
+      injectionTargets.push(target)
+      if (target.allFrames) throw new Error('Unapproved child frame')
+      injected.add(target.tabId)
+    } },
     storage: { sync: area(sync), local: area({}), session: area(session), onChanged: { addListener: () => {} } },
   } as unknown as typeof chrome
   try {
@@ -51,5 +68,17 @@ test('background rejects untrusted senders and serves only summaries/codes to au
     expect((await request('summaries', page)).value).toMatchObject({ locked: true, accounts: [] })
     expect(await request('code', page, { revision: summary.value.revision, name: 'Example' })).toMatchObject({ ok: false, error: 'locked' })
     expect(await request('unlock', page, { password: 'test-password' })).toMatchObject({ ok: false, error: 'denied' })
+    expect(await request('unlock', popup, { password: 'wrong-password' })).toMatchObject({ ok: false })
+    expect(injectionTargets).toHaveLength(0)
+    notifications.length = 0
+    expect(await request('unlock', popup, { password: 'test-password' })).toMatchObject({ ok: true })
+    expect(injectionTargets).toEqual([{ tabId: 1, allFrames: true }, { tabId: 1 }])
+    expect(notifications).toContain(1)
+    expect(injected.has(3)).toBe(false)
+    expect((await request('summaries', page)).value.locked).toBe(false)
+    injectionTargets.length = 0
+    await request('lock', popup)
+    await request('unlock', popup, { password: 'test-password' })
+    expect(injectionTargets).toHaveLength(0)
   } finally { globalThis.chrome = previous }
 })

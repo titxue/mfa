@@ -4,11 +4,26 @@ import { grantedSites, sitePattern } from './utils/site-access'
 import { TOTP } from './utils/totp'
 import { StorageManager } from './utils/storage'
 
-async function notify(invalidate = false) {
+async function notify(invalidate = false, ensureInjected = false) {
   await chrome.runtime.sendMessage({ type: 'VAULT_CHANGED', invalidate }).catch(() => {})
   const tabs = await chrome.tabs.query({})
-  await Promise.all(tabs.map(tab => tab.id === undefined ? Promise.resolve() :
-    chrome.tabs.sendMessage(tab.id, { type: 'VAULT_CHANGED', invalidate }).catch(() => {})))
+  const sites = ensureInjected ? await grantedSites() : []
+  await Promise.all(tabs.map(async tab => {
+    if (tab.id === undefined) return
+    if (ensureInjected && sites.includes(sitePattern(tab.url ?? '') ?? '')) {
+      // Registering a content script does not inject it into an already-open page.
+      const receiver = await chrome.tabs.sendMessage(tab.id, { type: 'PING' }).catch(() => undefined)
+      if (!receiver?.ok) {
+        try {
+          await chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ['content-script.js'] })
+        } catch {
+          // A cross-origin frame can be outside the existing host grant.
+          await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['content-script.js'] }).catch(() => {})
+        }
+      }
+    }
+    await chrome.tabs.sendMessage(tab.id, { type: 'VAULT_CHANGED', invalidate }).catch(() => {})
+  }))
 }
 const ready = Promise.all([
   chrome.storage.sync.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }),
@@ -64,7 +79,7 @@ chrome.runtime.onMessage.addListener((message: VaultRequest, sender, respond) =>
       case 'backup': return vault.backup(!!m.plain, m.password ?? '')
       default: throw new Error('invalid')
     }
-    await notify()
+    await notify(false, m.action === 'unlock')
     return vault.snapshot()
   }).then(value => respond({ ok: true, value }), error => {
     const known = ['locked', 'conflict', 'invalid', 'passwordError', 'passwordLength', 'quota', 'denied']

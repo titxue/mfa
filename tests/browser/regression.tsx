@@ -152,5 +152,39 @@ await check('QR menu entry opens QR without filling or copying the code', async 
   assert(attempts === 0, 'opening QR triggered autofill')
 })
 
+await check('unlock restores autofill on an already-focused field without a page reload', async () => {
+  fixture.innerHTML = '<input autocomplete="one-time-code">'
+  const input = fixture.querySelector('input')!
+  input.focus()
+  let locked = true, allowed = true, requests = 0
+  let messageHandler!: (message: unknown, sender: unknown, respond: () => void) => boolean
+  chromeMock(async message => {
+    if (message.type === 'SITE_ACCESS_CHECK') return { allowed }
+    if (message.action === 'code') { requests++; return { ok: true, value: '123456' } }
+    return { ok: true, value: { locked, revision: 'one', accounts: locked ? [] : [{ name: 'Demo', website: location.origin }],
+      settings: { autofillInlineMenu: true, clipboardFallback: true }, language: 'en-US' } }
+  })
+  ;(chrome.runtime.onMessage as any).addListener = (handler: typeof messageHandler) => { messageHandler = handler }
+  const shadows: ShadowRoot[] = [], original = Element.prototype.attachShadow
+  Element.prototype.attachShadow = function (options) { const shadow = original.call(this, options); shadows.push(shadow); return shadow }
+  const settle = () => new Promise(resolve => setTimeout(resolve, 20))
+  const fillButton = () => shadows.filter(shadow => shadow.host.isConnected).map(shadow => shadow.querySelector<HTMLButtonElement>('.mfa-button')).find(Boolean)
+  try {
+    await import('../../src/content-script')
+    await settle()
+    assert(fillButton(), 'locked field has no menu button')
+    locked = false
+    messageHandler({ type: 'VAULT_CHANGED', invalidate: true }, {}, () => {})
+    await settle()
+    assert(document.activeElement === input && fillButton(), 'unlock did not restore the focused field button')
+    fillButton()!.click(); await settle()
+    assert(input.value === '123456' && requests === 1, 'unlock still requires refresh before filling')
+    allowed = false
+    messageHandler({ type: 'SITE_ACCESS_CHANGED' }, {}, () => {})
+    await settle()
+    assert(!fillButton(), 'revoked site regained autofill')
+  } finally { Element.prototype.attachShadow = original }
+})
+
 document.title = results.some(result => result.startsWith('FAIL')) ? 'FAIL MFA regression' : 'PASS MFA regression'
 ;(window as any).regressionResults = results

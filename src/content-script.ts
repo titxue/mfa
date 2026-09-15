@@ -116,6 +116,7 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
       locked = true
     }
     if (!siteAllowed || !settings.autofillInlineMenu) hideInlineUI()
+    else refreshInlineUI()
   }
 
   // 消息处理：弹窗点击账户卡片时驱动填充
@@ -168,56 +169,54 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
     return false
   })
 
-  // 焦点进入 OTP 字段/分段组时显示内联菜单
-  document.addEventListener(
-    'focusin',
-    async (e) => {
-      const target = e.target
-      if (!(target instanceof HTMLInputElement)) return
-      if (!settings.autofillInlineMenu) return
-      await reloadState()
-      if (!siteAllowed) return
-      if (document.activeElement !== target) return
-      const isOtp = isOTPField(target)
-      const segmentedGroup = isSegmentedInput(target) ? findSegmentedGroupFor(target) : null
-      if (!isOtp && !segmentedGroup) return
-      lastAnchor = target
-      const menuAccounts: MenuAccount[] = accounts.map((a) => ({
-        name: a.name,
-        website: a.website,
-      }))
-      // 自动识别当前网站：过滤出匹配的账户
-      const matches = matchAccountsForSite(menuAccounts, window.location.hostname)
-      // 1Password 风格：字段右侧显示填充按钮，点击弹出菜单选择填充（有匹配时菜单只显示匹配项）
-      // 不做聚焦即自动填充——始终由用户点击按钮后填充
-      showInlineUI(target, {
-        inputGroup: segmentedGroup ?? undefined,
-        accounts: matches.length > 0 ? matches : menuAccounts,
-        strings: menuStrings,
-        getCode: async (account) => {
-          const generation = vaultGeneration
-          if (locked) throw new Error('locked')
-          const code = await vaultRequest<string>('code', { name: account.name, revision: vaultRevision })
-          if (generation !== vaultGeneration || locked) throw new Error('locked')
-          return code
-        },
-        onFill: async (account, code) => {
-          const generation = vaultGeneration
-          if (!await refreshAccess() || locked || generation !== vaultGeneration) return
-          hideInlineUI()
-          const result = fillCode(code, target)
-          if (result.status === 'filled') {
-            showFilledFeedback(target, menuStrings.filled)
-          } else {
-            showFilledFeedback(target, menuStrings.failed)
-          }
-        },
-      })
-    },
-    true
-  )
+  // Rebuild from current state after unlock, including an input that stayed focused.
+  function refreshInlineUI(): void {
+    const target = document.activeElement
+    if (!(target instanceof HTMLInputElement) || !siteAllowed || !settings.autofillInlineMenu) return
+    const isOtp = isOTPField(target)
+    const segmentedGroup = isSegmentedInput(target) ? findSegmentedGroupFor(target) : null
+    if (!isOtp && !segmentedGroup) return
+    lastAnchor = target
+    const menuAccounts: MenuAccount[] = accounts.map((a) => ({
+      name: a.name,
+      website: a.website,
+    }))
+    // 自动识别当前网站：过滤出匹配的账户
+    const matches = matchAccountsForSite(menuAccounts, window.location.hostname)
+    // 1Password 风格：字段右侧显示填充按钮，点击弹出菜单选择填充（有匹配时菜单只显示匹配项）
+    // 不做聚焦即自动填充——始终由用户点击按钮后填充
+    showInlineUI(target, {
+      inputGroup: segmentedGroup ?? undefined,
+      accounts: matches.length > 0 ? matches : menuAccounts,
+      strings: menuStrings,
+      getCode: async (account) => {
+        const generation = vaultGeneration
+        if (locked) throw new Error('locked')
+        const code = await vaultRequest<string>('code', { name: account.name, revision: vaultRevision })
+        if (generation !== vaultGeneration || locked) throw new Error('locked')
+        return code
+      },
+      onFill: async (account, code) => {
+        const generation = vaultGeneration
+        if (!await refreshAccess() || locked || generation !== vaultGeneration) return
+        hideInlineUI()
+        const result = fillCode(code, target)
+        if (result.status === 'filled') {
+          showFilledFeedback(target, menuStrings.filled)
+        } else {
+          showFilledFeedback(target, menuStrings.failed)
+        }
+      },
+    })
+  }
 
-  reloadState()
+  // A popup can close without generating focusin on the still-focused input.
+  document.addEventListener('focusin', event => {
+    if (event.target instanceof HTMLInputElement) void reloadState()
+  }, true)
+  window.addEventListener('focus', () => { void reloadState() })
+
+  void reloadState()
 }
 
 export {}
