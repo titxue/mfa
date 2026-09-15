@@ -107,13 +107,13 @@ const copy: Record<Locale, Copy> = {
       faq: '常见问题',
     },
     hero: {
-      badge: 'Chrome 扩展 · 完全离线 · Manifest V3',
+      badge: 'Chrome 扩展 · 离线生成 · 密码保护',
       title: 'TOTP Authenticator',
       lead:
-        '安全快速的双因素认证码生成器。离线生成 2FA 验证码，支持二维码导入、验证码复制、账户导入导出和 12 种语言。',
+        '离线生成 2FA 验证码，支持主密码保护、加密备份、网站填充和 12 种语言。导入前查看账户数量，管理账户更清楚。',
       install: '安装扩展',
       github: '查看源码',
-      proof: ['本地生成验证码', '无第三方网络请求', '支持 Chrome 同步存储'],
+      proof: ['本地生成验证码', '支持密码保护', '支持 Chrome 同步存储'],
       trustSignals: [
         { label: '用户数量', value: 'Chrome Web Store', dynamic: 'users' },
         { label: '评分', value: 'Chrome Web Store', dynamic: 'rating' },
@@ -132,7 +132,7 @@ const copy: Record<Locale, Copy> = {
         { name: 'Cloudflare', code: '036 884', time: '24s' },
         { name: 'Google', code: '719 430', time: '09s' },
       ],
-      hint: '点击账户即可复制验证码，适合快速粘贴到登录页面。',
+      hint: '点击账户尝试填充验证码，也可按设置回退复制。',
     },
     sections: {
       features: '为日常登录做得足够顺手',
@@ -160,13 +160,13 @@ const copy: Record<Locale, Copy> = {
       },
       {
         icon: Copy,
-        title: '一键复制验证码',
-        body: '点击账户即可复制当前验证码，再粘贴到需要 2FA 的登录页面。',
+        title: '验证码填充与复制',
+        body: '点击账户尝试填充当前网页，未能填充时可按设置回退复制。授权网站后，可在验证码输入框旁选择账户。',
       },
       {
         icon: Download,
         title: '导入导出账户',
-        body: '使用 JSON 文件备份和迁移账户，导入时自动跳过重复项。',
+        body: '支持普通与加密 JSON 备份。普通备份直接预览数量，加密备份先解密再确认，导入时跳过重复账户。',
       },
       {
         icon: CloudOff,
@@ -190,28 +190,28 @@ const copy: Record<Locale, Copy> = {
       },
       {
         title: '使用验证码登录',
-        body: '打开需要 2FA 的网页，点击账户卡片复制验证码，再粘贴到登录页面。',
+        body: '打开需要 2FA 的网页，点击账户卡片尝试填充验证码，或复制后粘贴。',
       },
       {
         title: '备份和迁移',
-        body: '在设置中导出 JSON 文件，换设备后再导入。导出文件包含密钥，请妥善保存。',
+        body: '开启密码保护后默认导出加密备份。导入时先查看账户数量，再确认添加；请保管好备份密码。',
       },
     ],
     privacy: [
       {
         icon: LockKeyhole,
-        title: '密钥留在浏览器中',
-        body: '账户信息通过 Chrome Storage API 保存，非扩展环境才回退到 localStorage。',
+        title: '主密码保护',
+        body: '开启密码保护后，账户名称、密钥和网站信息一起加密。可手动锁定，浏览器重启后需要重新解锁。',
       },
       {
         icon: ShieldCheck,
-        title: '无数据收集',
-        body: '扩展不需要账号系统，不向第三方服务器上传验证码、密钥或账户列表。',
+        title: 'Chrome 账户同步',
+        body: '扩展账户通过 Chrome 同步，无需注册额外账号。未开启密码保护时同步的是明文账户；本官网不接收账户密钥。',
       },
       {
         icon: KeyRound,
         title: '备份文件需保护',
-        body: '导出的 JSON 用于迁移账户，里面包含未加密密钥，建议只存放在可信位置。',
+        body: '加密备份需要导出时的密码才能恢复。明文备份包含账户密钥；忘记密码无法恢复加密数据。',
       },
     ],
     faqs: [
@@ -227,7 +227,7 @@ const copy: Record<Locale, Copy> = {
       {
         question: '数据会跟随 Google 账号同步吗？',
         answer:
-          '扩展优先使用 Chrome Storage，同一 Google 账号且开启同步时可跨设备同步；未登录或不可用时回退本地存储。',
+          '两台设备需使用同一扩展、同一 Chrome 账号并开启扩展数据同步。另一台收到加密记录后需要输入同一密码；离线或尚未同步的旧副本不会立即锁定，请避免多设备同时编辑。',
       },
       {
         question: '可以通过开发者模式安装吗？',
@@ -250,13 +250,13 @@ const copy: Record<Locale, Copy> = {
       faq: 'FAQ',
     },
     hero: {
-      badge: 'Chrome extension · Fully offline · Manifest V3',
+      badge: 'Chrome extension · Offline codes · Password protection',
       title: 'TOTP Authenticator',
       lead:
-        'A secure and fast two-factor code generator for Chrome. Generate 2FA codes offline, import QR codes, copy codes quickly, back up accounts, and use it in 12 languages.',
+        'Generate 2FA codes offline with password protection, encrypted backups, website filling, and 12 languages. Preview the account count before confirming an import.',
       install: 'Install extension',
       github: 'View source',
-      proof: ['Codes generated locally', 'No third-party network requests', 'Chrome sync storage support'],
+      proof: ['Codes generated locally', 'Password protection available', 'Chrome sync storage support'],
       trustSignals: [
         { label: 'Users', value: 'Chrome Web Store', dynamic: 'users' },
         { label: 'Rating', value: 'Chrome Web Store', dynamic: 'rating' },
@@ -275,7 +275,7 @@ const copy: Record<Locale, Copy> = {
         { name: 'Cloudflare', code: '036 884', time: '24s' },
         { name: 'Google', code: '719 430', time: '09s' },
       ],
-      hint: 'Click an account to copy the code, then paste it into the sign-in page.',
+      hint: 'Click an account to fill a code, with optional copy fallback.',
     },
     sections: {
       features: 'Made for everyday sign-ins',
@@ -303,13 +303,13 @@ const copy: Record<Locale, Copy> = {
       },
       {
         icon: Copy,
-        title: 'One-click code copy',
-        body: 'Click an account to copy the current code, then paste it into the 2FA sign-in page.',
+        title: 'Fill or copy a code',
+        body: 'Click an account to fill the current page, with optional copy fallback. Grant site access to choose accounts beside verification fields.',
       },
       {
         icon: Download,
         title: 'Import and export',
-        body: 'Back up and move accounts with JSON files, with duplicate accounts skipped on import.',
+        body: 'Import plain or encrypted JSON backups. Preview the account count, decrypt encrypted files first, then confirm. Duplicate accounts are skipped.',
       },
       {
         icon: CloudOff,
@@ -333,28 +333,28 @@ const copy: Record<Locale, Copy> = {
       },
       {
         title: 'Sign in with a code',
-        body: 'Open the site that needs 2FA, click an account card to copy the code, then paste it.',
+        body: 'Open the site that needs 2FA, then click an account card to fill the code or copy and paste it.',
       },
       {
         title: 'Back up and migrate',
-        body: 'Export a JSON backup from settings and import it on another device. Keep exported secrets safe.',
+        body: 'With password protection enabled, exports are encrypted by default. Preview the account count before importing and keep the backup password safe.',
       },
     ],
     privacy: [
       {
         icon: LockKeyhole,
-        title: 'Secrets stay in the browser',
-        body: 'Accounts are stored with the Chrome Storage API, with localStorage fallback outside extension contexts.',
+        title: 'Master password protection',
+        body: 'Password protection encrypts account names, secrets, and websites. Lock manually or unlock again after restarting the browser.',
       },
       {
         icon: ShieldCheck,
-        title: 'No data collection',
-        body: 'No product account is required, and codes, secrets, and account lists are not uploaded.',
+        title: 'Chrome account sync',
+        body: 'Accounts sync through Chrome without a separate product account. Without password protection, account records are not encrypted by the extension. This website does not receive account secrets.',
       },
       {
         icon: KeyRound,
         title: 'Protect backup files',
-        body: 'Exported JSON files contain unencrypted secrets for migration, so keep them in trusted storage.',
+        body: 'Encrypted backups require the password used when exported. Plain backups expose account secrets. Encrypted data cannot be recovered if you forget its password.',
       },
     ],
     faqs: [
@@ -369,7 +369,7 @@ const copy: Record<Locale, Copy> = {
       {
         question: 'Does data sync with my Google account?',
         answer:
-          'The extension uses Chrome Storage first. It can sync across devices when the same Google account has Chrome sync enabled.',
+          'Use the same extension and Chrome account with extension data sync enabled. Another device needs the same password after receiving encrypted records. Offline or unsynced copies do not lock immediately; avoid editing on multiple devices at once.',
       },
       {
         question: 'Can I install it in developer mode?',

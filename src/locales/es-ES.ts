@@ -104,6 +104,7 @@ export const esES: Translations = {
   'toast.qr_scanning': 'Escaneando código QR...',
   'toast.qr_success': 'Código QR reconocido exitosamente',
   'toast.qr_no_code': 'No se encontró código QR, por favor intenta nuevamente',
+  'toast.unsupported_totp': 'Configuración no compatible. Solo se admite SHA1, 6 dígitos y un período de 30 segundos.',
   'toast.qr_invalid_format': 'Formato de código QR inválido',
   'toast.qr_parse_failed': 'Error al analizar el código QR',
   'toast.qr_invalid_file_type': 'Tipo de archivo no compatible, por favor sube un archivo de imagen',
@@ -116,6 +117,8 @@ export const esES: Translations = {
   // Diálogos de confirmación
   'dialog.export_title': 'Confirmar exportación',
   'dialog.export_message': 'Se exportarán los datos de {count} cuentas. El archivo exportado contiene información confidencial, por favor guárdalo de forma segura.',
+  'dialog.import_encrypted': "Esta copia está cifrada. Introduce la contraseña para descifrarla y ver el número de cuentas.",
+  'button.decrypt_preview': "Descifrar y revisar",
   'dialog.import_title': 'Confirmar importación',
   'dialog.import_message': 'Se importarán {count} cuentas. La operación de importación agregará nuevas cuentas, las cuentas duplicadas serán omitidas.',
   'dialog.delete_title': 'Confirmar eliminación',

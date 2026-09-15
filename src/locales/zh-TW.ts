@@ -104,6 +104,7 @@ export const zhTW: Translations = {
   'toast.qr_scanning': '正在掃描 QR 碼...',
   'toast.qr_success': 'QR 碼識別成功',
   'toast.qr_no_code': '未找到 QR 碼，請重試',
+  'toast.unsupported_totp': '暫不支援此驗證碼設定，僅支援 SHA1、6 位數字、30 秒週期。',
   'toast.qr_invalid_format': 'QR 碼格式不正確',
   'toast.qr_parse_failed': 'QR 碼解析失敗',
   'toast.qr_invalid_file_type': '不支援的檔案類型，請上傳圖片檔案',
@@ -116,6 +117,8 @@ export const zhTW: Translations = {
   // 確認對話框
   'dialog.export_title': '確認匯出',
   'dialog.export_message': '即將匯出 {count} 個帳戶的資料。匯出的檔案包含敏感資訊，請妥善保管。',
+  'dialog.import_encrypted': "這是加密備份，請先輸入密碼解密並查看帳戶數量。",
+  'button.decrypt_preview': "解密並預覽",
   'dialog.import_title': '確認匯入',
   'dialog.import_message': '即將匯入 {count} 個帳戶。匯入操作將新增新帳戶，重複的帳戶將被跳過。',
   'dialog.delete_title': '確認刪除',

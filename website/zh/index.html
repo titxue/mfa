@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="TOTP Authenticator Chrome 插件可离线生成 2FA 验证码，支持二维码导入、一键复制、账户备份，并让密钥留在本地。"
+      content="TOTP Authenticator Chrome 插件可离线生成 2FA 验证码，支持二维码导入、一键复制、账户备份，并支持主密码保护与加密备份。"
     />
     <meta name="google-site-verification" content="DrwOxH0uM-avcvLawOo-hCM6WYSRuUV37bdxGGksZgQ" />
     <meta name="theme-color" content="#0f172a" />
@@ -20,7 +20,7 @@
     <meta property="og:title" content="TOTP Authenticator Chrome 插件 - 离线 2FA 验证码生成器" />
     <meta
       property="og:description"
-      content="在 Chrome 中离线生成 TOTP 验证码，支持二维码导入、一键复制、账户备份，并让密钥留在本地。"
+      content="在 Chrome 中离线生成 TOTP 验证码，支持二维码导入、一键复制、账户备份，并支持主密码保护与加密备份。"
     />
     <meta property="og:url" content="https://mfa.xuejy.com/zh/" />
     <meta property="og:image" content="https://mfa.xuejy.com/icon128.png" />
@@ -39,10 +39,10 @@
         "name": "TOTP Authenticator Chrome 插件 - 离线 2FA 验证码生成器",
         "applicationCategory": "SecurityApplication",
         "operatingSystem": "Chrome",
-        "description": "TOTP Authenticator Chrome 插件可离线生成 2FA 验证码，支持二维码导入、一键复制、账户备份，并让密钥留在本地。",
+        "description": "TOTP Authenticator Chrome 插件可离线生成 2FA 验证码，支持二维码导入、一键复制、账户备份，并支持主密码保护与加密备份。",
         "url": "https://mfa.xuejy.com/zh/",
         "downloadUrl": "https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf",
-        "softwareVersion": "2.1.0",
+        "softwareVersion": "2.2.0",
         "license": "https://opensource.org/licenses/MIT",
         "codeRepository": "https://github.com/titxue/mfa",
         "offers": {
@@ -78,7 +78,7 @@
             "name": "数据会跟随 Google 账号同步吗？",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "扩展优先使用 Chrome Storage，同一 Google 账号且开启同步时可跨设备同步；未登录或不可用时回退本地存储。"
+              "text": "两台设备需使用同一扩展、同一 Chrome 账号并开启扩展数据同步。另一台收到加密记录后需要输入同一密码；离线或尚未同步的旧副本不会立即锁定，请避免多设备同时编辑。"
             }
           },
           {
@@ -99,7 +99,7 @@
       <main>
         <h1>TOTP Authenticator - 2FA OTP 验证码生成器</h1>
         <p>
-          在 Chrome 中离线生成 TOTP 验证码，支持二维码导入、一键复制、账户备份，并让密钥留在本地。
+          在 Chrome 中离线生成 TOTP 验证码，支持二维码导入、一键复制、账户备份，并支持主密码保护与加密备份。
         </p>
         <p>
           <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=official_site&utm_medium=website&utm_campaign=install_cta">

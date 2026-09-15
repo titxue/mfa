@@ -104,6 +104,7 @@ export const ptBR: Translations = {
   'toast.qr_scanning': 'Escaneando código QR...',
   'toast.qr_success': 'Código QR reconhecido com sucesso',
   'toast.qr_no_code': 'Nenhum código QR encontrado, por favor tente novamente',
+  'toast.unsupported_totp': 'Configuração não compatível. Apenas SHA1, 6 dígitos e período de 30 segundos são aceitos.',
   'toast.qr_invalid_format': 'Formato de código QR inválido',
   'toast.qr_parse_failed': 'Falha ao analisar o código QR',
   'toast.qr_invalid_file_type': 'Tipo de arquivo não suportado, por favor envie um arquivo de imagem',
@@ -116,6 +117,8 @@ export const ptBR: Translations = {
   // Diálogos de confirmação
   'dialog.export_title': 'Confirmar exportação',
   'dialog.export_message': 'Os dados de {count} contas serão exportados. O arquivo exportado contém informações confidenciais, por favor guarde-o com segurança.',
+  'dialog.import_encrypted': "Este backup está criptografado. Digite a senha para descriptografar e ver a quantidade de contas.",
+  'button.decrypt_preview': "Descriptografar e visualizar",
   'dialog.import_title': 'Confirmar importação',
   'dialog.import_message': '{count} contas serão importadas. A operação de importação adicionará novas contas, contas duplicadas serão ignoradas.',
   'dialog.delete_title': 'Confirmar exclusão',

@@ -104,6 +104,7 @@ export const koKR: Translations = {
   'toast.qr_scanning': 'QR 코드 스캔 중...',
   'toast.qr_success': 'QR 코드 인식 성공',
   'toast.qr_no_code': 'QR 코드를 찾을 수 없습니다. 다시 시도해주세요',
+  'toast.unsupported_totp': '지원하지 않는 설정입니다. SHA1, 6자리, 30초 주기만 지원합니다.',
   'toast.qr_invalid_format': '잘못된 QR 코드 형식입니다',
   'toast.qr_parse_failed': 'QR 코드 분석 실패',
   'toast.qr_invalid_file_type': '지원되지 않는 파일 형식입니다. 이미지 파일을 업로드해주세요',
@@ -116,6 +117,8 @@ export const koKR: Translations = {
   // 확인 대화상자
   'dialog.export_title': '내보내기 확인',
   'dialog.export_message': '{count}개의 계정 데이터를 내보냅니다. 내보낸 파일에는 민감한 정보가 포함되어 있으니 안전하게 보관하세요.',
+  'dialog.import_encrypted': "암호화된 백업입니다. 비밀번호를 입력하여 복호화하고 계정 수를 확인하세요.",
+  'button.decrypt_preview': "복호화 및 미리보기",
   'dialog.import_title': '가져오기 확인',
   'dialog.import_message': '{count}개의 계정을 가져옵니다. 가져오기 작업은 새 계정을 추가하며 중복된 계정은 건너뜁니다.',
   'dialog.delete_title': '삭제 확인',

@@ -60,6 +60,7 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const { t, locale, setLocale, resetLanguage } = useI18n()
   const { settings, loading: settingsLoading, saving: settingsSaving, updateSettings } = useSettings()
+  const [languageSaving, setLanguageSaving] = React.useState(false)
   const s = securityStrings(locale)
   const [plainExport, setPlainExport] = React.useState(false)
   const [backupPassword, setBackupPassword] = React.useState('')
@@ -98,12 +99,18 @@ export function SettingsModal({
 
   // 切换语言
   const handleLanguageChange = async (newLocale: Language) => {
-    try { await setLocale(newLocale); toast.success(t('toast.language_changed')) }
-    catch (error) { toast.error(securityError(locale, error)) }
+    if (languageSaving) return
+    setLanguageSaving(true)
+    try {
+      await setLocale(newLocale)
+      toast.success(t('toast.language_changed'))
+    } catch { toast.error(securityError(locale, new Error('storageError'))) }
+    finally { setLanguageSaving(false) }
   }
 
   // 连续点击重置语言（隐藏功能）
   const handleLanguageTitleClick = () => {
+    if (languageSaving) return
     const now = Date.now()
     const timeSinceLastClick = now - lastClickTimeRef.current
 
@@ -116,8 +123,11 @@ export function SettingsModal({
     lastClickTimeRef.current = now
 
     if (clickCountRef.current === 3) {
-      void resetLanguage().then(() => toast.success(t('toast.language_reset')))
-        .catch(error => toast.error(securityError(locale, error)))
+      setLanguageSaving(true)
+      void resetLanguage()
+        .then(() => toast.success(t('toast.language_reset')))
+        .catch(() => toast.error(securityError(locale, new Error('storageError'))))
+        .finally(() => setLanguageSaving(false))
       clickCountRef.current = 0
       lastClickTimeRef.current = 0
     }
@@ -165,6 +175,7 @@ export function SettingsModal({
                 <Label htmlFor="language">{t('settings.languageTitle')}</Label>
                 <div className="relative">
                   <select
+                    disabled={languageSaving}
                     id="language"
                     value={locale}
                     onChange={(event) => {

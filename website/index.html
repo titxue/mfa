@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Offline Chrome TOTP authenticator for 2FA login. Import QR codes, copy OTP codes, back up accounts, and keep secrets local."
+      content="Offline Chrome TOTP authenticator for 2FA login. Import QR codes, copy OTP codes, back up accounts, and protect accounts with a master password."
     />
     <meta name="google-site-verification" content="DrwOxH0uM-avcvLawOo-hCM6WYSRuUV37bdxGGksZgQ" />
     <meta name="theme-color" content="#0f172a" />
@@ -20,7 +20,7 @@
     <meta property="og:title" content="TOTP Authenticator for Chrome - Offline 2FA Code Generator" />
     <meta
       property="og:description"
-      content="Generate TOTP codes offline in Chrome. Import QR codes, copy OTP codes quickly, back up accounts, and keep secrets local."
+      content="Generate TOTP codes offline in Chrome. Import QR codes, copy OTP codes quickly, back up accounts, and protect accounts with a master password."
     />
     <meta property="og:url" content="https://mfa.xuejy.com/" />
     <meta property="og:image" content="https://mfa.xuejy.com/icon128.png" />
@@ -39,10 +39,10 @@
         "name": "TOTP Authenticator for Chrome - Offline 2FA Code Generator",
         "applicationCategory": "SecurityApplication",
         "operatingSystem": "Chrome",
-        "description": "Offline Chrome TOTP authenticator for 2FA login. Import QR codes, copy OTP codes, back up accounts, and keep secrets local.",
+        "description": "Offline Chrome TOTP authenticator for 2FA login. Import QR codes, copy OTP codes, back up accounts, and protect accounts with a master password.",
         "url": "https://mfa.xuejy.com/",
         "downloadUrl": "https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf",
-        "softwareVersion": "2.1.0",
+        "softwareVersion": "2.2.0",
         "license": "https://opensource.org/licenses/MIT",
         "codeRepository": "https://github.com/titxue/mfa",
         "offers": {
@@ -78,7 +78,7 @@
             "name": "Does data sync with my Google account?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The extension uses Chrome Storage first. It can sync across devices when the same Google account has Chrome sync enabled."
+              "text": "Use the same extension and Chrome account with extension data sync enabled. Another device needs the same password after receiving encrypted records. Offline or unsynced copies do not lock immediately; avoid editing on multiple devices at once."
             }
           },
           {
@@ -100,7 +100,7 @@
         <h1>TOTP Authenticator - 2FA OTP Code Generator</h1>
         <p>
           Generate TOTP codes offline in Chrome. Import QR codes, copy codes quickly,
-          back up accounts, and keep secrets local.
+          back up accounts, and protect accounts with a master password.
         </p>
         <p>
           <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=official_site&utm_medium=website&utm_campaign=install_cta">

@@ -104,6 +104,7 @@ export const enUS: Translations = {
   'toast.qr_scanning': 'Scanning QR code...',
   'toast.qr_success': 'QR code recognized successfully',
   'toast.qr_no_code': 'No QR code found, please try again',
+  'toast.unsupported_totp': 'Unsupported code settings. Only SHA1, 6 digits and a 30-second period are supported.',
   'toast.qr_invalid_format': 'Invalid QR code format',
   'toast.qr_parse_failed': 'Failed to parse QR code',
   'toast.qr_invalid_file_type': 'Unsupported file type, please upload an image file',
@@ -116,6 +117,8 @@ export const enUS: Translations = {
   // Confirmation dialogs
   'dialog.export_title': 'Confirm Export',
   'dialog.export_message': 'About to export {count} accounts data. The exported file contains sensitive information, please keep it safe.',
+  'dialog.import_encrypted': "This backup is encrypted. Enter its password to decrypt it and preview the account count.",
+  'button.decrypt_preview': "Decrypt and preview",
   'dialog.import_title': 'Confirm Import',
   'dialog.import_message': 'About to import {count} accounts. Import operation will add new accounts, duplicate accounts will be skipped.',
   'dialog.delete_title': 'Confirm Delete',

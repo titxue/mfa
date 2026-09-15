@@ -25,6 +25,12 @@
     "128": "icons/icon128.png"
   },
   "minimum_chrome_version": "102",
-  "optional_host_permissions": ["https://*/*", "http://*/*"],
-  "background": { "service_worker": "background.js", "type": "module" }
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
 }

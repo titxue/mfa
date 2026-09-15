@@ -104,6 +104,7 @@ export const jaJP: Translations = {
   'toast.qr_scanning': 'QRコードをスキャン中...',
   'toast.qr_success': 'QRコードの認識に成功しました',
   'toast.qr_no_code': 'QRコードが見つかりませんでした。もう一度お試しください',
+  'toast.unsupported_totp': '未対応の設定です。SHA1・6桁・30秒周期のみ対応しています。',
   'toast.qr_invalid_format': '無効なQRコード形式です',
   'toast.qr_parse_failed': 'QRコードの解析に失敗しました',
   'toast.qr_invalid_file_type': 'サポートされていないファイルタイプです。画像ファイルをアップロードしてください',
@@ -116,6 +117,8 @@ export const jaJP: Translations = {
   // 確認ダイアログ
   'dialog.export_title': 'エクスポートの確認',
   'dialog.export_message': '{count}個のアカウントデータをエクスポートします。エクスポートされたファイルには機密情報が含まれていますので、安全に保管してください。',
+  'dialog.import_encrypted': "暗号化されたバックアップです。パスワードを入力して復号し、アカウント数を確認してください。",
+  'button.decrypt_preview': "復号して確認",
   'dialog.import_title': 'インポートの確認',
   'dialog.import_message': '{count}個のアカウントをインポートします。インポート操作により新しいアカウントが追加され、重複するアカウントはスキップされます。',
   'dialog.delete_title': '削除の確認',

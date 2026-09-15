@@ -54,7 +54,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         }
 
         setLocaleState(detected)
-        await StorageManager.saveLanguage(detected)
+        // Detection does not need to persist until the user chooses a language.
       }
     }
 

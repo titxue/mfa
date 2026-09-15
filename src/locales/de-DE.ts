@@ -104,6 +104,7 @@ export const deDE: Translations = {
   'toast.qr_scanning': 'QR-Code wird gescannt...',
   'toast.qr_success': 'QR-Code erfolgreich erkannt',
   'toast.qr_no_code': 'Kein QR-Code gefunden, bitte versuchen Sie es erneut',
+  'toast.unsupported_totp': 'Nicht unterstützte Einstellungen. Unterstützt werden nur SHA1, 6 Ziffern und ein Intervall von 30 Sekunden.',
   'toast.qr_invalid_format': 'Ungültiges QR-Code-Format',
   'toast.qr_parse_failed': 'QR-Code konnte nicht analysiert werden',
   'toast.qr_invalid_file_type': 'Nicht unterstützter Dateityp, bitte laden Sie eine Bilddatei hoch',
@@ -116,6 +117,8 @@ export const deDE: Translations = {
   // Bestätigungsdialoge
   'dialog.export_title': 'Export bestätigen',
   'dialog.export_message': '{count} Kontodaten werden exportiert. Die exportierte Datei enthält vertrauliche Informationen, bewahren Sie sie sicher auf.',
+  'dialog.import_encrypted': "Diese Sicherung ist verschlüsselt. Gib das Passwort ein, um die Anzahl der Konten anzuzeigen.",
+  'button.decrypt_preview': "Entschlüsseln und anzeigen",
   'dialog.import_title': 'Import bestätigen',
   'dialog.import_message': '{count} Konten werden importiert. Der Importvorgang fügt neue Konten hinzu, doppelte Konten werden übersprungen.',
   'dialog.delete_title': 'Löschen bestätigen',

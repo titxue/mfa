@@ -102,6 +102,7 @@ export const zhCN = {
   'toast.qr_scanning': '正在扫描二维码...',
   'toast.qr_success': '二维码识别成功',
   'toast.qr_no_code': '未找到二维码，请重试',
+  'toast.unsupported_totp': '暂不支持此验证码配置，仅支持 SHA1、6 位数字、30 秒周期。',
   'toast.qr_invalid_format': '二维码格式不正确',
   'toast.qr_parse_failed': '二维码解析失败',
   'toast.qr_invalid_file_type': '不支持的文件类型，请上传图片文件',
@@ -114,6 +115,8 @@ export const zhCN = {
   // 确认对话框
   'dialog.export_title': '确认导出',
   'dialog.export_message': '即将导出 {count} 个账户的数据。导出的文件包含敏感信息，请妥善保管。',
+  'dialog.import_encrypted': "这是加密备份，请先输入密码解密并查看账户数量。",
+  'button.decrypt_preview': "解密并预览",
   'dialog.import_title': '确认导入',
   'dialog.import_message': '即将导入 {count} 个账户。导入操作将添加新账户，重复的账户将被跳过。',
   'dialog.delete_title': '确认删除',
