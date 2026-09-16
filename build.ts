@@ -1,6 +1,6 @@
 import { $ } from 'bun'
 import { copyFile, mkdir, readFile, writeFile } from 'fs/promises'
-import { existsSync, readdirSync } from 'fs'
+import { existsSync } from 'fs'
 import { LANGUAGE_CONFIGS } from './src/locales'
 
 if (Bun.argv.includes('--watch')) {
@@ -212,21 +212,3 @@ console.log(`✅ Generated ${LANGUAGE_CONFIGS.length} locale directories`)
 
 console.log('✅ Build completed successfully!')
 console.log('📦 Output directory: ./dist')
-
-
-// 辅助函数：递归复制目录
-async function copyDirectory(src: string, dest: string) {
-  const entries = readdirSync(src, { withFileTypes: true })
-
-  for (const entry of entries) {
-    const srcPath = `${src}/${entry.name}`
-    const destPath = `${dest}/${entry.name}`
-
-    if (entry.isDirectory()) {
-      await mkdir(destPath, { recursive: true })
-      await copyDirectory(srcPath, destPath)
-    } else {
-      await copyFile(srcPath, destPath)
-    }
-  }
-}

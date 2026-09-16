@@ -125,15 +125,6 @@
    - 技术实现细节
    - 设计模式分析
 
-5. **docs/OPTIMIZATION_SUMMARY.md** - 优化工作总结
-   - 完成的工作清单
-   - 效果对比
-   - 验证结果
-
-6. **docs/README_UPDATE_SUMMARY.md** - README 更新总结
-   - 更新内容详解
-   - 格式优化说明
-
 ---
 
 ## 🔧 技术改进
