@@ -10,6 +10,10 @@ interface TOTPCodes {
  * TOTP Hook - 管理验证码生成和定时更新
  */
 export function useTOTP(accounts: Account[]) {
+  // 验证码与列表顺序、网站配置无关；保存回读的新对象也不应清空验证码。
+  const credentials = JSON.stringify(
+    accounts.map(({ name, secret }) => [name, secret]).sort(([a], [b]) => a.localeCompare(b))
+  )
   const [codes, setCodes] = useState<TOTPCodes>({})
   const [remaining, setRemaining] = useState(30)
   const timeoutRef = useRef<number | undefined>(undefined)
@@ -21,17 +25,17 @@ export function useTOTP(accounts: Account[]) {
     const id = generation.current
     const newCodes: TOTPCodes = {}
 
-    for (const account of accounts) {
+    for (const [name, secret] of JSON.parse(credentials) as [string, string][]) {
       try {
-        const code = await TOTP.generateTOTP(account.secret)
-        newCodes[account.name] = code
+        const code = await TOTP.generateTOTP(secret)
+        newCodes[name] = code
       } catch (error) {
-        newCodes[account.name] = '------'
+        newCodes[name] = '------'
       }
     }
 
     if (id === generation.current) setCodes(newCodes)
-  }, [accounts])
+  }, [credentials])
 
   // 调度到下一个整秒执行
   const scheduleNext = () => {
