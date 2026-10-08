@@ -1,6 +1,10 @@
 import type { Translations } from './zh-CN'
 
 export const arSA: Translations = {
+  'settings.appearance': 'المظهر',
+  'settings.theme.light': 'فاتح',
+  'settings.theme.dark': 'داكن',
+  'settings.theme.system': 'النظام',
   // عنوان الصفحة والأزرار
   'title': 'مولد TOTP',
   'addAccount': 'إضافة حساب',

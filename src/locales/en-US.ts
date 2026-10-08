@@ -1,6 +1,10 @@
 import type { Translations } from './zh-CN'
 
 export const enUS: Translations = {
+  'settings.appearance': 'Appearance',
+  'settings.theme.light': 'Light',
+  'settings.theme.dark': 'Dark',
+  'settings.theme.system': 'System',
   // Page title and buttons
   'title': 'TOTP Generator',
   'addAccount': 'Add Account',

@@ -1,4 +1,8 @@
 export const zhCN = {
+  'settings.appearance': '外观',
+  'settings.theme.light': '浅色',
+  'settings.theme.dark': '深色',
+  'settings.theme.system': '跟随系统',
   // 页面标题和按钮
   'title': 'TOTP 生成器',
   'addAccount': '添加账户',

@@ -1,6 +1,10 @@
 import type { Translations } from './zh-CN'
 
 export const ruRU: Translations = {
+  'settings.appearance': 'Оформление',
+  'settings.theme.light': 'Светлое',
+  'settings.theme.dark': 'Тёмное',
+  'settings.theme.system': 'Системное',
   // Заголовок страницы и кнопки
   'title': 'Генератор TOTP',
   'addAccount': 'Добавить аккаунт',

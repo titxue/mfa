@@ -1,6 +1,10 @@
 import type { Translations } from './zh-CN'
 
 export const zhTW: Translations = {
+  'settings.appearance': '外觀',
+  'settings.theme.light': '淺色',
+  'settings.theme.dark': '深色',
+  'settings.theme.system': '跟隨系統',
   // 頁面標題和按鈕
   'title': 'TOTP 生成器',
   'addAccount': '新增帳戶',

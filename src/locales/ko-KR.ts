@@ -1,6 +1,10 @@
 import type { Translations } from './zh-CN'
 
 export const koKR: Translations = {
+  'settings.appearance': '화면 모드',
+  'settings.theme.light': '라이트',
+  'settings.theme.dark': '다크',
+  'settings.theme.system': '시스템',
   // 페이지 제목 및 버튼
   'title': 'TOTP 생성기',
   'addAccount': '계정 추가',

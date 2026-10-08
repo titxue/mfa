@@ -1,6 +1,10 @@
 import type { Translations } from './zh-CN'
 
 export const hiIN: Translations = {
+  'settings.appearance': 'दिखावट',
+  'settings.theme.light': 'लाइट',
+  'settings.theme.dark': 'डार्क',
+  'settings.theme.system': 'सिस्टम',
   // पृष्ठ शीर्षक और बटन
   'title': 'TOTP जनरेटर',
   'addAccount': 'खाता जोड़ें',

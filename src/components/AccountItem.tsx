@@ -30,12 +30,13 @@ interface AccountItemProps {
   secret: string
   onDelete: (name: string) => void
   onEdit: (name: string) => void
+  dragState?: 'overlay' | 'placeholder'
 }
 
 /**
  * 账户卡片组件
  */
-export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }: AccountItemProps) {
+export function AccountItem({ name, code, remaining, secret, onDelete, onEdit, dragState }: AccountItemProps) {
   const { t } = useI18n()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
@@ -81,13 +82,14 @@ export function AccountItem({ name, code, remaining, secret, onDelete, onEdit }:
       <ContextMenu>
         <ContextMenuTrigger>
           <Card
-            className="cursor-pointer hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+            className="account-card cursor-pointer"
+            data-drag-state={dragState}
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
           >
-            <CardContent className="p-6 flex items-center gap-4">
+            <CardContent className="relative p-6 flex items-center gap-4">
               <div className="flex-1 min-w-0 max-w-[220px]">
-                <p className="text-sm font-medium text-primary mb-2 truncate">
+                <p className="text-sm font-medium text-primary mb-2 truncate" title={name}>
                   {name}
                 </p>
                 <p className="text-3xl font-mono font-bold tracking-wider">

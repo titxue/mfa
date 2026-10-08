@@ -1,6 +1,10 @@
 import type { Translations } from './zh-CN'
 
 export const jaJP: Translations = {
+  'settings.appearance': '外観',
+  'settings.theme.light': 'ライト',
+  'settings.theme.dark': 'ダーク',
+  'settings.theme.system': 'システム',
   // ページタイトルとボタン
   'title': 'TOTPジェネレーター',
   'addAccount': 'アカウントを追加',

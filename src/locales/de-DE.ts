@@ -1,6 +1,10 @@
 import type { Translations } from './zh-CN'
 
 export const deDE: Translations = {
+  'settings.appearance': 'Darstellung',
+  'settings.theme.light': 'Hell',
+  'settings.theme.dark': 'Dunkel',
+  'settings.theme.system': 'System',
   // Seitentitel und Schaltflächen
   'title': 'TOTP-Generator',
   'addAccount': 'Konto hinzufügen',
