@@ -21,6 +21,7 @@ jobs:
       - run: bun install
       - run: npm ci --prefix tools/steam-link --ignore-scripts --no-audit --no-fund
       - run: bunx playwright install --with-deps chromium
+      - run: bun run build
       - run: bun run type-check
       - run: bun run steam:link:check
       - run: bun run test
