@@ -25,7 +25,7 @@
 
 - 🔐 **TOTP 验证码生成** - 30秒间隔、RFC 6238标准、实时倒计时进度环
 - 📷 **二维码扫描** - 图片上传识别、粘贴/拖拽上传、自动填充、离线处理
-- 📤 **二维码导出** - 右键账户卡片，选择“账户二维码”生成二维码、支持下载 PNG 图片、便于跨设备迁移
+- 📤 **二维码导出** - 右键账户卡片选择“显示二维码”、支持下载 PNG 图片、便于跨设备迁移
 - 🎯 **智能自动填充** - 一键填充到网页、按设置回退复制；授权网站后可使用输入框旁的账户菜单
 - 🎨 **拖拽排序** - 自由调整账户顺序、流畅动画效果
 - 💾 **数据管理** - Chrome 账号同步、普通/加密 JSON 备份、导入数量预览、重复检测
@@ -63,7 +63,7 @@ bun run build
 3. 上传包含 TOTP 二维码的图片
 4. 普通二维码填入表单，确认后添加；Google 迁移二维码进入批量导入预览
 
-也支持粘贴/拖拽二维码图片，或粘贴 `otpauth://totp/` URI。当前仅支持 **SHA1、6 位数字、30 秒周期**；不支持的参数会明确提示。
+也支持粘贴/拖拽二维码图片，或粘贴 `otpauth://totp/` URI。普通 TOTP 支持 **SHA1、6 位数字、30 秒周期**，另支持 **Steam Guard 五位字母数字验证码**；不支持的参数会明确提示。手动添加 Steam 账户时选择“Steam Guard”，输入 Base32 密钥或 Base64 `shared_secret`；已有账户可在编辑页面切换类型。Steam 类型会保留在二维码、同步存储和普通/加密备份中。
 
 **手动输入**
 1. 点击 "+" 按钮
@@ -120,8 +120,6 @@ bun run build
 标准账户仅支持 **SHA1、6 位、30 秒 TOTP**；另外支持显式标记为 Steam 的五位验证码。HOTP、其他算法/位数/周期、未知参数枚举及损坏条目会显示跳过原因。第三方 JSON 如果包含 `url`，也会校验其中的参数；已被第三方工具丢弃的参数无法从密钥恢复。其他认证器需提供通用 otpauth 格式，除 Steam .maFile 外，不支持其他专有备份、CSV、摄像头扫描或一张图片中的多个独立二维码。
 
 解析在扩展内本地完成，不上传二维码、链接或密钥。导入后继续使用现有 Chrome 同步与可选密码保护。
-
----
 
 ## 💡 为什么选择
 
@@ -206,6 +204,28 @@ bun run type-check       # 类型检查
 bun run test             # 自动化测试
 bun run generate-icons   # 生成图标
 ```
+
+### 关键回归测试
+
+首次运行完整测试需要 Node.js 20+，安装 Steam 本地助手依赖和独立的测试浏览器：
+
+```bash
+npm ci --prefix tools/steam-link --ignore-scripts --no-audit --no-fund
+bunx playwright install chromium
+bun run test             # 单元/组件测试 → Steam 助手测试 → 生产构建 → 浏览器测试
+bun run test:unit        # 仅运行单元与组件测试
+bun run steam:link:check # Steam 助手类型检查
+bun run steam:link:test  # Steam 助手测试
+bun run test:e2e         # 原有 DOM 回归与真实 Chromium 扩展测试
+```
+
+覆盖 TOTP 标准向量、跨周期取码、连续排序合并保存、失败恢复、锁定失效、
+排序不清空验证码、窗口恢复刷新、主题持久化/跟随系统，以及二维码菜单与弹窗关闭。
+浏览器测试使用公开测试密钥和独立临时配置目录，不访问日常 Chrome 账户；结束后删除测试配置目录。
+
+PR 和 `master`/`main` 推送会运行 `.github/workflows/regression.yml`。
+失败时截图、页面上下文和 trace 保存在 `output/playwright/results/`，CI 会上传这些诊断文件。
+可通过 `bunx playwright show-trace <trace.zip 路径>` 查看失败轨迹。
 
 ### 项目结构
 

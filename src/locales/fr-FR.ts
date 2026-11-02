@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const frFR: Translations = {
+  'qr.show_button': 'Afficher le code QR',
+  'settings.appearance': 'Apparence',
+  'settings.theme.light': 'Clair',
+  'settings.theme.dark': 'Sombre',
+  'settings.theme.system': 'Système',
   // Titre de page et boutons
   'title': 'Générateur TOTP',
   'addAccount': 'Ajouter un compte',
@@ -18,6 +23,9 @@ export const frFR: Translations = {
   'form.title_edit': 'Modifier le compte',
   'form.title': 'Ajouter un compte',
   'form.accountName': 'Nom du compte',
+  'form.codeType': 'Type de code',
+  'form.codeTypeTotp': 'Code standard (6 chiffres)',
+  'form.steamSecretDesc': 'Saisissez la clé Base32 ou le shared_secret Base64 Steam.',
   'form.secretKey': 'Clé secrète',
   'form.accountInfo': 'Informations du compte',
   'form.accountNameDesc': 'Définissez un nom facilement reconnaissable pour ce compte',
@@ -104,7 +112,7 @@ export const frFR: Translations = {
   'toast.qr_scanning': 'Scan du code QR en cours...',
   'toast.qr_success': 'Code QR reconnu avec succès',
   'toast.qr_no_code': 'Aucun code QR trouvé, veuillez réessayer',
-  'toast.unsupported_totp': 'Configuration non prise en charge. Seuls SHA1, 6 chiffres et une période de 30 secondes sont acceptés.',
+  'toast.unsupported_totp': 'Paramètres non pris en charge. SHA1 sur 30 secondes : 6 chiffres ou Steam Guard.',
   'toast.qr_invalid_format': 'Format de code QR invalide',
   'toast.qr_parse_failed': 'Échec de l\'analyse du code QR',
   'toast.qr_invalid_file_type': 'Type de fichier non pris en charge, veuillez télécharger un fichier image',

@@ -12,7 +12,8 @@ import {
   useSensors,
   DragEndEvent,
   DragStartEvent,
-  DragOverlay
+  DragOverlay,
+  defaultDropAnimationSideEffects
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -23,6 +24,11 @@ import {
   defaultAnimateLayoutChanges
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+
+const dropSideEffects = defaultDropAnimationSideEffects({
+  styles: { active: { opacity: '0' } },
+  className: { dragOverlay: 'account-dropping' }
+})
 
 interface AccountListProps {
   accounts: Account[]
@@ -44,6 +50,8 @@ interface SortableAccountItemProps {
   saving?: boolean
   onDelete: (name: string) => Promise<boolean>
   onEdit: (name: string) => void
+  placeholder: boolean
+  animateMotion: boolean
 }
 
 function SortableAccountItem({
@@ -52,29 +60,29 @@ function SortableAccountItem({
   remaining,
   onDelete,
   onEdit,
-  saving
+  saving,
+  placeholder,
+  animateMotion
 }: SortableAccountItemProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
-    transition,
-    isDragging
+    transition
   } = useSortable({
     id: account.name,
-    disabled: saving,
+    transition: animateMotion ? { duration: 180, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' } : null,
     animateLayoutChanges: defaultAnimateLayoutChanges
   })
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    opacity: isDragging ? 0 : 1,
     ...(transition && { transition })
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} className="sortable-account" style={style} {...attributes} {...listeners} aria-label={account.name}>
       <AccountItem
         name={account.name}
         secret={account.secret}
@@ -84,6 +92,7 @@ function SortableAccountItem({
         saving={saving}
         onDelete={onDelete}
         onEdit={onEdit}
+        dragState={placeholder ? 'placeholder' : undefined}
       />
     </div>
   )
@@ -102,6 +111,7 @@ export function AccountList({
   saving = false
 }: AccountListProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [animateMotion, setAnimateMotion] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -115,13 +125,17 @@ export function AccountList({
   )
 
   const handleDragStart = (event: DragStartEvent) => {
+    setAnimateMotion(
+      !(event.activatorEvent instanceof KeyboardEvent) &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
     setActiveId(event.active.id as string)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
-    if (saving || !over || active.id === over.id) {
+    if (!over || active.id === over.id) {
       setActiveId(null)
       return
     }
@@ -171,13 +185,19 @@ export function AccountList({
                 saving={saving}
                 onDelete={onDeleteAccount}
                 onEdit={onEditAccount}
+                placeholder={activeId === account.name}
+                animateMotion={animateMotion}
               />
             ))}
           </SortableContext>
         </div>
       </ScrollArea>
 
-      <DragOverlay>
+      <DragOverlay
+        className={animateMotion ? 'account-drag-overlay' : 'account-drag-overlay account-drag-static'}
+        transition="none"
+        dropAnimation={{ duration: animateMotion ? 180 : 0, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', sideEffects: dropSideEffects }}
+      >
         {activeAccount && (
           <AccountItem
             name={activeAccount.name}
@@ -188,6 +208,7 @@ export function AccountList({
             saving={saving}
             onDelete={onDeleteAccount}
             onEdit={onEditAccount}
+            dragState="overlay"
           />
         )}
       </DragOverlay>

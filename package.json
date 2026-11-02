@@ -1,6 +1,6 @@
 {
   "name": "mfa",
-  "version": "2.3.4",
+  "version": "2.3.8",
   "description": "TOTP 生成器 Chrome 扩展 - 基于 React + TypeScript + Bun",
   "repository": {
     "type": "git",
@@ -15,7 +15,9 @@
     "build": "bun run build.ts",
     "type-check": "tsc --noEmit",
     "generate-icons": "bun run generate-icons.ts",
-    "test": "bun test tests",
+    "test": "bun run test:unit && bun run steam:link:test && bun run test:e2e",
+    "test:unit": "bun test ./tests",
+    "test:e2e": "bun run build && playwright test",
     "steam:link": "bun tools/steam-link/launch.ts",
     "steam:link:test": "bun test tools/steam-link/tests",
     "steam:link:check": "tsc --noEmit -p tools/steam-link/tsconfig.json"
@@ -53,6 +55,7 @@
   },
   "private": true,
   "devDependencies": {
+    "@playwright/test": "1.64.0",
     "@types/bun": "latest",
     "@types/chrome": "^0.1.32",
     "@types/qrcode": "^1.5.5",
@@ -60,6 +63,7 @@
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.23",
     "canvas": "^3.2.0",
+    "happy-dom": "20.14.6",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.0",
     "tailwindcss-animate": "^1.0.7"

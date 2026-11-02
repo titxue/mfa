@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const zhTW: Translations = {
+  'qr.show_button': '顯示 QR 碼',
+  'settings.appearance': '外觀',
+  'settings.theme.light': '淺色',
+  'settings.theme.dark': '深色',
+  'settings.theme.system': '跟隨系統',
   // 頁面標題和按鈕
   'title': 'TOTP 生成器',
   'addAccount': '新增帳戶',
@@ -18,6 +23,9 @@ export const zhTW: Translations = {
   'form.title_edit': '編輯帳戶',
   'form.title': '新增帳戶',
   'form.accountName': '帳戶名稱',
+  'form.codeType': '驗證碼類型',
+  'form.codeTypeTotp': '一般驗證碼（6 位數字）',
+  'form.steamSecretDesc': '輸入 Steam 的 Base32 金鑰或 Base64 shared_secret。',
   'form.secretKey': '金鑰',
   'form.accountInfo': '帳戶資訊',
   'form.accountNameDesc': '為此帳戶設定一個易於識別的名稱',
@@ -104,7 +112,7 @@ export const zhTW: Translations = {
   'toast.qr_scanning': '正在掃描 QR 碼...',
   'toast.qr_success': 'QR 碼識別成功',
   'toast.qr_no_code': '未找到 QR 碼，請重試',
-  'toast.unsupported_totp': '暫不支援此驗證碼設定，僅支援 SHA1、6 位數字、30 秒週期。',
+  'toast.unsupported_totp': '暫不支援此驗證碼設定。支援 30 秒週期的 SHA1 六位驗證碼及 Steam Guard。',
   'toast.qr_invalid_format': 'QR 碼格式不正確',
   'toast.qr_parse_failed': 'QR 碼解析失敗',
   'toast.qr_invalid_file_type': '不支援的檔案類型，請上傳圖片檔案',

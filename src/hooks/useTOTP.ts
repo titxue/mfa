@@ -10,6 +10,10 @@ interface TOTPCodes {
  * TOTP Hook - 管理验证码生成和定时更新
  */
 export function useTOTP(accounts: Account[]) {
+  // 验证码与列表顺序、网站配置无关；保存回读的新对象也不应清空验证码。
+  const credentials = JSON.stringify(
+    accounts.map(({ name, secret, type }) => [name, secret, type || 'totp']).sort(([a], [b]) => a.localeCompare(b))
+  )
   const [codes, setCodes] = useState<TOTPCodes>({})
   const [remaining, setRemaining] = useState(30)
   const timeoutRef = useRef<number | undefined>(undefined)
@@ -18,26 +22,25 @@ export function useTOTP(accounts: Account[]) {
 
   // 生成所有账户的验证码
   const generateCodes = useCallback(async () => {
-    const id = generation.current
+    const id = ++generation.current
     const newCodes: TOTPCodes = {}
 
-    for (const account of accounts) {
+    for (const [name, secret, type] of JSON.parse(credentials) as [string, string, Account['type']][]) {
       try {
-        const code = await TOTP.generateTOTP(account.secret, 30, account.type)
-        newCodes[account.name] = code
+        const code = await TOTP.generateTOTP(secret, 30, type)
+        newCodes[name] = code
       } catch (error) {
-        newCodes[account.name] = account.type === 'steam' ? '-----' : '------'
+        newCodes[name] = type === 'steam' ? '-----' : '------'
       }
     }
 
     if (id === generation.current) setCodes(newCodes)
-  }, [accounts])
+  }, [credentials])
 
   // 调度到下一个整秒执行
   const scheduleNext = () => {
     const now = Date.now()
-    const nextSecond = Math.ceil(now / 1000) * 1000
-    const delay = nextSecond - now
+    const delay = 1000 - (now % 1000)
     timeoutRef.current = window.setTimeout(updateTimer, delay)
   }
 
@@ -63,8 +66,19 @@ export function useTOTP(accounts: Account[]) {
     // 立即执行一次初始化
     updateTimer()
 
+    const resume = () => {
+      if (document.visibilityState !== 'visible') return
+      clearTimeout(timeoutRef.current)
+      lastStepRef.current = -1
+      updateTimer()
+    }
+    window.addEventListener('focus', resume)
+    document.addEventListener('visibilitychange', resume)
+
     return () => {
       generation.current++
+      window.removeEventListener('focus', resume)
+      document.removeEventListener('visibilitychange', resume)
       if (timeoutRef.current !== undefined) {
         clearTimeout(timeoutRef.current)
       }

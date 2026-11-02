@@ -1,0 +1,33 @@
+name: Regression tests
+
+on:
+  pull_request:
+  push:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: npm ci --prefix tools/steam-link --ignore-scripts --no-audit --no-fund
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run type-check
+      - run: bun run steam:link:check
+      - run: bun run test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-regression-failures
+          path: output/playwright/results
+          retention-days: 7
+          if-no-files-found: ignore

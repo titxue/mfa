@@ -39,3 +39,34 @@ test('settings round trip preserves the unchanged option', async () => {
   await StorageManager.saveSettings({ ...DEFAULT_AUTOFILL_SETTINGS, clipboardFallback: false })
   expect(await StorageManager.getSettings()).toEqual({ autofillInlineMenu: true, clipboardFallback: false })
 })
+
+test('theme defaults to system and persists in device-local Chrome storage', async () => {
+  const data: Record<string, unknown> = {}
+  Object.defineProperty(globalThis, 'chrome', { configurable: true, value: { storage: {
+    sync: { set: async () => { throw new Error('theme must stay local') } },
+    local: {
+      get: async () => data,
+      set: async (value: object) => { Object.assign(data, value) },
+    },
+  } } })
+  expect(await StorageManager.getTheme()).toBe('system')
+  for (const theme of ['dark', 'light', 'system'] as const) {
+    await StorageManager.saveTheme(theme)
+    expect(await StorageManager.getTheme()).toBe(theme)
+  }
+  data.theme = 'unknown'
+  expect(await StorageManager.getTheme()).toBe('system')
+})
+
+test('theme uses localStorage outside Chrome and reports save failures', async () => {
+  const data = new Map<string, string>()
+  Object.defineProperty(globalThis, 'chrome', { configurable: true, value: undefined })
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    getItem: (key: string) => data.get(key) ?? null,
+    setItem: (key: string, value: string) => { data.set(key, value) },
+  } })
+  await StorageManager.saveTheme('dark')
+  expect(await StorageManager.getTheme()).toBe('dark')
+  localStorage.setItem = () => { throw new Error('disk full') }
+  await expect(StorageManager.saveTheme('light')).rejects.toThrow('disk full')
+})

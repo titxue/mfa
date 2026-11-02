@@ -7,6 +7,12 @@ import { hmacSha1 } from './hmac-sha1'
 import type { Account } from '@/types'
 
 export class TOTP {
+  static normalizeSecret(secret: string, type?: Account['type']): string {
+    const value = secret.trim().replace(/\s/g, '')
+    if (type !== 'steam' || /^[A-Z2-7]+=*$/i.test(value)) return value.toUpperCase().replace(/=+$/, '')
+    return this.steamSecretToBase32(value)
+  }
+
   private static readonly BASE32_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
 
   static base32Encode(bytes: Uint8Array): string {
@@ -66,7 +72,7 @@ export class TOTP {
    * @param now - 毫秒时间戳；默认系统时间，本地绑定助手核对时可传 Steam 服务端时间
    * @returns 6 位数字 TOTP 或 5 位字母数字 Steam Guard 验证码
    */
-  static async generateTOTP(secret: string, interval: number = 30, type: Account['type'] = 'totp', now: number = Date.now()): Promise<string> {
+  static async generateTOTP(secret: string, interval: number = 30, type: Account['type'] = 'totp', now?: number): Promise<string> {
     if (type !== 'totp' && type !== 'steam') throw new Error('invalid')
     if (type === 'steam' && interval !== 30) throw new Error('invalid')
     // Base32 解码
@@ -74,7 +80,7 @@ export class TOTP {
     if (!key.length) throw new Error('invalid')
 
     // 计算当前时间步
-    const timestamp = Math.floor(now / 1000 / interval)
+    const timestamp = Math.floor((now ?? Date.now()) / 1000 / interval)
 
     // 将时间戳转换为 8 字节大端 buffer
     const timeBuffer = new ArrayBuffer(8)
@@ -104,6 +110,11 @@ export class TOTP {
                 ((hmacArray[offset + 1] & 0xff) << 16) |
                 ((hmacArray[offset + 2] & 0xff) << 8) |
                 (hmacArray[offset + 3] & 0xff)
+
+    // Async signing may cross the boundary; explicit reference times remain deterministic.
+    if (now === undefined && Math.floor(Date.now() / 1000 / interval) !== timestamp) {
+      return this.generateTOTP(secret, interval, type)
+    }
 
     if (type === 'steam') {
       const alphabet = '23456789BCDFGHJKMNPQRTVWXY'

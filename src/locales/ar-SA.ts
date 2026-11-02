@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const arSA: Translations = {
+  'qr.show_button': 'عرض رمز QR',
+  'settings.appearance': 'المظهر',
+  'settings.theme.light': 'فاتح',
+  'settings.theme.dark': 'داكن',
+  'settings.theme.system': 'النظام',
   // عنوان الصفحة والأزرار
   'title': 'مولد TOTP',
   'addAccount': 'إضافة حساب',
@@ -18,6 +23,9 @@ export const arSA: Translations = {
   'form.title_edit': 'تعديل الحساب',
   'form.title': 'إضافة حساب',
   'form.accountName': 'اسم الحساب',
+  'form.codeType': 'نوع الرمز',
+  'form.codeTypeTotp': 'رمز عادي (6 أرقام)',
+  'form.steamSecretDesc': 'أدخل مفتاح Steam بصيغة Base32 أو shared_secret بصيغة Base64.',
   'form.secretKey': 'المفتاح السري',
   'form.accountInfo': 'معلومات الحساب',
   'form.accountNameDesc': 'قم بتعيين اسم يسهل التعرف عليه لهذا الحساب',
@@ -104,7 +112,7 @@ export const arSA: Translations = {
   'toast.qr_scanning': 'جارٍ مسح رمز QR...',
   'toast.qr_success': 'تم التعرف على رمز QR بنجاح',
   'toast.qr_no_code': 'لم يتم العثور على رمز QR، يرجى المحاولة مرة أخرى',
-  'toast.unsupported_totp': 'إعدادات غير مدعومة. يُدعم فقط SHA1 ورمز من 6 أرقام وفترة 30 ثانية.',
+  'toast.unsupported_totp': 'إعدادات غير مدعومة. يدعم SHA1 بفترة 30 ثانية: رمز من 6 أرقام أو Steam Guard.',
   'toast.qr_invalid_format': 'تنسيق رمز QR غير صالح',
   'toast.qr_parse_failed': 'فشل تحليل رمز QR',
   'toast.qr_invalid_file_type': 'نوع ملف غير مدعوم، يرجى تحميل ملف صورة',

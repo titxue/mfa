@@ -53,7 +53,7 @@ export function AddAccountModal({
   const [secret, setSecret] = useState('')
   let detected: ReturnType<typeof parseManualSecret> | undefined
   try { if (mode === 'add' && secret.trim()) detected = parseManualSecret(secret, sourceType) } catch { /* Validate on submission. */ }
-  const type = mode === 'edit' ? initialData?.type : detected?.type
+  const type = sourceType ?? (mode === 'edit' ? initialData?.type : detected?.type) ?? 'totp'
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -71,7 +71,7 @@ export function AddAccountModal({
       setName(initialData.name)
       setWebsite(initialData.website || '')
       setSecret(initialData.secret)
-      setSourceType(initialData.type)
+      setSourceType(initialData.type ?? 'totp')
     } else if (open && mode === 'add') {
       setName('')
       setWebsite('')
@@ -88,7 +88,7 @@ export function AddAccountModal({
   const receive = (chunks: ImportChunk[]) => {
     if (chunks.length === 1 && chunks[0].kind === 'standard' && chunks[0].accounts.length === 1 && !chunks[0].issues.length) {
       const account = chunks[0].accounts[0]
-      if (mode === 'edit' && (account.type ?? 'totp') !== (initialData?.type ?? 'totp')) { toast.error(strings.useImport); return }
+      if (mode === 'edit' && (account.type ?? 'totp') !== type) { toast.error(strings.useImport); return }
       setName(account.name)
       setSourceType(account.type ?? 'totp')
       setSecret(account.type === 'steam' ? TOTP.steamSecretToBase64(account.secret) : account.secret)
@@ -130,11 +130,13 @@ export function AddAccountModal({
     setLoading(true)
 
     try {
-      let accountType = initialData?.type
+      let accountType: Account['type'] = type
       let accountSecret = initialData?.secret ?? ''
       if (mode === 'add') {
         try {
-          const parsed = parseManualSecret(secret, sourceType)
+          const parsed = sourceType === 'steam'
+            ? { secret: TOTP.normalizeSecret(secret, 'steam'), type: 'steam' as const }
+            : parseManualSecret(secret, sourceType)
           accountSecret = parsed.secret; accountType = parsed.type
         } catch { toast.error(t('toast.invalid_secret')); return }
       }
@@ -163,6 +165,7 @@ export function AddAccountModal({
         }
         setName('')
         setSecret('')
+        setSourceType(undefined)
         onOpenChange(false)
       } else {
         toast.error(t(result.message as any))
@@ -308,20 +311,29 @@ export function AddAccountModal({
             </p>
           </div>
 
+          <div>
+            <Label htmlFor="code-type">{t('form.codeType')}</Label>
+            <select id="code-type" value={type} onChange={e => setSourceType(e.target.value as 'totp' | 'steam')}
+              className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <option value="totp">{t('form.codeTypeTotp')}</option>
+              <option value="steam">Steam Guard</option>
+            </select>
+          </div>
+
           {mode === 'add' && (
             <div>
-              <Label htmlFor="secret">{type === 'steam' ? steam.secret : t('form.secretKey')}</Label>
+              <Label htmlFor="secret">{t('form.secretKey')}</Label>
               <Input
                 id="secret"
                 value={secret}
-                onChange={(e) => { setSecret(e.target.value); setSourceType(undefined) }}
-                placeholder={type === 'steam' ? steam.secret : 'Base32 / Steam shared_secret'}
+                onChange={(e) => setSecret(e.target.value)}
+                placeholder={type === 'steam' ? 'Base32 / shared_secret (Base64)' : 'Base32 / Steam shared_secret'}
                 autoComplete="off"
                 spellCheck={false}
                 className="mt-2 font-mono"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {type === 'steam' ? steam.hint : steam.autoHint}
+                {type === 'steam' ? t('form.steamSecretDesc') : sourceType ? t('form.secretKeyDesc') : steam.autoHint}
               </p>
             </div>
           )}

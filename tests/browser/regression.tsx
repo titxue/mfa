@@ -38,24 +38,31 @@ function chromeMock(sendMessage: (message: any) => Promise<any>, set = async (_v
     storage: { sync: { get: async () => ({}), set } } }
 }
 
-await check('account save is optimistic, blocks overlapping writes and exposes disabled controls', async () => {
-  const gate = deferred()
+await check('account save is optimistic, serializes queued orders and exposes disabled controls', async () => {
+  const gates = [deferred(), deferred()]
   let writes = 0, state!: ReturnType<typeof useAccounts>
   let snapshot = { accounts: [testAccount], revision: 'one', protected: false, locked: false }
   chromeMock(async message => {
-    if (message.action === 'save') { writes++; await gate.promise; snapshot = { ...snapshot, accounts: message.accounts, revision: 'two' } }
+    if (message.action === 'save') {
+      const index = writes++
+      await gates[index].promise
+      snapshot = { ...snapshot, accounts: message.accounts, revision: index === 0 ? 'two' : 'three' }
+    }
     return { ok: true, value: snapshot }
   })
   function Harness() { state = useAccounts(); return <I18nProvider><Header saving={state.isSaving} onAddAccount={() => {}} onOpenSettings={() => {}} /></I18nProvider> }
   await render(<Harness />)
-  let save!: Promise<boolean>
+  let save!: Promise<boolean>, queued!: Promise<boolean>
   await act(async () => { save = state.updateAccounts([]) })
   assert(state.accounts.length === 0, 'optimistic update delayed')
   assert(state.isSaving && [...fixture.querySelectorAll('button')].every(button => button.disabled), 'write controls enabled during save')
-  await act(async () => { assert(!await state.updateAccounts([testAccount]), 'overlapping save accepted') })
-  assert(writes === 1 && state.error, 'overlap was silent or sent to storage')
-  await act(async () => { gate.resolve(); assert(await save, 'save failed') })
-  assert(!state.isSaving && state.revision === 'two', 'save never settled')
+  await act(async () => { queued = state.updateAccounts([testAccount]) })
+  assert(writes === 1 && state.accounts.length === 1, 'queued order was not optimistic or wrote concurrently')
+  await act(async () => { gates[0].resolve(); assert(await save, 'save failed') })
+  assert(writes === 2 && state.isSaving && state.accounts.length === 1, 'first save overwrote queued order or ended saving early')
+  assert([...fixture.querySelectorAll('button')].every(button => button.disabled), 'write controls enabled before queue settled')
+  await act(async () => { gates[1].resolve(); assert(await queued, 'queued save failed') })
+  assert(!state.isSaving && state.revision === 'three' && state.accounts.length === 1, 'save queue never settled')
 })
 
 await check('account save failure restores persisted accounts and reports the error', async () => {
