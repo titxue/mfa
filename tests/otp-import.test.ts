@@ -48,9 +48,14 @@ describe('standard OTP import', () => {
     expect(parseOTPURI(value).accounts).toHaveLength(0)
     expect(parseOTPURI(value).issues).toHaveLength(1)
   })
-  test('normalizes padded base32 and rejects invalid lengths/alphabet', () => {
+  test('normalizes padded Base32, retains legacy decoded bytes and rejects empty keys or invalid alphabet', async () => {
     expect(normalizeOTPSecret(' my====== ')).toBe('MY')
-    for (const value of ['', 'A', 'AAA', 'AAAAAA', '12', 'AB=C']) expect(() => normalizeOTPSecret(value)).toThrow('invalid')
+    for (const value of ['AAA', 'AAAAAA', 'A'.repeat(27)]) {
+      const normalized = normalizeOTPSecret(` ${value.toLowerCase()}\n`)
+      expect(TOTP.base32Decode(normalized)).toEqual(TOTP.base32Decode(value))
+      expect(await TOTP.generateTOTP(normalized, 30, 'totp', 59000)).toBe(await TOTP.generateTOTP(value, 30, 'totp', 59000))
+    }
+    for (const value of ['', ' ', '=', 'A', '12', 'AB=C', 'AA!']) expect(() => normalizeOTPSecret(value)).toThrow('invalid')
   })
   test('multiline text keeps valid entries and reports bad lines', async () => {
     const chunks = await parseImportText(`\uFEFF# comment\r\n${uri}\n\ninvalid\n${uri}&digits=8`)
@@ -159,6 +164,24 @@ describe('preview and batch collection', () => {
 })
 
 describe('backup formats and compatibility', () => {
+  test('plain and encrypted native backups retain distinct names with surrounding whitespace', async () => {
+    const accounts = [{ name: ' Demo ', secret, website: 'example.test' }, { name: 'Demo', secret }]
+    const salt = newSalt(), key = await deriveKey('synthetic-backup-password', salt)
+    const encrypted = await encryptAccounts(accounts, key, salt)
+    for (const [text, password] of [
+      [ImportExportManager.exportAccounts(accounts), undefined],
+      [JSON.stringify(encrypted), 'synthetic-backup-password'],
+    ] as const) {
+      const result = importPreview(await parseImportText(text, password), [])
+      expect(result.accounts).toEqual(accounts)
+      expect(result.duplicates).toEqual([])
+      expect(result.issues).toEqual([])
+    }
+    const blank = await parseImportText(JSON.stringify({ accounts: [{ name: ' \n ', secret }] }))
+    expect(blank[0].accounts).toEqual([])
+    expect(blank[0].issues).toHaveLength(1)
+    expect((await parseImportText(JSON.stringify([{ name: ' Demo ', issuer: ' Example ', secret }])))[0].accounts[0].name).toBe('Example Demo')
+  })
   test('encrypted queue identity ignores JSON layout and key order, but distinguishes backups', async () => {
     const salt = newSalt(), key = await deriveKey('test-password', salt)
     const encrypted = await encryptAccounts([{ name: 'Demo', secret }], key, salt)

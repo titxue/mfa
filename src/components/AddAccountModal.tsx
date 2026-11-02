@@ -86,6 +86,11 @@ export function AddAccountModal({
   }
 
   const receive = (chunks: ImportChunk[]) => {
+    const error = chunks.flatMap(chunk => chunk.issues)[0]
+    if (error && !chunks.some(chunk => chunk.accounts.length || chunk.batch)) {
+      toast.error(strings[error.reason])
+      return
+    }
     if (chunks.length === 1 && chunks[0].kind === 'standard' && chunks[0].accounts.length === 1 && !chunks[0].issues.length) {
       const account = chunks[0].accounts[0]
       if (mode === 'edit' && (account.type ?? 'totp') !== type) { toast.error(strings.useImport); return }

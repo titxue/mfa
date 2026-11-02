@@ -21,8 +21,9 @@ export function generateOtpauthURI(
   }
   // 尝试从 name 中提取 issuer（如果包含空格，第一部分作为 issuer）
   const parts = name.trim().split(/\s+/)
-  const issuer = parts.length > 1 ? parts[0] : undefined
-  const accountName = parts.length > 1 ? parts.slice(1).join(' ') : name
+  // A Steam issuer is a legacy encoder marker. Keep numeric TOTP names unambiguous.
+  const issuer = parts.length > 1 && parts[0].toLowerCase() !== 'steam' ? parts[0] : undefined
+  const accountName = issuer ? parts.slice(1).join(' ') : name
 
   // 构造 label (path 部分)
   let label = accountName

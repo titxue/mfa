@@ -22,7 +22,9 @@ export function encryptedBackupIdentity(text: string): string {
 
 export function normalizeOTPSecret(value: string): string {
   const secret = value.toUpperCase().replace(/\s/g, '').replace(/=+$/, '')
-  if (!/^[A-Z2-7]+$/.test(secret) || ![0, 2, 4, 5, 7].includes(secret.length % 8)) throw new Error('invalid')
+  // Older releases accept any Base32 length that decodes to at least one byte.
+  // Keep that interpretation before trying Base64 so an existing TOTP cannot become Steam.
+  if (!/^[A-Z2-7]+$/.test(secret) || !TOTP.base32Decode(secret).length) throw new Error('invalid')
   return secret
 }
 
@@ -47,12 +49,15 @@ function displayName(name: string, issuer: string): string {
 }
 
 function checkParameters(value: Record<string, unknown>) {
-  const steam = value.type === 'steam' || value.encoder === 'steam'
+  const encoder = typeof value.encoder === 'string' ? value.encoder.toLowerCase() : value.encoder
+  const steam = value.type === 'steam' || encoder === 'steam'
   const digits = steam ? 5 : 6
   if ((value.type !== undefined && value.type !== 'totp' && value.type !== 'steam') ||
-      (value.encoder !== undefined && value.encoder !== 'steam') ||
+      (encoder !== undefined && encoder !== 'steam') ||
       (value.algorithm !== undefined && (typeof value.algorithm !== 'string' || value.algorithm.toUpperCase() !== 'SHA1')) ||
-      (value.digits !== undefined && value.digits !== digits && value.digits !== String(digits)) ||
+      // Older Steam URIs advertise six digits, but still use Steam's five-character encoder.
+      (value.digits !== undefined && value.digits !== digits && value.digits !== String(digits) &&
+        !(steam && (value.digits === 6 || value.digits === '6'))) ||
       (value.period !== undefined && value.period !== 30 && value.period !== '30')) throw new Error('unsupported')
   return steam ? 'steam' : 'totp'
 }
@@ -70,10 +75,14 @@ function standardAccount(uri: string): Account {
     if (url.searchParams.getAll(key).length > 1) throw new Error('invalid')
     if (url.searchParams.has(key)) params[key] = url.searchParams.get(key)!
   }
-  const type = checkParameters(params)
   const label = decodeURIComponent(url.pathname.slice(1))
   const colon = label.indexOf(':')
   const issuer = typeof params.issuer === 'string' ? params.issuer : colon >= 0 ? label.slice(0, colon) : ''
+  // Preserve the Steam QR forms accepted by the published extension.
+  if (params.encoder === undefined && (issuer.toLowerCase() === 'steam' || label.toLowerCase().startsWith('steam:'))) {
+    params.encoder = 'steam'
+  }
+  const type = checkParameters(params)
   if (typeof params.secret !== 'string') throw new Error('invalid')
   return { name: displayName(label, issuer), secret: normalizeOTPSecret(params.secret), ...(type === 'steam' ? { type } : {}) }
 }
@@ -214,8 +223,9 @@ export async function parseImportText(text: string, password?: string): Promise<
         result.accounts.push({ name: displayName(name, 'Steam'), secret: TOTP.steamSecretToBase32(a.shared_secret), type: 'steam', website: 'steamcommunity.com' })
         continue
       }
-      name = typeof a.name === 'string' ? a.name.trim() : undefined
-      if (!name || typeof a.secret !== 'string' || (a.website !== undefined && typeof a.website !== 'string') || (a.issuer !== undefined && typeof a.issuer !== 'string')) throw new Error('invalid')
+      // Native backups use exact names as account identities, including surrounding spaces.
+      name = typeof a.name === 'string' ? (foreign ? a.name.trim() : a.name) : undefined
+      if (!name?.trim() || typeof a.secret !== 'string' || (a.website !== undefined && typeof a.website !== 'string') || (a.issuer !== undefined && typeof a.issuer !== 'string')) throw new Error('invalid')
       const secret = normalizeOTPSecret(a.secret)
       let parsed: Account | undefined
       if (a.url !== undefined) {
@@ -223,7 +233,7 @@ export async function parseImportText(text: string, password?: string): Promise<
         parsed = standardAccount(a.url)
         if (parsed.secret !== secret) throw new Error('invalid')
         if (a.type === 'steam' && parsed.type !== 'steam') throw new Error('invalid')
-        if (a.encoder !== undefined && a.encoder !== parsed.type) throw new Error('invalid')
+        if (a.encoder !== undefined && (typeof a.encoder !== 'string' || a.encoder.toLowerCase() !== parsed.type)) throw new Error('invalid')
       }
       const type = checkParameters({ ...a, ...(parsed?.type === 'steam' ? { encoder: 'steam' } : {}) })
       name = foreign ? displayName(name, typeof a.issuer === 'string' ? a.issuer : '') : name

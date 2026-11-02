@@ -117,7 +117,9 @@ bun run build
 
 支持标准 `otpauth://totp/` 链接及二维码、Google `otpauth-migration://offline?data=…`、每行一个链接的 TXT（空行和 `#` 注释忽略）、[extract_otp_secrets](https://github.com/scito/extract_otp_secrets) 导出的 JSON 数组，以及本扩展的明文/加密 JSON 备份。可在导入窗口直接粘贴链接或 JSON；仅加密备份要求输入备份密码。
 
-标准账户仅支持 **SHA1、6 位、30 秒 TOTP**；另外支持显式标记为 Steam 的五位验证码。HOTP、其他算法/位数/周期、未知参数枚举及损坏条目会显示跳过原因。第三方 JSON 如果包含 `url`，也会校验其中的参数；已被第三方工具丢弃的参数无法从密钥恢复。其他认证器需提供通用 otpauth 格式，除 Steam .maFile 外，不支持其他专有备份、CSV、摄像头扫描或一张图片中的多个独立二维码。
+标准账户仅支持 **SHA1、6 位、30 秒 TOTP**；另外支持 Steam 五位验证码，并兼容商店旧版使用的 `Steam:` 标签、`issuer=Steam` 和 `encoder=Steam` 等二维码形式。旧 Steam 链接的 `digits=6` 兼容标记仍按 Steam 五位码处理。HOTP、其他算法/位数/周期、未知参数枚举及损坏条目会显示跳过原因。第三方 JSON 如果包含 `url`，也会校验其中的参数；已被第三方工具丢弃的参数无法从密钥恢复。其他认证器需提供通用 otpauth 格式，除 Steam .maFile 外，不支持其他专有备份、CSV、摄像头扫描或一张图片中的多个独立二维码。
+
+恢复本扩展的普通或加密备份时保留原始账户名称；商店旧版可用的 Base32 密钥保持相同解码和验证码，不会因长度不同而自动切换为 Steam。商店功能覆盖与验证记录见[功能覆盖检查](docs/STORE-FEATURE-COVERAGE-20261102.md)。
 
 解析在扩展内本地完成，不上传二维码、链接或密钥。导入后继续使用现有 Chrome 同步与可选密码保护。
 

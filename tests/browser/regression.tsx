@@ -101,6 +101,13 @@ await check('segmented OTP needs semantic evidence and never hijacks unrelated i
   assert([...fixture.querySelectorAll('#postal input')].map(input => (input as HTMLInputElement).value).join('') === '123456', 'wrong values')
   fixture.innerHTML = '<div aria-label="OTP">' + '<input maxlength="1">'.repeat(5) + '</div>'
   assert(fillCode('ABCDE').status === 'filled', 'Steam segmented fill regressed')
+  fixture.innerHTML = '<form><h2>Verification code</h2><div>' + '<input maxlength="1">'.repeat(6) + '</div></form>'
+  assert(fillCode('123456').status === 'filled', 'OTP heading no longer identifies a segmented field')
+  const boxes = [...fixture.querySelectorAll<HTMLInputElement>('input')]
+  boxes.forEach(box => { box.value = '' })
+  assert(fillCode('ABCDE').status === 'no-field' && boxes.every(box => box.value === ''), 'partial Steam code filled a six-box group')
+  fixture.innerHTML = '<input autocomplete="one-time-code" maxlength="6" type="number">'
+  assert(fillCode('ABCDE').status === 'no-field', 'Steam code filled a numeric-only input')
 })
 
 await check('segmented groups resolve external aria-labelledby references', async () => {

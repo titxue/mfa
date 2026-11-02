@@ -213,7 +213,7 @@ export function findSegmentedGroupFor(anchor: HTMLInputElement): HTMLInputElemen
       const groupSignal = matchesKeyword([node.id, node.className, node.getAttribute('aria-label'),
         ...(node.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean)
           .map(id => node!.ownerDocument.getElementById(id)?.textContent),
-        ...Array.from(node.querySelectorAll('label, legend, [role=heading]')).map(el => el.textContent)].filter(Boolean).join(' '))
+        ...Array.from(node.querySelectorAll('label, legend, h1, h2, h3, h4, h5, h6, [role=heading]')).map(el => el.textContent)].filter(Boolean).join(' '))
       if (fieldSignal || groupSignal) return sortByDomOrder(group)
     }
     node = node.parentElement
