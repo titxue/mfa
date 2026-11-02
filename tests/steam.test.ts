@@ -58,9 +58,10 @@ describe('Steam Guard generation', () => {
 
 describe('Steam import and round trips', () => {
   test('ambiguous ordinary Steam labels round trip without changing type, key, code or name', async () => {
-    for (const name of ['Steam:alice', 'sTeAm:alice', 'Steam:alice account']) {
+    for (const name of ['Steam:alice', 'sTeAm:alice', 'Steam: alice', 'Steam:alice account', ':Steam:alice', '::alice']) {
       const uri = generateOtpauthURI(name, secret, 'totp')
-      expect(new URL(uri).searchParams.get('encoder')).toBe('totp')
+      expect(new URL(uri).searchParams.has('encoder')).toBe(false)
+      expect(decodeURIComponent(new URL(uri).pathname)).toBe(`/:${name}`)
       const result = parseOTPURI(uri)
       expect(result.issues).toEqual([])
       expect(result.accounts).toEqual([{ name, secret }])
@@ -77,9 +78,19 @@ describe('Steam import and round trips', () => {
       }
     }
   })
+  test('previous explicit numeric encoders retain literal labels and reject unsupported parameters', () => {
+    for (const name of ['Steam:alice', ':Steam:alice']) {
+      const uri = `otpauth://totp/${encodeURIComponent(name)}?${new URLSearchParams({ secret, encoder: 'TOTP', digits: '6' })}`
+      expect(parseOTPURI(uri).accounts).toEqual([{ name, secret }])
+      expect(parseOTPURI(uri.replace('digits=6', 'digits=5')).issues[0].reason).toBe('unsupported')
+    }
+  })
   test('explicit Steam exports retain literal colon names and conflict with an explicit numeric encoder', async () => {
     const name = 'Steam:alice'
     expect(parseOTPURI(generateOtpauthURI(name, secret, 'steam')).accounts).toEqual([{ name, secret, type: 'steam' }])
+    expect(parseOTPURI(generateOtpauthURI(`:${name}`, secret, 'steam')).accounts).toEqual([{ name: `:${name}`, secret, type: 'steam' }])
+    expect(parseOTPURI(`otpauth://totp/%3ASteam%3Aalice?${new URLSearchParams({ secret, issuer: 'Steam' })}`).accounts)
+      .toEqual([{ name: 'Steam :Steam:alice', secret, type: 'steam' }])
     const bad = await parseImportText(JSON.stringify([{ name, secret, type: 'steam', encoder: 'totp' }]))
     expect(bad[0].accounts).toEqual([])
     expect(bad[0].issues[0].reason).toBe('unsupported')

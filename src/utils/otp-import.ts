@@ -88,7 +88,10 @@ function standardAccount(uri: string): Account {
   }
   const type = checkParameters(params)
   if (typeof params.secret !== 'string') throw new Error('invalid')
-  const name = explicitEncoder !== undefined && !url.searchParams.has('issuer') ? label : displayName(label, issuer)
+  // Match the published parser's empty issuer separator only after Steam detection.
+  // Explicit encoders retain literal labels, including QR codes exported previously.
+  const accountLabel = explicitEncoder === undefined && !url.searchParams.has('issuer') && label.startsWith(':') ? label.slice(1) : label
+  const name = explicitEncoder !== undefined && !url.searchParams.has('issuer') ? label : displayName(accountLabel, issuer)
   if (!name.trim()) throw new Error('invalid')
   return { name, secret: normalizeOTPSecret(params.secret), ...(type === 'steam' ? { type } : {}) }
 }
