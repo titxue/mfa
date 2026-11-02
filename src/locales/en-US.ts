@@ -1,6 +1,7 @@
 import type { Translations } from './zh-CN'
 
 export const enUS: Translations = {
+  'qr.show_button': 'Show QR code',
   'settings.appearance': 'Appearance',
   'settings.theme.light': 'Light',
   'settings.theme.dark': 'Dark',
@@ -22,6 +23,9 @@ export const enUS: Translations = {
   'form.title_edit': 'Edit Account',
   'form.title': 'Add Account',
   'form.accountName': 'Account Name',
+  'form.codeType': 'Code type',
+  'form.codeTypeTotp': 'Standard code (6 digits)',
+  'form.steamSecretDesc': 'Enter a Steam Base32 secret or Base64 shared_secret.',
   'form.secretKey': 'Secret Key',
   'form.accountInfo': 'Account Information',
   'form.accountNameDesc': 'Set an easily recognizable name for this account',
@@ -108,7 +112,7 @@ export const enUS: Translations = {
   'toast.qr_scanning': 'Scanning QR code...',
   'toast.qr_success': 'QR code recognized successfully',
   'toast.qr_no_code': 'No QR code found, please try again',
-  'toast.unsupported_totp': 'Unsupported code settings. Only SHA1, 6 digits and a 30-second period are supported.',
+  'toast.unsupported_totp': 'Unsupported settings. Supports SHA1 with a 30-second period: standard 6-digit codes or Steam Guard.',
   'toast.qr_invalid_format': 'Invalid QR code format',
   'toast.qr_parse_failed': 'Failed to parse QR code',
   'toast.qr_invalid_file_type': 'Unsupported file type, please upload an image file',

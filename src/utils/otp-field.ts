@@ -255,7 +255,7 @@ function fillSingle(code: string, input: HTMLInputElement): FillResult {
 }
 
 function fillSegmented(code: string, group: HTMLInputElement[]): FillResult {
-  const digits = code.replace(/\D/g, '')
+  const digits = code
   group.forEach((box, i) => {
     if (i < digits.length) {
       setInputValue(box, digits[i])

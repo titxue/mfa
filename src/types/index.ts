@@ -4,6 +4,7 @@
 export interface Account {
   name: string
   secret: string
+  type?: 'totp' | 'steam'
   website?: string
 }
 

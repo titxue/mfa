@@ -1,6 +1,7 @@
 import type { Translations } from './zh-CN'
 
 export const esES: Translations = {
+  'qr.show_button': 'Mostrar código QR',
   'settings.appearance': 'Apariencia',
   'settings.theme.light': 'Claro',
   'settings.theme.dark': 'Oscuro',
@@ -22,6 +23,9 @@ export const esES: Translations = {
   'form.title_edit': 'Editar cuenta',
   'form.title': 'Agregar cuenta',
   'form.accountName': 'Nombre de cuenta',
+  'form.codeType': 'Tipo de código',
+  'form.codeTypeTotp': 'Código estándar (6 dígitos)',
+  'form.steamSecretDesc': 'Introduce la clave Base32 o shared_secret Base64 de Steam.',
   'form.secretKey': 'Clave secreta',
   'form.accountInfo': 'Información de cuenta',
   'form.accountNameDesc': 'Establece un nombre fácilmente reconocible para esta cuenta',
@@ -108,7 +112,7 @@ export const esES: Translations = {
   'toast.qr_scanning': 'Escaneando código QR...',
   'toast.qr_success': 'Código QR reconocido exitosamente',
   'toast.qr_no_code': 'No se encontró código QR, por favor intenta nuevamente',
-  'toast.unsupported_totp': 'Configuración no compatible. Solo se admite SHA1, 6 dígitos y un período de 30 segundos.',
+  'toast.unsupported_totp': 'Configuración no compatible. Se admite SHA1 con 30 segundos: 6 dígitos o Steam Guard.',
   'toast.qr_invalid_format': 'Formato de código QR inválido',
   'toast.qr_parse_failed': 'Error al analizar el código QR',
   'toast.qr_invalid_file_type': 'Tipo de archivo no compatible, por favor sube un archivo de imagen',

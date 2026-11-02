@@ -34,6 +34,7 @@ import { PasswordProtection } from './PasswordProtection'
 import { Input } from './ui/input'
 import { securityStrings, securityError } from '@/locales/security'
 import { vaultRequest } from '@/utils/vault-client'
+import { bindingStrings } from '@/steam-link/strings'
 
 interface SettingsModalProps {
   open: boolean
@@ -376,6 +377,14 @@ export function SettingsModal({
                 </p>
               </div>
             </div>
+
+            <Button variant="outline" className="w-full" disabled={typeof chrome === 'undefined' || !chrome.runtime?.id} onClick={() => {
+              const url = chrome.runtime.getURL('steam-link.html')
+              void chrome.tabs.query({ url }).then(tabs => {
+                if (tabs[0]?.id !== undefined) return chrome.tabs.update(tabs[0].id, { active: true })
+                return chrome.tabs.create({ url })
+              }).catch(() => toast.error(t('toast.fill_failed')))
+            }}>{bindingStrings(locale).title}</Button>
 
             {/* 关于 */}
             <div className="space-y-3">

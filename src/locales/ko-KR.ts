@@ -1,6 +1,7 @@
 import type { Translations } from './zh-CN'
 
 export const koKR: Translations = {
+  'qr.show_button': 'QR 코드 표시',
   'settings.appearance': '화면 모드',
   'settings.theme.light': '라이트',
   'settings.theme.dark': '다크',
@@ -22,6 +23,9 @@ export const koKR: Translations = {
   'form.title_edit': '계정 편집',
   'form.title': '계정 추가',
   'form.accountName': '계정 이름',
+  'form.codeType': '코드 유형',
+  'form.codeTypeTotp': '일반 코드 (6자리)',
+  'form.steamSecretDesc': 'Steam Base32 키 또는 Base64 shared_secret을 입력하세요.',
   'form.secretKey': '비밀 키',
   'form.accountInfo': '계정 정보',
   'form.accountNameDesc': '이 계정에 대해 쉽게 식별할 수 있는 이름을 설정하세요',
@@ -108,7 +112,7 @@ export const koKR: Translations = {
   'toast.qr_scanning': 'QR 코드 스캔 중...',
   'toast.qr_success': 'QR 코드 인식 성공',
   'toast.qr_no_code': 'QR 코드를 찾을 수 없습니다. 다시 시도해주세요',
-  'toast.unsupported_totp': '지원하지 않는 설정입니다. SHA1, 6자리, 30초 주기만 지원합니다.',
+  'toast.unsupported_totp': '지원하지 않는 설정입니다. 30초 주기의 SHA1 6자리 코드와 Steam Guard를 지원합니다.',
   'toast.qr_invalid_format': '잘못된 QR 코드 형식입니다',
   'toast.qr_parse_failed': 'QR 코드 분석 실패',
   'toast.qr_invalid_file_type': '지원되지 않는 파일 형식입니다. 이미지 파일을 업로드해주세요',

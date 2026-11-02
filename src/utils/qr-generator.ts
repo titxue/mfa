@@ -1,3 +1,4 @@
+import type { Account } from '@/types'
 import QRCode from 'qrcode'
 
 /**
@@ -9,7 +10,8 @@ import QRCode from 'qrcode'
  */
 export function generateOtpauthURI(
   name: string,
-  secret: string
+  secret: string,
+  type?: Account['type']
 ): string {
   // 尝试从 name 中提取 issuer（如果包含空格，第一部分作为 issuer）
   const parts = name.trim().split(/\s+/)
@@ -26,7 +28,8 @@ export function generateOtpauthURI(
   const params = new URLSearchParams()
   params.set('secret', secret.toUpperCase())
   params.set('algorithm', 'SHA1')
-  params.set('digits', '6')
+  params.set('digits', type === 'steam' ? '5' : '6')
+  if (type === 'steam') params.set('encoder', 'steam')
   params.set('period', '30')
   if (issuer) {
     params.set('issuer', issuer)

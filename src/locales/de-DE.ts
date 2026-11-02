@@ -1,6 +1,7 @@
 import type { Translations } from './zh-CN'
 
 export const deDE: Translations = {
+  'qr.show_button': 'QR-Code anzeigen',
   'settings.appearance': 'Darstellung',
   'settings.theme.light': 'Hell',
   'settings.theme.dark': 'Dunkel',
@@ -22,6 +23,9 @@ export const deDE: Translations = {
   'form.title_edit': 'Konto bearbeiten',
   'form.title': 'Konto hinzufügen',
   'form.accountName': 'Kontoname',
+  'form.codeType': 'Code-Typ',
+  'form.codeTypeTotp': 'Standardcode (6 Ziffern)',
+  'form.steamSecretDesc': 'Steam Base32-Schlüssel oder Base64 shared_secret eingeben.',
   'form.secretKey': 'Geheimer Schlüssel',
   'form.accountInfo': 'Kontoinformationen',
   'form.accountNameDesc': 'Legen Sie einen leicht erkennbaren Namen für dieses Konto fest',
@@ -108,7 +112,7 @@ export const deDE: Translations = {
   'toast.qr_scanning': 'QR-Code wird gescannt...',
   'toast.qr_success': 'QR-Code erfolgreich erkannt',
   'toast.qr_no_code': 'Kein QR-Code gefunden, bitte versuchen Sie es erneut',
-  'toast.unsupported_totp': 'Nicht unterstützte Einstellungen. Unterstützt werden nur SHA1, 6 Ziffern und ein Intervall von 30 Sekunden.',
+  'toast.unsupported_totp': 'Nicht unterstützte Einstellungen. Unterstützt: SHA1 mit 30 Sekunden, 6 Ziffern oder Steam Guard.',
   'toast.qr_invalid_format': 'Ungültiges QR-Code-Format',
   'toast.qr_parse_failed': 'QR-Code konnte nicht analysiert werden',
   'toast.qr_invalid_file_type': 'Nicht unterstützter Dateityp, bitte laden Sie eine Bilddatei hoch',

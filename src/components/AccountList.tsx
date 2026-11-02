@@ -83,6 +83,7 @@ function SortableAccountItem({
       <AccountItem
         name={account.name}
         secret={account.secret}
+        type={account.type}
         code={code}
         remaining={remaining}
         onDelete={onDelete}
@@ -195,6 +196,7 @@ export function AccountList({
           <AccountItem
             name={activeAccount.name}
             secret={activeAccount.secret}
+            type={activeAccount.type}
             code={codes[activeAccount.name] || '------'}
             remaining={remaining}
             onDelete={onDeleteAccount}

@@ -1,3 +1,4 @@
+import type { Account } from '@/types'
 import React, { useState, useEffect } from 'react'
 import {
   Dialog,
@@ -17,6 +18,7 @@ interface QRCodeModalProps {
   onOpenChange: (open: boolean) => void
   accountName: string
   accountSecret: string
+  accountType?: Account['type']
 }
 
 /**
@@ -26,7 +28,8 @@ export function QRCodeModal({
   open,
   onOpenChange,
   accountName,
-  accountSecret
+  accountSecret,
+  accountType
 }: QRCodeModalProps) {
   const { t } = useI18n()
   const [qrDataURL, setQrDataURL] = useState<string>('')
@@ -41,7 +44,7 @@ export function QRCodeModal({
       setQrDataURL('')
 
       try {
-        const uri = generateOtpauthURI(accountName, accountSecret)
+        const uri = generateOtpauthURI(accountName, accountSecret, accountType)
         const dataURL = await generateQRDataURL(uri)
         setQrDataURL(dataURL)
       } catch (error) {
@@ -53,7 +56,7 @@ export function QRCodeModal({
     }
 
     generateQR()
-  }, [open, accountName, accountSecret, t])
+  }, [open, accountName, accountSecret, accountType, t])
 
   // 下载二维码
   const handleDownload = () => {

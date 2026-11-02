@@ -13,6 +13,7 @@ import { QrCode } from 'lucide-react'
 import { useI18n } from '@/contexts/I18nContext'
 import { toast } from 'sonner'
 import { parseQRCodeFromFile, parseOtpauthURI, UnsupportedTOTPParametersError } from '@/utils/qr-parser'
+import { TOTP } from '@/utils/totp'
 import { cn } from '@/utils/cn'
 import type { Account } from '@/types'
 
@@ -42,6 +43,7 @@ export function AddAccountModal({
   const [name, setName] = useState('')
   const [website, setWebsite] = useState('')
   const [secret, setSecret] = useState('')
+  const [type, setType] = useState<'totp' | 'steam'>('totp')
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -54,10 +56,12 @@ export function AddAccountModal({
       setName(initialData.name)
       setWebsite(initialData.website || '')
       setSecret(initialData.secret)
+      setType(initialData.type || 'totp')
     } else if (open && mode === 'add') {
       setName('')
       setWebsite('')
       setSecret('')
+      setType('totp')
     }
   }, [open, mode, initialData])
 
@@ -79,6 +83,7 @@ export function AddAccountModal({
       // 自动填充表单
       setName(result.issuer ? `${result.issuer} ${result.name}` : result.name)
       setSecret(result.secret)
+      setType(result.type || 'totp')
 
       toast.dismiss()
       toast.success(t('toast.qr_success'))
@@ -124,11 +129,12 @@ export function AddAccountModal({
 
     try {
       const processedAccount = {
+        type,
         name: name.trim(),
         website: website.trim() || undefined,
         secret: mode === 'edit' && initialData
           ? initialData.secret  // 编辑模式保持原密钥
-          : secret.trim().toUpperCase().replace(/\s/g, '')
+          : TOTP.normalizeSecret(secret, type)
       }
 
       let result: { success: boolean; message?: string }
@@ -149,6 +155,7 @@ export function AddAccountModal({
         }
         setName('')
         setSecret('')
+        setType('totp')
         onOpenChange(false)
       } else {
         toast.error(t(result.message as any))
@@ -262,6 +269,7 @@ export function AddAccountModal({
                 // 自动填充表单
                 setName(result.issuer ? `${result.issuer} ${result.name}` : result.name)
                 setSecret(result.secret)
+                setType(result.type || 'totp')
 
                 toast.success(t('toast.token_parse_success'))
               } catch (error) {
@@ -374,6 +382,15 @@ export function AddAccountModal({
             </p>
           </div>
 
+          <div>
+            <Label htmlFor="code-type">{t('form.codeType')}</Label>
+            <select id="code-type" value={type} onChange={e => setType(e.target.value as 'totp' | 'steam')}
+              className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <option value="totp">{t('form.codeTypeTotp')}</option>
+              <option value="steam">Steam Guard</option>
+            </select>
+          </div>
+
           {mode === 'add' && (
             <div>
               <Label htmlFor="secret">{t('form.secretKey')}</Label>
@@ -385,7 +402,7 @@ export function AddAccountModal({
                 className="mt-2 font-mono"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {t('form.secretKeyDesc')}
+                {t(type === 'steam' ? 'form.steamSecretDesc' : 'form.secretKeyDesc')}
               </p>
             </div>
           )}

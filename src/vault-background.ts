@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((message: VaultRequest, sender, respond) =>
         if (snapshot.revision !== m.revision) throw new Error('conflict')
         const account = snapshot.accounts.find(a => a.name === m.name)
         if (!account) throw new Error('invalid')
-        const code = await TOTP.generateTOTP(account.secret)
+        const code = await TOTP.generateTOTP(account.secret, 30, account.type)
         const fresh = await vault.snapshot()
         if (fresh.locked || fresh.revision !== snapshot.revision) throw new Error('locked')
         if (page && !(await grantedSites()).includes(sitePattern(sender.url ?? '')!)) throw new Error('denied')

@@ -26,6 +26,7 @@ export class ImportExportManager {
       typeof account.secret === 'string' &&
       account.name.trim() &&
       account.secret.trim() &&
+      (account.type === undefined || account.type === 'totp' || account.type === 'steam') &&
       (account.website === undefined || typeof account.website === 'string')
     )
   }
@@ -40,7 +41,8 @@ export class ImportExportManager {
       accounts: accounts.map(account => ({
         name: account.name,
         secret: account.secret,
-        website: account.website
+        website: account.website,
+        ...(account.type ? { type: account.type } : {})
       }))
     }
 
@@ -122,7 +124,7 @@ export class ImportExportManager {
       } else {
         // 验证密钥格式
         try {
-          await TOTP.generateTOTP(account.secret)
+          await TOTP.generateTOTP(account.secret, 30, account.type)
           newAccounts.push(account)
         } catch (error) {
           invalidCount++

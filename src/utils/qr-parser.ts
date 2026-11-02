@@ -1,13 +1,14 @@
 import jsQR from 'jsqr'
 
 export class UnsupportedTOTPParametersError extends Error {
-  constructor() { super('Only SHA1, 6 digits and a 30-second period are supported') }
+  constructor() { super('Only SHA1 with a 30-second period, standard 6-digit TOTP or Steam Guard is supported') }
 }
 
 export interface ParsedQRData {
   name: string
   secret: string
   issuer?: string
+  type?: 'steam'
 }
 
 /**
@@ -97,9 +98,15 @@ export function parseOtpauthURI(uri: string): ParsedQRData {
   try {
     const url = new URL(uri)
 
-    const supported = { algorithm: 'SHA1', digits: '6', period: '30' }
+    if (url.searchParams.getAll('encoder').some(value => value.toLowerCase() !== 'steam')) {
+      throw new UnsupportedTOTPParametersError()
+    }
+    const steam = url.searchParams.get('encoder')?.toLowerCase() === 'steam' ||
+      url.searchParams.get('issuer')?.toLowerCase() === 'steam' ||
+      decodeURIComponent(url.pathname).toLowerCase().startsWith('/steam:')
+    const supported = { algorithm: 'SHA1', digits: steam ? '5' : '6', period: '30' }
     for (const [parameter, expected] of Object.entries(supported)) {
-      if (url.searchParams.getAll(parameter).some(value => value.toUpperCase() !== expected)) {
+      if (url.searchParams.getAll(parameter).some(value => value.toUpperCase() !== expected && !(steam && parameter === 'digits' && value === '6'))) {
         throw new UnsupportedTOTPParametersError()
       }
     }
@@ -123,6 +130,7 @@ export function parseOtpauthURI(uri: string): ParsedQRData {
     }
 
     return {
+      ...(steam ? { type: 'steam' as const } : {}),
       name: name.trim(),
       secret: secret.trim().toUpperCase().replace(/\s/g, ''),
       issuer: issuer?.trim()

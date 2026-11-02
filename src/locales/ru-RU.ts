@@ -1,6 +1,7 @@
 import type { Translations } from './zh-CN'
 
 export const ruRU: Translations = {
+  'qr.show_button': 'Показать QR-код',
   'settings.appearance': 'Оформление',
   'settings.theme.light': 'Светлое',
   'settings.theme.dark': 'Тёмное',
@@ -22,6 +23,9 @@ export const ruRU: Translations = {
   'form.title_edit': 'Редактировать аккаунт',
   'form.title': 'Добавить аккаунт',
   'form.accountName': 'Имя аккаунта',
+  'form.codeType': 'Тип кода',
+  'form.codeTypeTotp': 'Обычный код (6 цифр)',
+  'form.steamSecretDesc': 'Введите ключ Steam Base32 или shared_secret Base64.',
   'form.secretKey': 'Секретный ключ',
   'form.accountInfo': 'Информация об аккаунте',
   'form.accountNameDesc': 'Установите узнаваемое имя для этого аккаунта',
@@ -108,7 +112,7 @@ export const ruRU: Translations = {
   'toast.qr_scanning': 'Сканирование QR-кода...',
   'toast.qr_success': 'QR-код успешно распознан',
   'toast.qr_no_code': 'QR-код не найден, попробуйте снова',
-  'toast.unsupported_totp': 'Неподдерживаемые параметры. Поддерживаются только SHA1, 6 цифр и период 30 секунд.',
+  'toast.unsupported_totp': 'Неподдерживаемые параметры. Поддерживается SHA1 с периодом 30 секунд: 6 цифр или Steam Guard.',
   'toast.qr_invalid_format': 'Неверный формат QR-кода',
   'toast.qr_parse_failed': 'Не удалось разобрать QR-код',
   'toast.qr_invalid_file_type': 'Неподдерживаемый тип файла, загрузите изображение',
