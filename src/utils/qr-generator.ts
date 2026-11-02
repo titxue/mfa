@@ -37,6 +37,12 @@ export function generateOtpauthURI(
   params.set('algorithm', 'SHA1')
   params.set('digits', '6')
   params.set('period', '30')
+  // Preserve ordinary account names that otherwise look like legacy Steam labels.
+  // Keep the conventional URI for all other names so existing authenticators can read it.
+  if (/^steam:/i.test(label) || issuer?.toLowerCase() === 'steam') {
+    params.set('encoder', 'totp')
+    return `otpauth://totp/${encodeURIComponent(name)}?${params}`
+  }
   if (issuer) {
     params.set('issuer', issuer)
   }

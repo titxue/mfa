@@ -29,7 +29,7 @@ const initial = [
 let state: ReturnType<typeof useAccounts>
 let stored: VaultSnapshot
 let listeners: Set<(event: unknown) => void>
-let saves: { message: VaultRequest; finish: (ok?: boolean) => void }[]
+let saves: { message: VaultRequest; finish: (ok?: boolean, afterCommit?: () => void) => void }[]
 let revision: number
 const notify = (invalidate = false) => listeners.forEach(listener => listener({ type: 'VAULT_CHANGED', invalidate }))
 
@@ -44,11 +44,12 @@ beforeEach(() => {
       id: 'test', onMessage: { addListener: (fn: any) => listeners.add(fn), removeListener: (fn: any) => listeners.delete(fn) },
       sendMessage: (message: VaultRequest) => {
         if (message.action === 'snapshot') return Promise.resolve({ ok: true, value: structuredClone(stored) })
-        return new Promise(resolve => saves.push({ message, finish: (ok = true) => {
+        return new Promise(resolve => saves.push({ message, finish: (ok = true, afterCommit) => {
           if (!ok) return resolve({ ok: false, error: 'quota' })
           expect(message.revision).toBe(stored.revision)
           stored = { ...stored, accounts: message.accounts!, revision: `r${++revision}` }
           notify()
+          afterCommit?.()
           resolve({ ok: true, value: structuredClone(stored) })
         } }))
       },
@@ -87,6 +88,40 @@ test('rapid reorders merge waiting saves and retain the latest optimistic order'
   expect(stored.accounts).toEqual(final)
   expect(state.revision).toBe('r2')
 })
+
+for (const update of ['add', 'edit', 'delete'] as const) {
+  test(`queued reorders preserve an external account ${update} arriving between commit and response`, async () => {
+    await mount(<Accounts />)
+    let first!: Promise<boolean>, second!: Promise<boolean>
+    await act(async () => {
+      first = state.updateAccounts([...initial].reverse())
+      second = state.updateAccounts([initial[1], initial[2], initial[0]])
+    })
+    await act(async () => saves[0].finish(true, () => {
+      const accounts = update === 'add'
+        ? [...stored.accounts, { name: 'Remote account', secret: initial[0].secret }]
+        : update === 'edit'
+          ? stored.accounts.map(account => account.name === initial[0].name
+            ? { ...account, secret: initial[1].secret, website: 'remote.example.test', type: 'steam' as const } : account)
+          : stored.accounts.filter(account => account.name !== initial[0].name)
+      stored = { ...stored, revision: 'remote-r2', accounts }
+      notify()
+    }))
+    const remote = structuredClone(stored)
+    expect(await Promise.all([first, second])).toEqual([false, false])
+    expect(saves).toHaveLength(1)
+    expect(state.accounts).toEqual(remote.accounts)
+    expect(state.revision).toBe('remote-r2')
+    expect(state.error).toBe('conflict')
+    expect(state.isSaving).toBe(false)
+    let retry!: Promise<boolean>
+    await act(async () => { retry = state.updateAccounts([...state.accounts].reverse()) })
+    await act(async () => saves[1].finish())
+    expect(await retry).toBe(true)
+    expect([...stored.accounts].reverse()).toEqual(remote.accounts)
+    expect(state.error).toBe('')
+  })
+}
 
 test('failed saves reject waiting operations, restore persisted data, and allow retry', async () => {
   await mount(<Accounts />)

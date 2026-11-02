@@ -43,8 +43,10 @@ function displayName(name: string, issuer: string): string {
   name = name.trim(); issuer = issuer.trim()
   if (!name) throw new Error('invalid')
   if (!issuer) return name
-  if (name.startsWith(`${issuer}:`)) name = name.slice(issuer.length + 1).trim()
-  if (!name) return issuer
+  if (name.startsWith(`${issuer}:`)) {
+    const account = name.slice(issuer.length + 1).trim()
+    return account ? `${issuer} ${account}` : issuer
+  }
   return name === issuer || name.startsWith(`${issuer} `) ? name : `${issuer} ${name}`
 }
 
@@ -53,7 +55,8 @@ function checkParameters(value: Record<string, unknown>) {
   const steam = value.type === 'steam' || encoder === 'steam'
   const digits = steam ? 5 : 6
   if ((value.type !== undefined && value.type !== 'totp' && value.type !== 'steam') ||
-      (encoder !== undefined && encoder !== 'steam') ||
+      (encoder !== undefined && encoder !== 'steam' && encoder !== 'totp') ||
+      (value.type === 'steam' && encoder === 'totp') ||
       (value.algorithm !== undefined && (typeof value.algorithm !== 'string' || value.algorithm.toUpperCase() !== 'SHA1')) ||
       // Older Steam URIs advertise six digits, but still use Steam's five-character encoder.
       (value.digits !== undefined && value.digits !== digits && value.digits !== String(digits) &&
@@ -76,6 +79,7 @@ function standardAccount(uri: string): Account {
     if (url.searchParams.has(key)) params[key] = url.searchParams.get(key)!
   }
   const label = decodeURIComponent(url.pathname.slice(1))
+  const explicitEncoder = params.encoder
   const colon = label.indexOf(':')
   const issuer = typeof params.issuer === 'string' ? params.issuer : colon >= 0 ? label.slice(0, colon) : ''
   // Preserve the Steam QR forms accepted by the published extension.
@@ -84,7 +88,9 @@ function standardAccount(uri: string): Account {
   }
   const type = checkParameters(params)
   if (typeof params.secret !== 'string') throw new Error('invalid')
-  return { name: displayName(label, issuer), secret: normalizeOTPSecret(params.secret), ...(type === 'steam' ? { type } : {}) }
+  const name = explicitEncoder !== undefined && !url.searchParams.has('issuer') ? label : displayName(label, issuer)
+  if (!name.trim()) throw new Error('invalid')
+  return { name, secret: normalizeOTPSecret(params.secret), ...(type === 'steam' ? { type } : {}) }
 }
 
 // A bounded protobuf wire reader. Unknown fields are skipped for forward compatibility.
@@ -233,7 +239,7 @@ export async function parseImportText(text: string, password?: string): Promise<
         parsed = standardAccount(a.url)
         if (parsed.secret !== secret) throw new Error('invalid')
         if (a.type === 'steam' && parsed.type !== 'steam') throw new Error('invalid')
-        if (a.encoder !== undefined && (typeof a.encoder !== 'string' || a.encoder.toLowerCase() !== parsed.type)) throw new Error('invalid')
+        if (a.encoder !== undefined && (typeof a.encoder !== 'string' || a.encoder.toLowerCase() !== (parsed.type ?? 'totp'))) throw new Error('invalid')
       }
       const type = checkParameters({ ...a, ...(parsed?.type === 'steam' ? { encoder: 'steam' } : {}) })
       name = foreign ? displayName(name, typeof a.issuer === 'string' ? a.issuer : '') : name

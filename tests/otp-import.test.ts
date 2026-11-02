@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'bun:test'
 import { encryptedBackupIdentity, importPreview, mergeImportChunks, normalizeOTPSecret, parseImportText, parseOTPURI } from '../src/utils/otp-import'
 import { ImportExportManager } from '../src/utils/import-export'
+import { generateOtpauthURI } from '../src/utils/qr-generator'
 import { importMessage, importStrings, importQueueStrings } from '../src/locales/import'
 import { LANGUAGE_CONFIGS } from '../src/locales'
 import { TOTP } from '../src/utils/totp'
@@ -28,6 +29,29 @@ function migration(entries = [account()], size = 1, index = 0, id = 42, extra: n
 }
 
 describe('standard OTP import', () => {
+  test('an explicit issuer prefix is removed exactly once when an account repeats the issuer', () => {
+    for (const name of ['Example Example alice', 'Example Example']) {
+      const parsed = parseOTPURI(generateOtpauthURI(name, secret))
+      expect(parsed.accounts).toEqual([{ name, secret }])
+      expect(parsed.issues).toEqual([])
+      const preview = importPreview([parsed], [{ name: name.slice('Example '.length), secret: 'MY' }])
+      expect(preview.accounts).toEqual([{ name, secret }])
+      expect(preview.duplicates).toEqual([])
+    }
+  })
+  test('ordinary QR exports retain the conventional URI understood by the published extension', () => {
+    for (const name of ['Example alice', 'Steam demo', 'alice']) {
+      const exported = new URL(generateOtpauthURI(name, secret))
+      expect(exported.searchParams.has('encoder')).toBe(false)
+      expect(exported.searchParams.get('algorithm')).toBe('SHA1')
+      expect(exported.searchParams.get('digits')).toBe('6')
+      expect(exported.searchParams.get('period')).toBe('30')
+      // These are the published extension's two implicit Steam signals.
+      expect(exported.searchParams.get('issuer')?.toLowerCase()).not.toBe('steam')
+      expect(decodeURIComponent(exported.pathname).toLowerCase().startsWith('/steam:')).toBe(false)
+      expect(parseOTPURI(exported.href).accounts).toEqual([{ name, secret }])
+    }
+  })
   test('names, URI decoding, defaults and supported explicit parameters', () => {
     expect(parseOTPURI(uri).accounts).toEqual([{ name: 'Example alice', secret }])
     expect(parseOTPURI(`${uri}&algorithm=SHA1&digits=6&period=30`).issues).toEqual([])

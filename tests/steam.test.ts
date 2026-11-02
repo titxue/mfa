@@ -57,6 +57,33 @@ describe('Steam Guard generation', () => {
 })
 
 describe('Steam import and round trips', () => {
+  test('ambiguous ordinary Steam labels round trip without changing type, key, code or name', async () => {
+    for (const name of ['Steam:alice', 'sTeAm:alice', 'Steam:alice account']) {
+      const uri = generateOtpauthURI(name, secret, 'totp')
+      expect(new URL(uri).searchParams.get('encoder')).toBe('totp')
+      const result = parseOTPURI(uri)
+      expect(result.issues).toEqual([])
+      expect(result.accounts).toEqual([{ name, secret }])
+      expect(TOTP.base32Decode(result.accounts[0].secret)).toEqual(TOTP.base32Decode(secret))
+      expect(await TOTP.generateTOTP(result.accounts[0].secret, 30, result.accounts[0].type, 59000))
+        .toBe(await TOTP.generateTOTP(secret, 30, 'totp', 59000))
+      const imported = await parseImportText(JSON.stringify([{ name, secret, type: 'totp', encoder: 'TOTP', url: uri }]))
+      expect(imported[0].accounts).toEqual([{ name, secret }])
+      for (const parameter of ['digits=5', 'algorithm=SHA256', 'period=60']) {
+        const bad = new URL(uri)
+        const [key, value] = parameter.split('=')
+        bad.searchParams.set(key, value)
+        expect(parseOTPURI(bad.href).issues[0].reason).toBe('unsupported')
+      }
+    }
+  })
+  test('explicit Steam exports retain literal colon names and conflict with an explicit numeric encoder', async () => {
+    const name = 'Steam:alice'
+    expect(parseOTPURI(generateOtpauthURI(name, secret, 'steam')).accounts).toEqual([{ name, secret, type: 'steam' }])
+    const bad = await parseImportText(JSON.stringify([{ name, secret, type: 'steam', encoder: 'totp' }]))
+    expect(bad[0].accounts).toEqual([])
+    expect(bad[0].issues[0].reason).toBe('unsupported')
+  })
   test('legacy Base32 stays numeric instead of being reinterpreted as a Steam Base64 key', async () => {
     const legacySecret = 'A'.repeat(27)
     const parsed = parseManualSecret(legacySecret)

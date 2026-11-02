@@ -4,6 +4,13 @@ import { TOTP } from '@/utils/totp'
 import { vaultRequest, onVaultChange } from '@/utils/vault-client'
 import type { VaultSnapshot } from '@/utils/vault'
 
+// Chrome may reorder object properties; compare the account data, not JSON key order.
+const sameAccounts = (saved: Account[], submitted: Account[]) => saved.length === submitted.length && saved.every((account, index) => {
+  const expected = submitted[index]
+  return account.name === expected.name && account.secret === expected.secret && account.website === expected.website &&
+    (account.type ?? 'totp') === (expected.type ?? 'totp')
+})
+
 export function useAccounts() {
   const [snapshot, setSnapshot] = useState<VaultSnapshot>({ accounts: [], revision: '', protected: false, locked: true })
   const [loading, setLoading] = useState(true)
@@ -47,6 +54,9 @@ export function useAccounts() {
         try {
           const value = await vaultRequest('save', { accounts: next.accounts, revision: current.current.revision })
           if (!alive.current || id !== generation.current || current.current.locked) throw new Error('conflict')
+          // A sync update can arrive after commit but before the background reads its response snapshot.
+          // Never use that unrelated revision to write the older queued account list.
+          if (value.locked || !sameAccounts(value.accounts, next.accounts)) throw new Error('conflict')
           const waiting = pending.current as typeof next | null
           apply({ ...value, accounts: waiting?.accounts ?? value.accounts })
           next.resolve.forEach(resolve => resolve(true))

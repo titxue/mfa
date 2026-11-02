@@ -5,7 +5,7 @@ import { useSettings } from '../../src/hooks/useSettings'
 import { Header } from '../../src/components/Header'
 import { AccountItem } from '../../src/components/AccountItem'
 import { I18nProvider } from '../../src/contexts/I18nContext'
-import { findSegmentedGroupFor, fillCode } from '../../src/utils/otp-field'
+import { findOTPField, findSegmentedGroupFor, fillCode } from '../../src/utils/otp-field'
 import { showInlineUI, hideInlineUI } from '../../src/content-script-menu'
 
 const fixture = document.querySelector<HTMLDivElement>('#fixture')!
@@ -89,7 +89,30 @@ await check('settings failure rolls back; overlapping settings writes are reject
   assert(state.settings.autofillInlineMenu && !state.saving && failure === 'storageError', 'failed setting did not roll back')
 })
 
-await check('segmented OTP needs semantic evidence and never hijacks unrelated inputs', async () => {
+await check('OTP needs semantic evidence and never hijacks unrelated inputs', async () => {
+  fixture.innerHTML = '<form><label>Username<input name="username" autocomplete="username" value="keep-me"></label>' +
+    '<label>Password<input type="password" autocomplete="current-password"></label><button>Sign in</button></form>'
+  assert(!findOTPField() && fillCode('123456').status === 'no-field', 'ordinary login treated as OTP')
+  assert(fixture.querySelector('input')!.value === 'keep-me', 'username overwritten')
+  fixture.innerHTML = '<form><h2>Verification code</h2><label>Postal code<input name="postal_code" inputmode="numeric" maxlength="6" value="654321"></label></form>'
+  assert(!findOTPField() && fillCode('123456').status === 'no-field', 'postal field treated as OTP')
+  assert(fixture.querySelector('input')!.value === '654321', 'postal code overwritten')
+  fixture.innerHTML = '<form><h2>Verification code</h2><input name="username" autocomplete="username" inputmode="numeric" maxlength="6" value="keep-me"></form>'
+  assert(fillCode('123456').status === 'no-field' && fixture.querySelector('input')!.value === 'keep-me', 'OTP heading overrode username autocomplete')
+  fixture.querySelector('input')!.removeAttribute('autocomplete')
+  assert(fillCode('123456').status === 'no-field', 'OTP heading overrode username purpose')
+  fixture.innerHTML = '<form><h2>Verification code</h2><input inputmode="numeric" maxlength="6"></form>'
+  assert(fillCode('123456').status === 'filled' && fixture.querySelector('input')!.value === '123456', 'local heading did not identify numeric OTP')
+  fixture.innerHTML = '<fieldset><legend>One-time verification code</legend><div><input inputmode="numeric" maxlength="6"></div></fieldset>'
+  assert(fillCode('123456').status === 'filled', 'local legend did not identify numeric OTP')
+  fixture.innerHTML = '<label>Verification code<input name="challenge"></label>'
+  let inputs = 0, changes = 0
+  fixture.querySelector('input')!.addEventListener('input', () => { inputs++ })
+  fixture.querySelector('input')!.addEventListener('change', () => { changes++ })
+  assert(fillCode('123456').status === 'filled', 'labelled single OTP not filled')
+  assert(fixture.querySelector('input')!.value === '123456' && inputs === 1 && changes === 1, 'framework input events missing')
+  fixture.innerHTML = '<input autocomplete="one-time-code" maxlength="5">'
+  assert(fillCode('ABCDE').status === 'filled' && fixture.querySelector('input')!.value === 'ABCDE', 'Steam single OTP not filled')
   fixture.innerHTML = '<div id="postal" aria-label="Postal code">' + '<input maxlength="1">'.repeat(6) + '</div><input id="other">'
   const first = fixture.querySelector('input')!
   assert(!findSegmentedGroupFor(first), 'postal group misidentified')

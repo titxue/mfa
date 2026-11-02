@@ -10,6 +10,7 @@ for (const input of ['invalid QR image', 'unsupported URI'] as const) {
     await dialog.locator('#name').fill('Draft account')
     await dialog.locator('#website').fill('example.test')
     await dialog.locator('#code-type').selectOption('steam')
+    await dialog.locator('#steam-secret-format').selectOption('base32')
     await dialog.locator('#secret').fill(secret)
 
     if (input === 'invalid QR image') {

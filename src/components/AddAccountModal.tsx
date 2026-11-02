@@ -48,12 +48,14 @@ export function AddAccountModal({
   const strings = importStrings(locale)
   const steam = steamStrings(locale)
   const [sourceType, setSourceType] = useState<Account['type']>()
+  const [steamEncoding, setSteamEncoding] = useState<'' | 'base32' | 'base64'>('')
   const [name, setName] = useState('')
   const [website, setWebsite] = useState('')
   const [secret, setSecret] = useState('')
   let detected: ReturnType<typeof parseManualSecret> | undefined
   try { if (mode === 'add' && secret.trim()) detected = parseManualSecret(secret, sourceType) } catch { /* Validate on submission. */ }
   const type = sourceType ?? (mode === 'edit' ? initialData?.type : detected?.type) ?? 'totp'
+  const encoding = sourceType === undefined && detected?.type === 'steam' ? 'base64' : steamEncoding
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -61,22 +63,28 @@ export function AddAccountModal({
   const dragCounterRef = useRef(0)
   const working = useRef(false)
   const generation = useRef(0)
-  useEffect(() => { generation.current++; return () => { generation.current++ } }, [open])
+  useEffect(() => {
+    generation.current++
+    setLoading(false)
+    return () => { generation.current++ }
+  }, [open, mode, initialData?.name])
 
   // 当模态框打开时填充初始值
   useEffect(() => {
     if (!open) {
-      setName(''); setSecret(''); setWebsite(''); setScanning(false); setSourceType(undefined)
+      setName(''); setSecret(''); setWebsite(''); setScanning(false); setSourceType(undefined); setSteamEncoding('')
     } else if (mode === 'edit' && initialData) {
       setName(initialData.name)
       setWebsite(initialData.website || '')
       setSecret(initialData.secret)
       setSourceType(initialData.type ?? 'totp')
+      setSteamEncoding('base32')
     } else if (open && mode === 'add') {
       setName('')
       setWebsite('')
       setSecret('')
       setSourceType(undefined)
+      setSteamEncoding('')
     }
   }, [open, mode, initialData])
 
@@ -96,7 +104,8 @@ export function AddAccountModal({
       if (mode === 'edit' && (account.type ?? 'totp') !== type) { toast.error(strings.useImport); return }
       setName(account.name)
       setSourceType(account.type ?? 'totp')
-      setSecret(account.type === 'steam' ? TOTP.steamSecretToBase64(account.secret) : account.secret)
+      setSecret(account.secret)
+      setSteamEncoding('base32')
       toast.success(t('toast.qr_success'))
     } else if (mode === 'edit') toast.error(strings.useImport)
     else onImportData?.(chunks)
@@ -126,6 +135,8 @@ export function AddAccountModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (loading) return
+    const id = generation.current
 
     if (!name.trim()) {
       toast.error(t('toast.fill_all_fields'))
@@ -138,9 +149,10 @@ export function AddAccountModal({
       let accountType: Account['type'] = type
       let accountSecret = initialData?.secret ?? ''
       if (mode === 'add') {
+        if (type === 'steam' && !encoding) { toast.error(steam.chooseEncoding); return }
         try {
-          const parsed = sourceType === 'steam'
-            ? { secret: TOTP.normalizeSecret(secret, 'steam'), type: 'steam' as const }
+          const parsed = type === 'steam'
+            ? { secret: encoding === 'base64' ? TOTP.steamSecretToBase32(secret) : parseManualSecret(secret, 'totp').secret, type: 'steam' as const }
             : parseManualSecret(secret, sourceType)
           accountSecret = parsed.secret; accountType = parsed.type
         } catch { toast.error(t('toast.invalid_secret')); return }
@@ -162,6 +174,7 @@ export function AddAccountModal({
         throw new Error('Invalid modal configuration')
       }
 
+      if (generation.current !== id) return
       if (result.success) {
         if (mode === 'add') {
           toast.success(`${name}`)
@@ -176,9 +189,9 @@ export function AddAccountModal({
         toast.error(t(result.message as any))
       }
     } catch (error) {
-      toast.error(t('error.init_failed'))
+      if (generation.current === id) toast.error(t('error.init_failed'))
     } finally {
-      setLoading(false)
+      if (generation.current === id) setLoading(false)
     }
   }
 
@@ -318,7 +331,7 @@ export function AddAccountModal({
 
           <div>
             <Label htmlFor="code-type">{t('form.codeType')}</Label>
-            <select id="code-type" value={type} onChange={e => setSourceType(e.target.value as 'totp' | 'steam')}
+            <select id="code-type" value={type} onChange={e => { setSourceType(e.target.value as 'totp' | 'steam'); setSteamEncoding('') }}
               className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
               <option value="totp">{t('form.codeTypeTotp')}</option>
               <option value="steam">Steam Guard</option>
@@ -327,6 +340,16 @@ export function AddAccountModal({
 
           {mode === 'add' && (
             <div>
+              {type === 'steam' && <div className="mb-4">
+                <Label htmlFor="steam-secret-format">{steam.encoding}</Label>
+                <select id="steam-secret-format" value={encoding}
+                  onChange={e => { setSourceType('steam'); setSteamEncoding(e.target.value as '' | 'base32' | 'base64') }}
+                  className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  <option value="">{steam.chooseEncoding}</option>
+                  <option value="base32">Base32</option>
+                  <option value="base64">Base64 shared_secret</option>
+                </select>
+              </div>}
               <Label htmlFor="secret">{t('form.secretKey')}</Label>
               <Input
                 id="secret"

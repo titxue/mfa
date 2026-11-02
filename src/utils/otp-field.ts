@@ -28,20 +28,6 @@ const OTP_KEYWORDS = [
   'सत्यापन',
 ]
 
-/** 登录/提交按钮关键词（邻近提示用） */
-const LOGIN_BUTTON_KEYWORDS = [
-  'login', 'signin', 'log in', 'sign in', 'verify', 'continue', 'submit',
-  '登录', '登入', '验证', '继续', '确认', '提交',
-  'iniciarsesion', 'entrar',
-  'connexion', 'seconnecter',
-  'anmelden', 'einloggen', 'weiter',
-  'войти', 'продолжить', 'подтвердить',
-  'دخول', 'متابعة',
-  'ログイン', 'ログインする', '次へ',
-  '로그인', '계속', '확인',
-  'साइनइन', 'लॉगइन', 'जारीरखें',
-]
-
 /** 将文本压缩为紧凑形式（去除大小写与分隔符差异） */
 function compact(text: string): string {
   return text
@@ -97,21 +83,19 @@ function matchesKeyword(text: string): boolean {
   return OTP_KEYWORDS.some((word) => kw.includes(word))
 }
 
-/** 附近（4 层祖先内）是否有密码框或登录类提交按钮 */
-function nearLoginContext(input: HTMLInputElement): boolean {
-  let node: HTMLElement | null = input.parentElement
-  for (let i = 0; i < 4 && node; i++) {
-    if (!(node instanceof HTMLElement)) break
-    const els = node.querySelectorAll('input, button')
-    for (const el of els) {
-      if (el === input) continue
-      if (el instanceof HTMLInputElement && el.type === 'password') return true
-      if (el.tagName === 'BUTTON') {
-        const txt = compact(el.textContent || el.getAttribute('aria-label') || '')
-        if (txt && LOGIN_BUTTON_KEYWORDS.some((word) => txt.includes(word))) return true
-      }
-    }
-    node = node.parentElement
+/** 无独立标签的短数字框可借用最近局部标题；明确的其它字段用途优先。 */
+function hasLocalOTPHeading(input: HTMLInputElement, labels: string): boolean {
+  if (labels.trim() || input.getAttribute('aria-label')?.trim()) return false
+  const autocomplete = (input.getAttribute('autocomplete') || '').toLowerCase()
+  if (autocomplete && !['on', 'off'].includes(autocomplete)) return false
+  const purpose = compact([input.name, input.id, input.placeholder].join(' '))
+  if (/(username|email|password|postal|postcode|zipcode)/.test(purpose)) return false
+  let node = input.parentElement
+  for (let depth = 0; depth < 3 && node; depth++, node = node.parentElement) {
+    const text = Array.from(node.children)
+      .filter(child => child.matches('legend, h1, h2, h3, h4, h5, h6, [role=heading]'))
+      .map(child => child.textContent).join(' ').trim()
+    if (text) return matchesKeyword(text)
   }
   return false
 }
@@ -131,8 +115,6 @@ function scoreInput(input: HTMLInputElement): number {
 
   const attrs = getAttributeText(input)
   const labels = getLabelText(input)
-  const maxLen = input.maxLength
-  const inputMode = (input.getAttribute('inputmode') || '').toLowerCase()
 
   let score = 0
 
@@ -141,25 +123,9 @@ function scoreInput(input: HTMLInputElement): number {
   // 关键词命中关联 label 文本
   if (matchesKeyword(labels)) score = Math.max(score, 70)
 
-  // inputmode=numeric + maxlength 4-8
-  if ((inputMode === 'numeric' || inputMode === 'tel') && maxLen >= 4 && maxLen <= 8) {
-    score = Math.max(score, 55)
-  }
-
-  // 带 maxlength 约束的 "code" 类字段（避免 promo code 等误报）
-  if (compact(attrs).includes('code') && maxLen >= 4 && maxLen <= 8 && inputMode === 'numeric') {
-    score = Math.max(score, 60)
-  }
-
-  // 邻近提示：附近有密码框或登录按钮（password 类型仅凭关键词等强信号判定，避免误判）
-  if (score < 50 && input.type !== 'password' && nearLoginContext(input)) {
-    score = Math.max(score, 45)
-  }
-
-  // autocomplete="off" 且无强信号时降低优先级
-  if (autocomplete === 'off' && score < 60) {
-    score = Math.max(0, score - 20)
-  }
+  // 数字长度、通用 code 和登录邻近不能单独区分 OTP、用户名或邮编。
+  const numeric = ['numeric', 'tel'].includes(input.getAttribute('inputmode') || '') || input.type === 'tel' || input.type === 'number'
+  if (!score && numeric && input.maxLength >= 4 && input.maxLength <= 8 && hasLocalOTPHeading(input, labels)) score = 55
 
   return score
 }

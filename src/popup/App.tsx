@@ -35,7 +35,6 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
   useEffect(() => {
     setShowEditModal(false)
     setEditingAccount(null)
-    setShowAddModal(false)
   }, [state.revision])
 
   const handleEditAccount = (accountName: string) => {

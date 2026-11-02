@@ -31,27 +31,30 @@ export class SteamLinkApi {
     if (!['QueryTime', 'QueryStatus', 'AddAuthenticator'].includes(method)) throw new LinkError('protocol')
     const body = new URLSearchParams({ input_json: JSON.stringify(input) })
     if (token) body.set('access_token', token)
-    let response: Response
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 15000)
     try {
-      response = await this.request(`https://api.steampowered.com/ITwoFactorService/${method}/v1/`, {
-        method: 'POST', body, redirect: 'error', credentials: 'omit', signal: controller.signal,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      })
-    } catch { throw new LinkError('network') }
-    finally { clearTimeout(timer) }
-    if (!response.ok) throw new LinkError(response.status === 429 ? 'rateLimit' : 'http', response.status)
-    const header = response.headers.get('x-eresult')
-    if (!header || !/^\d+$/.test(header)) throw new LinkError('protocol')
-    const result = Number(header)
-    if (result !== 1) throw new LinkError('steam', result)
-    let data: unknown
-    try { data = await response.json() } catch { throw new LinkError('protocol') }
-    const inner = (data as { response?: unknown })?.response
-    if (!inner || typeof inner !== 'object' || Array.isArray(inner)) throw new LinkError('protocol')
-    return inner as Record<string, unknown>
+      let response: Response
+      try {
+        response = await this.request(`https://api.steampowered.com/ITwoFactorService/${method}/v1/`, {
+          method: 'POST', body, redirect: 'error', credentials: 'omit', signal: controller.signal,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        })
+      } catch { throw new LinkError('network') }
+      if (!response.ok) throw new LinkError(response.status === 429 ? 'rateLimit' : 'http', response.status)
+      const header = response.headers.get('x-eresult')
+      if (!header || !/^\d+$/.test(header)) throw new LinkError('protocol')
+      const result = Number(header)
+      if (result !== 1) throw new LinkError('steam', result)
+      let data: unknown
+      try { data = await response.json() }
+      catch { throw new LinkError(controller.signal.aborted ? 'network' : 'protocol') }
+      const inner = (data as { response?: unknown })?.response
+      if (!inner || typeof inner !== 'object' || Array.isArray(inner)) throw new LinkError('protocol')
+      return inner as Record<string, unknown>
+    } finally { clearTimeout(timer) }
   }
+
   async time(): Promise<number> {
     const response = await this.call('QueryTime', {})
     const time = Number(response.server_time)

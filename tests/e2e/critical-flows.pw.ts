@@ -116,6 +116,7 @@ test('Steam type can be selected, persisted, displayed and copied as five charac
   await popup.getByRole('button', { name: '添加账户', exact: true }).click({ force: true })
   await popup.locator('#name').fill('Steam test')
   await popup.locator('#code-type').selectOption('steam')
+  await popup.locator('#steam-secret-format').selectOption('base64')
   await popup.locator('#secret').fill('MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=')
   await popup.getByRole('button', { name: '保存', exact: true }).click({ force: true })
   const card = popup.locator('.sortable-account[aria-label="Steam test"]')

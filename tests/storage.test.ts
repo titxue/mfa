@@ -40,6 +40,20 @@ test('settings round trip preserves the unchanged option', async () => {
   expect(await StorageManager.getSettings()).toEqual({ autofillInlineMenu: true, clipboardFallback: false })
 })
 
+test('an unset language stays distinct from an explicit Chinese preference', async () => {
+  const data: Record<string, unknown> = {}
+  Object.defineProperty(globalThis, 'chrome', { configurable: true, value: { storage: { sync: {
+    get: async () => data,
+    set: async (value: object) => { Object.assign(data, value) },
+    remove: async (key: string) => { delete data[key] },
+  } } } })
+  expect(await StorageManager.getLanguage()).toBeUndefined()
+  await StorageManager.saveLanguage('zh-CN')
+  expect(await StorageManager.getLanguage()).toBe('zh-CN')
+  await StorageManager.removeLanguage()
+  expect(await StorageManager.getLanguage()).toBeUndefined()
+})
+
 test('theme defaults to system and persists in device-local Chrome storage', async () => {
   const data: Record<string, unknown> = {}
   Object.defineProperty(globalThis, 'chrome', { configurable: true, value: { storage: {

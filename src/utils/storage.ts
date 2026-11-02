@@ -71,9 +71,8 @@ export class StorageManager {
   /**
    * 获取语言设置
    */
-  static async getLanguage(): Promise<string> {
-    const language = await this.getFromStorage<string>('language')
-    return language || 'zh-CN'
+  static async getLanguage(): Promise<string | undefined> {
+    return this.getFromStorage<string>('language')
   }
 
   /**
