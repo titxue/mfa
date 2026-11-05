@@ -1,6 +1,6 @@
 # PR #6 新功能测试覆盖
 
-对象为原 PR HEAD `c232ed8f9c7d6ded11978a429af050dd07365ad5`，加上本地修复 `c0218a1`。本轮补充测试，不修改生产实现。测试使用合成密钥、测试密码、独立存储和临时 Chromium profile。
+对象为原 PR HEAD `c232ed8f9c7d6ded11978a429af050dd07365ad5`，加上本地修复 `c0218a1`、测试补充 `5b5fe74` 及后续高级设置界面调整。测试使用合成密钥、测试密码、独立存储和临时 Chromium profile。
 
 ## 功能与回归映射
 
@@ -10,6 +10,7 @@
 | 纯 JS SHA-2 fallback、长密钥和跨块消息 | `totp.test.ts` 覆盖无 WebCrypto 时的全部 RFC 6238 向量、64/65/128/129/131/256 字节密钥和 257 字节消息；新增 RFC 4231 第 6 例的 SHA256/SHA512 固定摘要，避免仅依赖同环境实现互相对照。 |
 | 自定义 15–120 秒周期 | `otp-import.test.ts`、`vault-compatibility.test.ts` 验证合法/非法范围；`e2e/otp-parameters.pw.ts` 验证导入 45 秒及编辑至 15/120 秒；新往返测试覆盖 15/45/120 秒边界。 |
 | 手动选择参数及持久化 | `e2e/sha2-roundtrip.pw.ts` 手动选择 SHA512/8/60，保存、重开、复制、下载二维码、重扫后逐项核对参数和密钥；SHA256/8/45 由 `e2e/otp-parameters.pw.ts` 覆盖。 |
+| 高级选项默认折叠与简洁表单 | `e2e/advanced-settings.pw.ts` 验证浅/深色、键盘与焦点、重开折叠、导入/编辑/修改后收起均保留参数，以及固定页脚与无横向溢出；Steam 错误展开和连续提交焦点由 `review-ui-regressions.pw.ts` 覆盖；恢复入口的折叠和重开由 `sync-recovery.pw.ts` 覆盖。 |
 | 每个账户独立倒计时及进度环 | `use-totp-parameters.test.tsx` 检验 15/30/45/120 秒共存、多个边界和独立预期码；浏览器检验 15/30/45/60 秒的倒计时、圆环比例和跨周期验证码。 |
 | 参数编辑后立即刷新及异步竞态 | 新 hook 测试分别改变 algorithm/digits/period；编辑和 focus 后，迟到的旧计算不能覆盖新状态；错误账户不阻断正常账户，错误占位符匹配 6/8 位和 Steam。已有 `use-totp.test.tsx` 保留挂起恢复/监听器清理测试。 |
 | 页面内联菜单按各账户周期刷新 | `e2e/inline-periods.pw.ts` 验证 15/30/45/60 秒共存和关闭后定时器清理。 |

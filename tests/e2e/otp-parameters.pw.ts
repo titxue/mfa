@@ -1,3 +1,4 @@
+import { openAccountAdvanced } from './advanced-helpers'
 import { test, expect, accounts } from './extension'
 
 test('an imported 45-second period can be edited across the supported 15–120 second range', async ({ popup }) => {
@@ -8,6 +9,7 @@ test('an imported 45-second period can be edited across the supported 15–120 s
     transfer.setData('text/plain', uri)
     element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: transfer }))
   }, `otpauth://totp/CustomPeriod?secret=${accounts[1].secret}&algorithm=SHA256&digits=8&period=45`)
+  await openAccountAdvanced(add)
   await expect(add.locator('#period')).toHaveValue('45')
   await expect(add.locator('#period option:checked')).toHaveText('45')
   await add.getByRole('button', { name: '保存', exact: true }).click()
@@ -18,6 +20,7 @@ test('an imported 45-second period can be edited across the supported 15–120 s
   await card.click({ button: 'right', position: { x: 12, y: 12 } })
   await popup.getByRole('menuitem', { name: '编辑', exact: true }).click()
   const edit = popup.getByRole('dialog')
+  await openAccountAdvanced(edit)
   await expect(edit.locator('#period')).toHaveValue('45')
   await expect(edit.locator('#period option')).toHaveCount(106)
   await edit.locator('#period').selectOption('15')
@@ -27,6 +30,7 @@ test('an imported 45-second period can be edited across the supported 15–120 s
   await popup.reload()
   await card.click({ button: 'right', position: { x: 12, y: 12 } })
   await popup.getByRole('menuitem', { name: '编辑', exact: true }).click()
+  await openAccountAdvanced(edit)
   await expect(edit.locator('#period')).toHaveValue('15')
   await edit.locator('#period').selectOption('120')
   await edit.getByRole('button', { name: '保存', exact: true }).click()
@@ -34,6 +38,7 @@ test('an imported 45-second period can be edited across the supported 15–120 s
   await popup.reload()
   await card.click({ button: 'right', position: { x: 12, y: 12 } })
   await popup.getByRole('menuitem', { name: '编辑', exact: true }).click()
+  await openAccountAdvanced(edit)
   await expect(edit.locator('#period')).toHaveValue('120')
   await expect(edit.locator('#algorithm')).toHaveValue('SHA256')
   await expect(edit.locator('#digits')).toHaveValue('8')

@@ -7,6 +7,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { AdvancedSettings } from '@/components/ui/advanced-settings'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
@@ -36,7 +37,6 @@ import { securityStrings, securityError } from '@/locales/security'
 import { vaultRequest } from '@/utils/vault-client'
 import { importStrings } from '@/locales/import'
 import { bindingStrings } from '@/steam-link/strings'
-import { syncRecoveryStrings } from '@/locales/sync-recovery'
 
 interface SettingsModalProps {
   open: boolean
@@ -70,9 +70,10 @@ export function SettingsModal({
   const [plainExport, setPlainExport] = React.useState(false)
   const [backupPassword, setBackupPassword] = React.useState('')
   const [busy, setBusy] = React.useState(false)
+  const [advancedOpen, setAdvancedOpen] = React.useState(false)
   const alive = useRef(true)
   useEffect(() => { alive.current = true; return () => { alive.current = false } }, [])
-  useEffect(() => { if (!open) { setBackupPassword(''); setExportDialog(false) } }, [open])
+  useEffect(() => { if (!open) { setBackupPassword(''); setExportDialog(false); setAdvancedOpen(false) } }, [open])
   const clickCountRef = useRef(0)
   const lastClickTimeRef = useRef(0)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -229,9 +230,6 @@ export function SettingsModal({
             </div>
 
             <PasswordProtection protected={protectedMode} revision={revision} reload={reload} />
-            {onOpenRecovery && <Button variant="outline" className="w-full" onClick={onOpenRecovery}>
-              {syncRecoveryStrings(locale).exportAll}
-            </Button>}
 
             {/* 自动填充设置 */}
             <div className="space-y-2">
@@ -299,6 +297,13 @@ export function SettingsModal({
                 }}>{bindingStrings(locale).title}</Button>
               </div>
             </div>
+
+            {onOpenRecovery && <AdvancedSettings id="settings-advanced" title={t('form.advancedSettings')}
+              hint={t('settings.advancedHint')} open={advancedOpen} onOpenChange={setAdvancedOpen}>
+              <Button variant="outline" className="h-auto min-h-10 w-full whitespace-normal" onClick={onOpenRecovery}>
+                {t('settings.recovery')}
+              </Button>
+            </AdvancedSettings>}
 
             {/* 关于 */}
             <div className="space-y-3">

@@ -1,3 +1,4 @@
+import { openAccountAdvanced } from './advanced-helpers'
 import QRCode from 'qrcode'
 import { TOTP } from '../../src/utils/totp'
 import { test, expect, accounts } from './extension'
@@ -12,11 +13,23 @@ for (const encoding of ['base32', 'base64'] as const) {
     const dialog = popup.getByRole('dialog', { name: '添加账户', exact: true })
     const name = `Steam ${encoding}`
     await dialog.locator('#name').fill(name)
+    await openAccountAdvanced(dialog)
     await dialog.locator('#code-type').selectOption('steam')
     await dialog.locator('#secret').fill(ambiguous)
+    await dialog.locator('#account-advanced-toggle').click()
+    await expect(dialog.locator('#account-advanced-toggle')).toHaveAttribute('aria-expanded', 'false')
     await dialog.getByRole('button', { name: '保存', exact: true }).click()
-    await expect(popup.locator('[data-sonner-toast][data-type="error"]').last()).toContainText('请选择密钥格式')
+    await expect(dialog.locator('#steam-format-error')).toHaveAttribute('role', 'alert')
+    await expect(dialog.locator('#steam-format-error')).toContainText('请选择密钥格式')
+    await expect(dialog.locator('#account-advanced-toggle')).toHaveAttribute('aria-expanded', 'true')
+    await expect(dialog.locator('#steam-secret-format')).toBeFocused()
+    await expect(dialog.locator('#steam-secret-format')).toHaveAttribute('aria-invalid', 'true')
     await expect(dialog).toBeVisible()
+    // Submitting the same invalid draft must restore focus each time.
+    await dialog.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(dialog.locator('#steam-format-error')).toBeVisible()
+    await expect(dialog.locator('#steam-secret-format')).toBeFocused()
+    await expect(dialog.locator('#steam-secret-format')).toHaveAttribute('aria-invalid', 'true')
     await dialog.locator('#steam-secret-format').selectOption(encoding)
     await dialog.getByRole('button', { name: '保存', exact: true }).click()
     await expect(popup.locator(`.sortable-account[aria-label="${name}"] .font-mono`)).toHaveText(/^[A-Z0-9]{5}$/)
@@ -45,6 +58,7 @@ for (const source of ['URI', 'QR'] as const) {
     }, uri)
     await expect(dialog.locator('#name')).toHaveValue(name)
     await expect(dialog.locator('#secret')).toHaveValue(secret)
+    await openAccountAdvanced(dialog)
     await expect(dialog.locator('#steam-secret-format')).toHaveValue('base32')
     await dialog.getByRole('button', { name: '保存', exact: true }).click()
     await expect(popup.locator(`.sortable-account[aria-label="${name}"] .font-mono`)).toHaveText(/^[A-Z0-9]{5}$/)

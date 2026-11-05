@@ -1,3 +1,4 @@
+import { openAccountAdvanced } from './advanced-helpers'
 import { readFile } from 'node:fs/promises'
 import QRCode from 'qrcode'
 import type { BrowserContext, Page, Worker } from '@playwright/test'
@@ -40,11 +41,13 @@ test('first use supports manual add, editing account details and confirmed delet
   await page.getByRole('button', { name: '添加账户', exact: true }).click()
   await page.locator('#name').fill('Manual example')
   await page.locator('#secret').fill(secret)
+  await openAccountAdvanced(page)
   await page.locator('#website').fill('example.test')
   await saveForm(page, 'Manual example')
 
   await card(page, 'Manual example').click({ button: 'right' })
   await page.getByRole('menuitem', { name: '编辑', exact: true }).click()
+  await openAccountAdvanced(page)
   await expect(page.locator('#website')).toHaveValue('example.test')
   await page.locator('#name').fill('Renamed example')
   await page.locator('#website').fill('login.example.test')
@@ -52,6 +55,7 @@ test('first use supports manual add, editing account details and confirmed delet
   await expect(card(page, 'Manual example')).toHaveCount(0)
   await card(page, 'Renamed example').click({ button: 'right' })
   await page.getByRole('menuitem', { name: '编辑', exact: true }).click()
+  await openAccountAdvanced(page)
   await expect(page.locator('#website')).toHaveValue('login.example.test')
   await page.getByRole('dialog').getByRole('button', { name: '取消', exact: true }).click()
 

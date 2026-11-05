@@ -1,3 +1,4 @@
+import { openAccountAdvanced } from './advanced-helpers'
 import { test, expect } from './extension'
 
 const order = (page: import('@playwright/test').Page) => page.locator('.sortable-account').evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-label')))
@@ -115,6 +116,8 @@ test('Steam type can be selected, persisted, displayed and copied as five charac
   await popup.goto(popupUrl)
   await popup.getByRole('button', { name: '添加账户', exact: true }).click({ force: true })
   await popup.locator('#name').fill('Steam test')
+  // This test pauses animation frames before opening the dialog.
+  await popup.locator('#account-advanced-toggle').click({ force: true })
   await popup.locator('#code-type').selectOption('steam')
   await popup.locator('#steam-secret-format').selectOption('base64')
   await popup.locator('#secret').fill('MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=')
@@ -146,5 +149,6 @@ test('Steam type can be selected, persisted, displayed and copied as five charac
   await popup.clock.resume()
   await card.click({ button: 'right', position: { x: 12, y: 12 } })
   await popup.getByRole('menuitem', { name: '编辑', exact: true }).click()
+  await openAccountAdvanced(popup)
   await expect(popup.locator('#code-type')).toHaveValue('steam')
 })

@@ -1,3 +1,4 @@
+import { openAccountAdvanced } from './advanced-helpers'
 import { readFile } from 'node:fs/promises'
 import { createHmac } from 'node:crypto'
 import { test, expect, accounts } from './extension'
@@ -14,6 +15,7 @@ test('manual SHA512/8/60 selection preserves code through clipboard and download
   await popup.getByRole('button', { name: '添加账户', exact: true }).click()
   await popup.locator('#name').fill('SHA512 example')
   await popup.locator('#secret').fill(accounts[0].secret)
+  await openAccountAdvanced(popup)
   await popup.locator('#algorithm').selectOption('SHA512')
   await popup.locator('#digits').selectOption('8')
   await popup.locator('#period').selectOption('60')
@@ -33,6 +35,7 @@ test('manual SHA512/8/60 selection preserves code through clipboard and download
   await popup.locator('input[type=file]').setInputFiles(path)
   await expect(popup.locator('#name')).toHaveValue('SHA512 example')
   await expect(popup.locator('#secret')).toHaveValue(accounts[0].secret)
+  await openAccountAdvanced(popup)
   await expect(popup.locator('#algorithm')).toHaveValue('SHA512')
   await expect(popup.locator('#digits')).toHaveValue('8')
   await expect(popup.locator('#period')).toHaveValue('60')

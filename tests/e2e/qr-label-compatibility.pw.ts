@@ -1,3 +1,4 @@
+import { openAccountAdvanced } from './advanced-helpers'
 import { test, expect, accounts } from './extension'
 
 for (const [label, name] of [['Steam label', 'Steam:alice'], ['leading colon', ':Steam:alice']]) {
@@ -33,6 +34,7 @@ for (const [label, name] of [['Steam label', 'Steam:alice'], ['leading colon', '
     await popup.locator('input[type=file]').setInputFiles(filename)
     await expect(popup.locator('#name')).toHaveValue(name)
     await expect(popup.locator('#secret')).toHaveValue(accounts[0].secret)
+    await openAccountAdvanced(popup)
     await expect(popup.locator('#code-type')).toHaveValue('totp')
     await popup.getByRole('dialog').getByRole('button', { name: '保存', exact: true }).click()
     await expect(card.locator('.font-mono')).toHaveText(/^\d{3} \d{3}$/)

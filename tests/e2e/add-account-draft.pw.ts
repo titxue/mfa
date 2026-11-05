@@ -1,3 +1,4 @@
+import { openAccountAdvanced } from './advanced-helpers'
 import QRCode from 'qrcode'
 import { test, expect, accounts } from './extension'
 
@@ -8,6 +9,7 @@ for (const input of ['invalid QR image', 'unsupported URI'] as const) {
     await popup.getByRole('button', { name: '添加账户', exact: true }).click()
     const dialog = popup.getByRole('dialog', { name: '添加账户', exact: true })
     await dialog.locator('#name').fill('Draft account')
+    await openAccountAdvanced(dialog)
     await dialog.locator('#website').fill('example.test')
     await dialog.locator('#code-type').selectOption('steam')
     await dialog.locator('#steam-secret-format').selectOption('base32')
@@ -118,5 +120,6 @@ test('a SHA256 Google migration is imported and preserves its algorithm after re
   await expect(card.locator('.font-mono')).toHaveText(/^\d{3} \d{3}$/)
   await card.click({ button: 'right', position: { x: 12, y: 12 } })
   await popup.getByRole('menuitem', { name: '编辑', exact: true }).click()
+  await openAccountAdvanced(popup)
   await expect(popup.getByRole('dialog').locator('#algorithm')).toHaveValue('SHA256')
 })
