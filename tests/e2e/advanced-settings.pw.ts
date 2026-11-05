@@ -83,3 +83,34 @@ test('collapsed imported and edited custom settings preserve metadata, including
   await edit('RenamedCustom')
   await expect(dialog.getByText('已自定义', { exact: true })).toBeVisible()
 })
+
+for (const reducedMotion of ['no-preference', 'reduce'] as const) {
+  test(`disclosure motion respects ${reducedMotion} and rapid toggles remain usable`, async ({ popup }) => {
+    await popup.emulateMedia({ reducedMotion })
+    await popup.getByRole('button', { name: '添加账户', exact: true }).click()
+    const toggle = popup.locator('#account-advanced-toggle')
+    await toggle.click()
+    await expect(popup.locator('#algorithm')).toBeVisible()
+    if (reducedMotion === 'reduce') {
+      expect(await popup.locator('#account-advanced-settings').evaluate(el => el.getAnimations().length)).toBe(0)
+    }
+    await toggle.evaluate(el => {
+      el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))
+    })
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await expect(popup.locator('#account-advanced-settings')).toBeHidden()
+    await toggle.click()
+    await popup.locator('#account-advanced-settings').evaluate(async el => {
+      await Promise.allSettled(el.getAnimations().map(animation => animation.finished))
+    })
+    await expect(popup.locator('#account-advanced-settings')).toHaveCSS('opacity', '1')
+    await popup.locator('#period').selectOption('45')
+    await expect(popup.locator('#period')).toHaveValue('45')
+    await footerVisible(popup)
+    await toggle.focus()
+    await popup.keyboard.press('Space')
+    await popup.keyboard.press('Enter')
+    await expect(toggle).toBeFocused()
+    expect(await popup.locator('#account-advanced-settings').evaluate(el => el.getAnimations().length)).toBe(0)
+  })
+}
