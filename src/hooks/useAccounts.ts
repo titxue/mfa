@@ -95,7 +95,7 @@ export function useAccounts() {
   }
   const validate = async (account: Account, original?: string) => {
     if (current.current.accounts.some(a => a.name === account.name && a.name !== original)) return 'toast.account_exists'
-    try { await TOTP.generateTOTP(account.secret, 30, account.type) } catch { return 'toast.invalid_secret' }
+    try { await TOTP.generateTOTP(account.secret, account.period ?? 30, account.type, undefined, { algorithm: account.algorithm, digits: account.digits }) } catch { return 'toast.invalid_secret' }
     return undefined
   }
   const addAccount = async (account: Account) => {

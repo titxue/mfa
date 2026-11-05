@@ -60,7 +60,13 @@ describe('standard OTP import', () => {
     expect(parseOTPURI(`otpauth://totp/%E6%B5%8B%E8%AF%95%3A%E5%B0%8F%E6%98%8E?secret=${secret}`).accounts[0].name).toBe('测试 小明')
     expect(parseOTPURI(`otpauth://totp/alice?secret=${secret.toLowerCase()}`).accounts[0].secret).toBe(secret)
   })
-  test.each(['algorithm=SHA256', 'algorithm=SHA512', 'algorithm=MD5', 'digits=8', 'digits=0', 'period=60', 'period=0', 'period=abc'])('rejects unsupported %s without changing parameters', parameter => {
+  test('accepts SHA-256/SHA-512, 8 digits and non-default periods', () => {
+    expect(parseOTPURI(`${uri}&algorithm=SHA256`).accounts).toEqual([{ name: 'Example alice', secret, algorithm: 'SHA256' }])
+    expect(parseOTPURI(`${uri}&algorithm=sha512&digits=8&period=60`).accounts)
+      .toEqual([{ name: 'Example alice', secret, algorithm: 'SHA512', digits: 8, period: 60 }])
+    expect(parseOTPURI(`${uri}&algorithm=SHA256&digits=6&period=30`).accounts).toEqual([{ name: 'Example alice', secret, algorithm: 'SHA256' }])
+  })
+  test.each(['algorithm=MD5', 'algorithm=SHA999', 'digits=0', 'digits=7', 'period=0', 'period=abc'])('rejects unsupported %s without changing parameters', parameter => {
     const result = parseOTPURI(`${uri}&${parameter}`)
     expect(result.accounts).toEqual([])
     expect(result.issues).toEqual([{ name: 'Example alice', reason: 'unsupported' }])
@@ -84,8 +90,13 @@ describe('standard OTP import', () => {
   test('multiline text keeps valid entries and reports bad lines', async () => {
     const chunks = await parseImportText(`\uFEFF# comment\r\n${uri}\n\ninvalid\n${uri}&digits=8`)
     const result = importPreview(chunks, [])
+    // 两条 URI 同名，第二条按重复处理，但仍保留 8 位参数
     expect(result.accounts).toHaveLength(1)
-    expect(result.issues.map(i => i.reason)).toEqual(['invalid', 'unsupported'])
+    expect(result.duplicates).toHaveLength(1)
+    expect(result.issues.map(i => i.reason)).toEqual(['invalid'])
+    expect(result.accounts[0]).toEqual({ name: 'Example alice', secret })
+    const digitsOnly = await parseImportText(`${uri.replace('Example:alice', 'Demo')}&digits=8`)
+    expect(digitsOnly[0].accounts).toEqual([{ name: 'Example Demo', secret, digits: 8 }])
   })
 })
 
@@ -116,7 +127,13 @@ describe('Google migration wire decoding', () => {
       expect(parseOTPURI(prefix + data).accounts).toEqual(parseOTPURI(value).accounts)
     }
   })
-  test.each([[2, 1, 2], [3, 1, 2], [0, 1, 2], [1, 2, 2], [1, 6, 2], [1, 0, 2], [1, 1, 1], [1, 1, 0], [1, 1, 99]])('rejects enums algorithm=%i digits=%i type=%i', (algorithm, digits, type) => {
+  test('accepts SHA-256/SHA-512 algorithm and 8-digit enums in migration payloads', () => {
+    const sha256 = parseOTPURI(migration([account('sha256', 2, 2)]))
+    expect(sha256.accounts).toEqual([{ name: 'Example sha256', secret, algorithm: 'SHA256', digits: 8 }])
+    const sha512 = parseOTPURI(migration([account('sha512', 3, 1)]))
+    expect(sha512.accounts).toEqual([{ name: 'Example sha512', secret, algorithm: 'SHA512' }])
+  })
+  test.each([[4, 1, 2], [0, 1, 2], [1, 6, 2], [1, 0, 2], [1, 1, 1], [1, 1, 0], [1, 1, 99]])('rejects enums algorithm=%i digits=%i type=%i', (algorithm, digits, type) => {
     const result = parseOTPURI(migration([account('unsupported', algorithm, digits, type), account('valid')]))
     expect(result.accounts.map(a => a.name)).toEqual(['Example valid'])
     expect(result.issues).toEqual([{ name: 'Example unsupported', reason: 'unsupported' }])
@@ -233,10 +250,23 @@ describe('backup formats and compatibility', () => {
     expect(result.issues).toEqual([{ name: 'HOTP demo', reason: 'unsupported' }])
   })
   test('does not ignore JSON or embedded URI parameters or mismatched secrets', async () => {
-    const items = [{ name: 'a', secret, digits: 8 }, { name: 'b', secret, url: uri + '&period=60' }, { name: 'c', secret: 'MY', url: uri }]
+    const items = [{ name: 'a', secret, digits: 7 }, { name: 'b', secret, url: uri + '&period=0' }, { name: 'c', secret: 'MY', url: uri }]
     const result = importPreview(await parseImportText(JSON.stringify(items)), [])
     expect(result.accounts).toHaveLength(0)
     expect(result.issues.map(i => i.reason)).toEqual(['unsupported', 'unsupported', 'invalid'])
+  })
+  test('JSON fields and native backups retain SHA-256/512 parameters', async () => {
+    const items = [{ name: 'a', secret, algorithm: 'sha256' }, { name: 'b', secret, digits: 8, period: 60 }, { name: 'c', secret, url: uri + '&algorithm=SHA512' }]
+    const result = importPreview(await parseImportText(JSON.stringify(items)), [])
+    expect(result.accounts).toEqual([
+      { name: 'a', secret, algorithm: 'SHA256' },
+      { name: 'b', secret, digits: 8, period: 60 },
+      { name: 'c', secret, algorithm: 'SHA512' }
+    ])
+    const accounts = [{ name: ' Demo ', secret, algorithm: 'SHA512', digits: 8, period: 60 }]
+    const roundtrip = importPreview(await parseImportText(ImportExportManager.exportAccounts(accounts)), [])
+    expect(roundtrip.accounts).toEqual(accounts)
+    expect(roundtrip.issues).toEqual([])
   })
   test('preserves original backup account names, website and encrypted imports', async () => {
     const accounts = [{ name: 'Original name', secret, website: 'example.test' }]

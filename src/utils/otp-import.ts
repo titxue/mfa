@@ -1,4 +1,4 @@
-import type { Account } from '@/types'
+import type { Account, TOTPAlgorithm } from '@/types'
 import { decryptAccounts, deriveKey, validateEncrypted } from './vault-crypto'
 import { TOTP } from './totp'
 
@@ -50,19 +50,50 @@ function displayName(name: string, issuer: string): string {
   return name === issuer || name.startsWith(`${issuer} `) ? name : `${issuer} ${name}`
 }
 
+const ALGORITHMS: readonly TOTPAlgorithm[] = ['SHA1', 'SHA256', 'SHA512']
+
+function normalizeAlgorithm(value: unknown): TOTPAlgorithm | undefined {
+  if (value === undefined) return undefined
+  if (typeof value !== 'string') throw new Error('unsupported')
+  const algorithm = value.toUpperCase() as TOTPAlgorithm
+  if (!ALGORITHMS.includes(algorithm)) throw new Error('unsupported')
+  return algorithm
+}
+
+function normalizeDigits(value: unknown, steam: boolean): 6 | 8 | undefined {
+  if (value === undefined) return undefined
+  const digits = typeof value === 'number' ? value
+    : typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : NaN
+  if (steam) {
+    // Older Steam URIs advertise six digits, but still use Steam's five-character encoder.
+    if (digits !== 5 && digits !== 6) throw new Error('unsupported')
+    return undefined
+  }
+  if (digits !== 6 && digits !== 8) throw new Error('unsupported')
+  return digits
+}
+
+function normalizePeriod(value: unknown): number | undefined {
+  if (value === undefined) return undefined
+  const period = typeof value === 'number' ? value
+    : typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : NaN
+  if (!Number.isInteger(period) || period < 15 || period > 120) throw new Error('unsupported')
+  return period
+}
+
 function checkParameters(value: Record<string, unknown>) {
   const encoder = typeof value.encoder === 'string' ? value.encoder.toLowerCase() : value.encoder
   const steam = value.type === 'steam' || encoder === 'steam'
-  const digits = steam ? 5 : 6
   if ((value.type !== undefined && value.type !== 'totp' && value.type !== 'steam') ||
       (encoder !== undefined && encoder !== 'steam' && encoder !== 'totp') ||
-      (value.type === 'steam' && encoder === 'totp') ||
-      (value.algorithm !== undefined && (typeof value.algorithm !== 'string' || value.algorithm.toUpperCase() !== 'SHA1')) ||
-      // Older Steam URIs advertise six digits, but still use Steam's five-character encoder.
-      (value.digits !== undefined && value.digits !== digits && value.digits !== String(digits) &&
-        !(steam && (value.digits === 6 || value.digits === '6'))) ||
-      (value.period !== undefined && value.period !== 30 && value.period !== '30')) throw new Error('unsupported')
-  return steam ? 'steam' : 'totp'
+      (value.type === 'steam' && encoder === 'totp')) throw new Error('unsupported')
+  const algorithm = normalizeAlgorithm(value.algorithm)
+  // Steam Guard is always SHA-1 / 5 characters / 30 seconds.
+  if (steam && (algorithm !== undefined && algorithm !== 'SHA1' ||
+      (value.period !== undefined && value.period !== 30 && value.period !== '30'))) throw new Error('unsupported')
+  const digits = normalizeDigits(value.digits, steam)
+  const period = normalizePeriod(value.period)
+  return { type: steam ? ('steam' as const) : ('totp' as const), algorithm, digits, period }
 }
 
 function issue(error: unknown, name?: string): ImportIssue {
@@ -86,14 +117,22 @@ function standardAccount(uri: string): Account {
   if (params.encoder === undefined && (issuer.toLowerCase() === 'steam' || label.toLowerCase().startsWith('steam:'))) {
     params.encoder = 'steam'
   }
-  const type = checkParameters(params)
+  const { type, algorithm, digits, period } = checkParameters(params)
   if (typeof params.secret !== 'string') throw new Error('invalid')
   // Match the published parser's empty issuer separator only after Steam detection.
   // Explicit encoders retain literal labels, including QR codes exported previously.
   const accountLabel = explicitEncoder === undefined && !url.searchParams.has('issuer') && label.startsWith(':') ? label.slice(1) : label
   const name = explicitEncoder !== undefined && !url.searchParams.has('issuer') ? label : displayName(accountLabel, issuer)
   if (!name.trim()) throw new Error('invalid')
-  return { name, secret: normalizeOTPSecret(params.secret), ...(type === 'steam' ? { type } : {}) }
+  // Only non-default parameters are stored so legacy accounts stay untouched.
+  return {
+    name,
+    secret: normalizeOTPSecret(params.secret),
+    ...(type === 'steam' ? { type } : {}),
+    ...(type !== 'steam' && algorithm !== undefined && algorithm !== 'SHA1' ? { algorithm } : {}),
+    ...(type !== 'steam' && digits !== undefined && digits !== 6 ? { digits } : {}),
+    ...(type !== 'steam' && period !== undefined && period !== 30 ? { period } : {})
+  }
 }
 
 // A bounded protobuf wire reader. Unknown fields are skipped for forward compatibility.
@@ -176,9 +215,18 @@ function migration(uri: string): ImportChunk {
       const secret = bytesField(fields, 1)
       if (!name || !secret?.length) throw new Error('invalid')
       name = displayName(name, issuer)
-      // Google encodes SIX_DIGITS as 1 (not the literal digit count).
-      if (numberField(fields, 4) !== 1 || numberField(fields, 5) !== 1 || numberField(fields, 6) !== 2) throw new Error('unsupported')
-      result.accounts.push({ name, secret: TOTP.base32Encode(secret) })
+      // Algorithm enum: 1=SHA1 2=SHA256 3=SHA512 (MD5=4 unsupported). Digits enum: 1=SIX_DIGITS 2=EIGHT_DIGITS.
+      // Google encodes SIX_DIGITS as 1 (not the literal digit count); periods are always 30s here.
+      const algorithmEnum = numberField(fields, 4) ?? 1
+      const digitsEnum = numberField(fields, 5)
+      if ((algorithmEnum !== 1 && algorithmEnum !== 2 && algorithmEnum !== 3) ||
+          (digitsEnum !== 1 && digitsEnum !== 2) || numberField(fields, 6) !== 2) throw new Error('unsupported')
+      result.accounts.push({
+        name,
+        secret: TOTP.base32Encode(secret),
+        ...(algorithmEnum !== 1 ? { algorithm: algorithmEnum === 2 ? 'SHA256' : 'SHA512' } : {}),
+        ...(digitsEnum === 2 ? { digits: 8 as const } : {})
+      })
     } catch (error) { result.issues.push(issue(error, name)) }
   }
   return result
@@ -244,9 +292,22 @@ export async function parseImportText(text: string, password?: string): Promise<
         if (a.type === 'steam' && parsed.type !== 'steam') throw new Error('invalid')
         if (a.encoder !== undefined && (typeof a.encoder !== 'string' || a.encoder.toLowerCase() !== (parsed.type ?? 'totp'))) throw new Error('invalid')
       }
-      const type = checkParameters({ ...a, ...(parsed?.type === 'steam' ? { encoder: 'steam' } : {}) })
+      const checked = checkParameters({ ...a, ...(parsed?.type === 'steam' ? { encoder: 'steam' } : {}) })
+      // URL-provided parameters win over the JSON fields when both exist.
+      const type = parsed ? (parsed.type ?? 'totp') : checked.type
+      const algorithm = parsed?.algorithm ?? checked.algorithm
+      const digits = parsed?.digits ?? checked.digits
+      const period = parsed?.period ?? checked.period
       name = foreign ? displayName(name, typeof a.issuer === 'string' ? a.issuer : '') : name
-      result.accounts.push({ name, secret, ...(type === 'steam' ? { type } : {}), ...(a.website === undefined ? {} : { website: a.website as string }) })
+      result.accounts.push({
+        name,
+        secret,
+        ...(type === 'steam' ? { type } : {}),
+        ...(type !== 'steam' && algorithm !== undefined && algorithm !== 'SHA1' ? { algorithm } : {}),
+        ...(type !== 'steam' && digits !== undefined && digits !== 6 ? { digits } : {}),
+        ...(type !== 'steam' && period !== undefined && period !== 30 ? { period } : {}),
+        ...(a.website === undefined ? {} : { website: a.website as string })
+      })
     } catch (error) { result.issues.push(issue(error, name)) }
   }
   return [result]

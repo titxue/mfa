@@ -16,7 +16,7 @@ import { parseQRCodeFromFile } from '@/utils/qr-parser'
 import { parseImportText, parseManualSecret, type ImportChunk } from '@/utils/otp-import'
 import { importStrings } from '@/locales/import'
 import { cn } from '@/utils/cn'
-import type { Account } from '@/types'
+import type { Account, TOTPAlgorithm } from '@/types'
 import { TOTP } from '@/utils/totp'
 import { steamStrings } from '@/locales/steam'
 
@@ -52,6 +52,9 @@ export function AddAccountModal({
   const [name, setName] = useState('')
   const [website, setWebsite] = useState('')
   const [secret, setSecret] = useState('')
+  const [algorithm, setAlgorithm] = useState<TOTPAlgorithm>('SHA1')
+  const [digits, setDigits] = useState<6 | 8>(6)
+  const [period, setPeriod] = useState<number>(30)
   let detected: ReturnType<typeof parseManualSecret> | undefined
   try { if (mode === 'add' && secret.trim()) detected = parseManualSecret(secret, sourceType) } catch { /* Validate on submission. */ }
   const type = sourceType ?? (mode === 'edit' ? initialData?.type : detected?.type) ?? 'totp'
@@ -73,18 +76,23 @@ export function AddAccountModal({
   useEffect(() => {
     if (!open) {
       setName(''); setSecret(''); setWebsite(''); setScanning(false); setSourceType(undefined); setSteamEncoding('')
+      setAlgorithm('SHA1'); setDigits(6); setPeriod(30)
     } else if (mode === 'edit' && initialData) {
       setName(initialData.name)
       setWebsite(initialData.website || '')
       setSecret(initialData.secret)
       setSourceType(initialData.type ?? 'totp')
       setSteamEncoding('base32')
+      setAlgorithm(initialData.algorithm ?? 'SHA1')
+      setDigits(initialData.digits ?? 6)
+      setPeriod(initialData.period ?? 30)
     } else if (open && mode === 'add') {
       setName('')
       setWebsite('')
       setSecret('')
       setSourceType(undefined)
       setSteamEncoding('')
+      setAlgorithm('SHA1'); setDigits(6); setPeriod(30)
     }
   }, [open, mode, initialData])
 
@@ -106,6 +114,9 @@ export function AddAccountModal({
       setSourceType(account.type ?? 'totp')
       setSecret(account.secret)
       setSteamEncoding('base32')
+      setAlgorithm(account.algorithm ?? 'SHA1')
+      setDigits(account.digits ?? 6)
+      setPeriod(account.period ?? 30)
       toast.success(t('toast.qr_success'))
     } else if (mode === 'edit') toast.error(strings.useImport)
     else onImportData?.(chunks)
@@ -161,7 +172,10 @@ export function AddAccountModal({
         name: name.trim(),
         website: website.trim() || undefined,
         secret: accountSecret,
-        ...(accountType === 'steam' ? { type: 'steam' } : {})
+        ...(accountType === 'steam' ? { type: 'steam' } : {}),
+        ...(accountType !== 'steam' && algorithm !== 'SHA1' ? { algorithm } : {}),
+        ...(accountType !== 'steam' && digits !== 6 ? { digits } : {}),
+        ...(accountType !== 'steam' && period !== 30 ? { period } : {})
       }
 
       let result: { success: boolean; message?: string }
@@ -337,6 +351,36 @@ export function AddAccountModal({
               <option value="steam">Steam Guard</option>
             </select>
           </div>
+
+          {type === 'totp' && (
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <Label htmlFor="algorithm">{t('form.algorithm')}</Label>
+                <select id="algorithm" value={algorithm} onChange={e => setAlgorithm(e.target.value as TOTPAlgorithm)}
+                  className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-2 text-sm">
+                  <option value="SHA1">SHA-1</option>
+                  <option value="SHA256">SHA-256</option>
+                  <option value="SHA512">SHA-512</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="digits">{t('form.digits')}</Label>
+                <select id="digits" value={digits} onChange={e => setDigits(Number(e.target.value) as 6 | 8)}
+                  className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-2 text-sm">
+                  <option value="6">6</option>
+                  <option value="8">8</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="period">{t('form.period')}</Label>
+                <select id="period" value={period} onChange={e => setPeriod(Number(e.target.value))}
+                  className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-2 text-sm">
+                  <option value="30">30</option>
+                  <option value="60">60</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {mode === 'add' && (
             <div>

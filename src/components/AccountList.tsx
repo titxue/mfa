@@ -34,6 +34,8 @@ interface AccountListProps {
   accounts: Account[]
   codes: { [key: string]: string }
   remaining: number
+  /** 每个账户各自的剩余秒数（按账户步长计算），缺省时回退到全局 remaining */
+  remainings: { [key: string]: number }
   saving?: boolean
   onDeleteAccount: (name: string) => Promise<boolean>
   onEditAccount: (name: string) => void
@@ -87,6 +89,9 @@ function SortableAccountItem({
         name={account.name}
         secret={account.secret}
         type={account.type}
+        algorithm={account.algorithm}
+        digits={account.digits}
+        period={account.period}
         code={code}
         remaining={remaining}
         saving={saving}
@@ -105,6 +110,7 @@ export function AccountList({
   accounts,
   codes,
   remaining,
+  remainings,
   onDeleteAccount,
   onEditAccount,
   onReorder,
@@ -180,8 +186,8 @@ export function AccountList({
               <SortableAccountItem
                 key={account.name}
                 account={account}
-                code={codes[account.name] || (account.type === 'steam' ? '-----' : '------')}
-                remaining={remaining}
+                code={codes[account.name] || (account.type === 'steam' ? '-----' : '-'.repeat(account.digits ?? 6))}
+                remaining={remainings[account.name] ?? remaining}
                 saving={saving}
                 onDelete={onDeleteAccount}
                 onEdit={onEditAccount}
@@ -203,8 +209,11 @@ export function AccountList({
             name={activeAccount.name}
             secret={activeAccount.secret}
             type={activeAccount.type}
-            code={codes[activeAccount.name] || (activeAccount.type === 'steam' ? '-----' : '------')}
-            remaining={remaining}
+            algorithm={activeAccount.algorithm}
+            digits={activeAccount.digits}
+            period={activeAccount.period}
+            code={codes[activeAccount.name] || (activeAccount.type === 'steam' ? '-----' : '-'.repeat(activeAccount.digits ?? 6))}
+            remaining={remainings[activeAccount.name] ?? remaining}
             saving={saving}
             onDelete={onDeleteAccount}
             onEdit={onEditAccount}

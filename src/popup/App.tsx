@@ -26,7 +26,7 @@ export function App() {
 function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
   const { accounts, addAccount, deleteAccount, updateAccounts, updateAccount } = state
   const { locale } = useI18n()
-  const { codes, remaining } = useTOTP(accounts)
+  const { codes, remaining, remainings } = useTOTP(accounts)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -65,6 +65,7 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
           accounts={accounts}
           codes={codes}
           remaining={remaining}
+          remainings={remainings}
           onDeleteAccount={deleteAccount}
           onEditAccount={handleEditAccount}
           onReorder={updateAccounts}

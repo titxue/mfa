@@ -21,7 +21,7 @@ for (const input of ['invalid QR image', 'unsupported URI'] as const) {
         const transfer = new DataTransfer()
         transfer.setData('text/plain', uri)
         element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: transfer }))
-      }, `otpauth://totp/Unsupported?secret=${secret}&algorithm=SHA256`)
+      }, `otpauth://totp/Unsupported?secret=${secret}&algorithm=MD5`)
     }
 
     await expect(popup.locator('[data-sonner-toast][data-type="error"]').last()).toBeVisible()
