@@ -3,6 +3,7 @@ import { SteamLinkApi, LinkError } from '../src/steam-link/core'
 import { SteamAuthApi } from '../src/steam-link/auth'
 import { SteamBindingService } from '../src/steam-link/service'
 import { bindingError } from '../src/steam-link/strings'
+import { V2_KEY } from '../src/utils/vault-sync'
 
 test('HTTP 429 retains rate-limit meaning through APIs, background and UI', async () => {
   const request = async () => new Response('', { status: 429 })
@@ -10,10 +11,12 @@ test('HTTP 429 retains rate-limit meaning through APIs, background and UI', asyn
   await expect(new SteamAuthApi(request).call('GetPasswordRSAPublicKey', { account_name: 'test' }, true)).rejects.toMatchObject({ code: 'rateLimit', result: 429 })
   const previous = globalThis.chrome
   let handler: (message: unknown, sender: unknown, respond: (value: any) => void) => boolean
-  const sync: Record<string, unknown> = { accountVault: { version: 1, revision: 'test', mode: 'plain', accounts: [] } }
+  const sync: Record<string, unknown> = { [V2_KEY]: {
+    id: 'test', vector: { test: 1 }, record: { version: 1, revision: 'test', mode: 'plain', accounts: [] },
+  } }
   const area = (data: Record<string, unknown> = {}) => ({
     setAccessLevel: async () => {},
-    get: async (keys: string | string[]) => Object.fromEntries((Array.isArray(keys) ? keys : [keys]).filter(k => k in data).map(k => [k, data[k]])),
+    get: async (keys: string | string[] | null) => structuredClone(keys === null ? data : Object.fromEntries((Array.isArray(keys) ? keys : [keys]).filter(k => k in data).map(k => [k, data[k]]))),
     set: async (value: Record<string, unknown>) => { Object.assign(data, value) },
     remove: async () => {},
   })

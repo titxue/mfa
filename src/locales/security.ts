@@ -1,3 +1,5 @@
+import { syncRecoveryStrings } from './sync-recovery'
+
 // Shared by popup and content-script; no account or storage dependencies.
 const en = {
   title: 'Password protection', enable: 'Enable password', change: 'Change password', disable: 'Disable protection',
@@ -115,6 +117,9 @@ export const securityStrings = (locale: string): Strings => messages[locale] ?? 
 export const securityError = (locale: string, error: unknown): string => {
   const strings = securityStrings(locale)
   const key = error instanceof Error ? error.message : String(error)
+  if (key === 'syncConflict') return syncRecoveryStrings(locale).conflictHint
+  if (key === 'syncPending') return syncRecoveryStrings(locale).pendingHint
+  if (key === 'migrationRequired') return syncRecoveryStrings(locale).migrationHint
   return strings[key as keyof Strings] ?? strings.storageError
 }
 

@@ -2,7 +2,7 @@ import type { Account } from '@/types'
 
 export interface EncryptedData {
   format: 'mfa-encrypted'
-  version: 1
+  version: 1 | 2
   kdf: 'PBKDF2-SHA256'
   iterations: 600000
   salt: string
@@ -11,16 +11,28 @@ export interface EncryptedData {
 }
 export const toBase64 = (bytes: Uint8Array): string => btoa(String.fromCharCode(...bytes))
 export const fromBase64 = (value: string): Uint8Array<ArrayBuffer> => Uint8Array.from(atob(value), c => c.charCodeAt(0))
+
+/** Version 1 readers silently discard these fields when editing an account. */
+export function accountDataVersion(accounts: Account[]): 1 | 2 {
+  return accounts.some(a => (a.algorithm ?? 'SHA1') !== 'SHA1' ||
+    (a.digits ?? 6) !== 6 || (a.period ?? 30) !== 30) ? 2 : 1
+}
+
 export function validateAccounts(value: unknown): asserts value is Account[] {
   if (!Array.isArray(value) || !value.every(a => a && typeof a.name === 'string' && a.name.trim() &&
     typeof a.secret === 'string' && a.secret.trim() && (a.website === undefined || typeof a.website === 'string') &&
-    (a.type === undefined || a.type === 'totp' || a.type === 'steam')) ||
+    (a.type === undefined || a.type === 'totp' || a.type === 'steam') &&
+    (a.algorithm === undefined || ['SHA1', 'SHA256', 'SHA512'].includes(a.algorithm)) &&
+    (a.digits === undefined || a.digits === 6 || a.digits === 8) &&
+    (a.period === undefined || Number.isInteger(a.period) && a.period >= 15 && a.period <= 120) &&
+    (a.type !== 'steam' || (a.algorithm === undefined || a.algorithm === 'SHA1') &&
+      a.digits === undefined && (a.period === undefined || a.period === 30))) ||
     new Set(value.map(a => a.name)).size !== value.length) throw new Error('invalid')
 }
 export function validateEncrypted(value: unknown): asserts value is EncryptedData {
   const v = value as EncryptedData
   try {
-    if (!v || v.format !== 'mfa-encrypted' || v.version !== 1 || v.kdf !== 'PBKDF2-SHA256' ||
+    if (!v || v.format !== 'mfa-encrypted' || (v.version !== 1 && v.version !== 2) || v.kdf !== 'PBKDF2-SHA256' ||
       v.iterations !== 600000 || typeof v.salt !== 'string' || typeof v.iv !== 'string' || typeof v.ciphertext !== 'string' ||
       fromBase64(v.salt).length !== 16 || fromBase64(v.iv).length !== 12 || fromBase64(v.ciphertext).length < 16) throw new Error()
   } catch { throw new Error('invalid') }
@@ -35,7 +47,7 @@ export async function encryptAccounts(accounts: Account[], key: CryptoKey, salt:
   validateAccounts(accounts)
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(JSON.stringify(accounts)))
-  return { format: 'mfa-encrypted', version: 1, kdf: 'PBKDF2-SHA256', iterations: 600000, salt,
+  return { format: 'mfa-encrypted', version: accountDataVersion(accounts), kdf: 'PBKDF2-SHA256', iterations: 600000, salt,
     iv: toBase64(iv), ciphertext: toBase64(new Uint8Array(ciphertext)) }
 }
 export async function decryptAccounts(data: EncryptedData, key: CryptoKey): Promise<Account[]> {

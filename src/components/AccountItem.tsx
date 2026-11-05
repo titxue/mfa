@@ -22,7 +22,7 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu'
 import { QRCodeModal } from './QRCodeModal'
-import type { Account } from '@/types'
+import type { Account, TOTPAlgorithm } from '@/types'
 
 interface AccountItemProps {
   name: string
@@ -30,6 +30,9 @@ interface AccountItemProps {
   remaining: number
   secret: string
   type?: Account['type']
+  algorithm?: TOTPAlgorithm
+  digits?: 6 | 8
+  period?: number
   saving?: boolean
   onDelete: (name: string) => Promise<boolean>
   onEdit: (name: string) => void
@@ -39,13 +42,14 @@ interface AccountItemProps {
 /**
  * 账户卡片组件
  */
-export function AccountItem({ name, code, remaining, secret, type, onDelete, onEdit, saving = false, dragState }: AccountItemProps) {
+export function AccountItem({ name, code, remaining, secret, type, algorithm, digits, period, onDelete, onEdit, saving = false, dragState }: AccountItemProps) {
   const { t } = useI18n()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
   const filling = useRef(false)
   const generation = useRef(0)
-  useEffect(() => () => { generation.current++ }, [name, secret, type])
+  useEffect(() => () => { generation.current++ }, [name, secret, type, algorithm, digits, period])
+  const interval = period ?? 30
 
   // 点击账户卡片 - 自动填充或复制验证码
   const handleClick = async () => {
@@ -53,7 +57,7 @@ export function AccountItem({ name, code, remaining, secret, type, onDelete, onE
     filling.current = true
     const id = generation.current
     try {
-      const freshCode = await TOTP.generateTOTP(secret, 30, type)
+      const freshCode = await TOTP.generateTOTP(secret, interval, type, undefined, { algorithm, digits })
       if (id !== generation.current) return
       const result = await fillCodeInActiveTab(freshCode)
       if (id !== generation.current) return
@@ -107,7 +111,7 @@ export function AccountItem({ name, code, remaining, secret, type, onDelete, onE
                 </p>
               </div>
               <div className="flex-shrink-0">
-                <ProgressRing value={remaining} max={30} size={48} />
+                <ProgressRing value={remaining} max={interval} size={48} />
               </div>
             </CardContent>
           </Card>
@@ -132,6 +136,9 @@ export function AccountItem({ name, code, remaining, secret, type, onDelete, onE
         accountName={name}
         accountSecret={secret}
         accountType={type}
+        accountAlgorithm={algorithm}
+        accountDigits={digits}
+        accountPeriod={period}
       />
 
       {/* 删除确认对话框 */}

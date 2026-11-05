@@ -40,7 +40,10 @@ export class ImportExportManager {
         name: account.name,
         secret: account.secret,
         website: account.website,
-        ...(account.type === undefined ? {} : { type: account.type })
+        ...(account.type === undefined ? {} : { type: account.type }),
+        ...(account.algorithm === undefined ? {} : { algorithm: account.algorithm }),
+        ...(account.digits === undefined ? {} : { digits: account.digits }),
+        ...(account.period === undefined ? {} : { period: account.period })
       }))
     }
 

@@ -23,7 +23,7 @@ test('a sync account arriving after commit survives queued sorting', async ({ po
     const set = chrome.storage.sync.set.bind(chrome.storage.sync)
     state.reviewExternalWrite = set
     chrome.storage.sync.set = async values => {
-      if (values.accountVault) state.reviewSaveWrites++
+      if (values[(globalThis as any).testVaultKey]) state.reviewSaveWrites++
       return set(values)
     }
     let release!: () => void
@@ -50,15 +50,18 @@ test('a sync account arriving after commit survives queued sorting', async ({ po
     const remote = { name: 'Remote account', secret: accounts[0].secret, website: 'remote.example.test' }
     await worker.evaluate(async account => {
       const state = globalThis as any
-      const { accountVault } = await chrome.storage.sync.get('accountVault')
-      await state.reviewExternalWrite({ accountVault: { ...accountVault, revision: 'remote-revision',
-        accounts: [...accountVault.accounts, account] } })
+      const key = state.testVaultKey
+      const current = (await chrome.storage.sync.get(key))[key]
+      await state.reviewExternalWrite({ [key]: { id: 'remote-revision',
+        vector: { ...current.vector, remote: (current.vector.remote ?? 0) + 1 },
+        record: { ...current.record, revision: 'remote-revision',
+          accounts: [...current.record.accounts, account] } } })
       state.reviewReleaseNotify()
     }, remote)
     await expect(popup.locator('.sortable-account[aria-label="Remote account"]')).toBeVisible()
     await expect(popup.getByRole('alert')).toBeVisible()
     expect(await worker.evaluate(() => (globalThis as any).reviewSaveWrites)).toBe(1)
-    const saved = await worker.evaluate(async () => (await chrome.storage.sync.get('accountVault')).accountVault)
+    const saved = await worker.evaluate(async () => (await chrome.storage.sync.get((globalThis as any).testVaultKey))[(globalThis as any).testVaultKey].record)
     expect(saved.revision).toBe('remote-revision')
     expect(saved.accounts).toEqual([accounts[1], accounts[2], accounts[0], remote])
     await popup.reload()

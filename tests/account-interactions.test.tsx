@@ -123,6 +123,56 @@ for (const update of ['add', 'edit', 'delete'] as const) {
   })
 }
 
+for (const [field, value] of [['algorithm', 'SHA256'], ['digits', 8], ['period', 60]] as const) {
+  test(`queued reorders preserve an external ${field} edit between commit and response`, async () => {
+    await mount(<Accounts />)
+    let first!: Promise<boolean>, second!: Promise<boolean>
+    await act(async () => {
+      first = state.updateAccounts([...initial].reverse())
+      second = state.updateAccounts([initial[1], initial[2], initial[0]])
+    })
+    await act(async () => saves[0].finish(true, () => {
+      stored = { ...stored, revision: 'remote-r2', accounts: stored.accounts.map(account =>
+        account.name === initial[0].name ? { ...account, [field]: value } : account) }
+      notify()
+    }))
+    const remote = structuredClone(stored)
+    expect(await Promise.all([first, second])).toEqual([false, false])
+    expect(saves).toHaveLength(1)
+    expect(state.accounts).toEqual(remote.accounts)
+    expect(state.revision).toBe('remote-r2')
+    expect(state.error).toBe('conflict')
+    let retry!: Promise<boolean>
+    await act(async () => { retry = state.updateAccounts([...state.accounts].reverse()) })
+    await act(async () => saves[1].finish())
+    expect(await retry).toBe(true)
+    expect([...stored.accounts].reverse()).toEqual(remote.accounts)
+  })
+}
+
+test('explicit standard and Steam defaults do not create false save conflicts', async () => {
+  const accounts = [initial[0], { ...initial[1], type: 'steam' as const }, initial[2]]
+  stored = { ...stored, accounts }
+  await mount(<Accounts />)
+  let first!: Promise<boolean>, second!: Promise<boolean>
+  const final = [accounts[1], accounts[2], accounts[0]]
+  await act(async () => {
+    first = state.updateAccounts([...accounts].reverse())
+    second = state.updateAccounts(final)
+  })
+  await act(async () => saves[0].finish(true, () => {
+    stored = { ...stored, accounts: stored.accounts.map(account => ({
+      ...account, type: account.type ?? 'totp', algorithm: 'SHA1',
+      ...(account.type === 'steam' ? {} : { digits: 6 as const }), period: 30,
+    })) }
+  }))
+  expect(saves).toHaveLength(2)
+  await act(async () => saves[1].finish())
+  expect(await Promise.all([first, second])).toEqual([true, true])
+  expect(stored.accounts).toEqual(final)
+  expect(state.error).toBe('')
+})
+
 test('failed saves reject waiting operations, restore persisted data, and allow retry', async () => {
   await mount(<Accounts />)
   let first!: Promise<boolean>, second!: Promise<boolean>

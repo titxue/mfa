@@ -1,3 +1,4 @@
+import { openAccountAdvanced } from './advanced-helpers'
 import QRCode from 'qrcode'
 import { TOTP } from '../../src/utils/totp'
 import { test, expect, accounts } from './extension'
@@ -12,11 +13,23 @@ for (const encoding of ['base32', 'base64'] as const) {
     const dialog = popup.getByRole('dialog', { name: '添加账户', exact: true })
     const name = `Steam ${encoding}`
     await dialog.locator('#name').fill(name)
+    await openAccountAdvanced(dialog)
     await dialog.locator('#code-type').selectOption('steam')
     await dialog.locator('#secret').fill(ambiguous)
+    await dialog.locator('#account-advanced-toggle').click()
+    await expect(dialog.locator('#account-advanced-toggle')).toHaveAttribute('aria-expanded', 'false')
     await dialog.getByRole('button', { name: '保存', exact: true }).click()
-    await expect(popup.locator('[data-sonner-toast][data-type="error"]').last()).toContainText('请选择密钥格式')
+    await expect(dialog.locator('#steam-format-error')).toHaveAttribute('role', 'alert')
+    await expect(dialog.locator('#steam-format-error')).toContainText('请选择密钥格式')
+    await expect(dialog.locator('#account-advanced-toggle')).toHaveAttribute('aria-expanded', 'true')
+    await expect(dialog.locator('#steam-secret-format')).toBeFocused()
+    await expect(dialog.locator('#steam-secret-format')).toHaveAttribute('aria-invalid', 'true')
     await expect(dialog).toBeVisible()
+    // Submitting the same invalid draft must restore focus each time.
+    await dialog.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(dialog.locator('#steam-format-error')).toBeVisible()
+    await expect(dialog.locator('#steam-secret-format')).toBeFocused()
+    await expect(dialog.locator('#steam-secret-format')).toHaveAttribute('aria-invalid', 'true')
     await dialog.locator('#steam-secret-format').selectOption(encoding)
     await dialog.getByRole('button', { name: '保存', exact: true }).click()
     await expect(popup.locator(`.sortable-account[aria-label="${name}"] .font-mono`)).toHaveText(/^[A-Z0-9]{5}$/)
@@ -45,6 +58,7 @@ for (const source of ['URI', 'QR'] as const) {
     }, uri)
     await expect(dialog.locator('#name')).toHaveValue(name)
     await expect(dialog.locator('#secret')).toHaveValue(secret)
+    await openAccountAdvanced(dialog)
     await expect(dialog.locator('#steam-secret-format')).toHaveValue('base32')
     await dialog.getByRole('button', { name: '保存', exact: true }).click()
     await expect(popup.locator(`.sortable-account[aria-label="${name}"] .font-mono`)).toHaveText(/^[A-Z0-9]{5}$/)
@@ -79,7 +93,11 @@ test('an old submit cannot clear, close or leave loading on a reopened add sessi
   await reopened.locator('#name').fill('New draft'); await reopened.locator('#secret').fill(secret)
   await expect(reopened.getByRole('button', { name: '保存', exact: true })).toBeEnabled()
   await popup.evaluate(() => (window as any).releaseValidation())
-  await expect.poll(() => worker.evaluate(async () => (await chrome.storage.sync.get('accountVault')).accountVault.accounts.map((account: { name: string }) => account.name))).toContain('Old submitted account')
+  await expect.poll(() => popup.evaluate(async () => {
+    const response = await chrome.runtime.sendMessage({ type: 'MFA_VAULT', action: 'snapshot' })
+    if (!response.ok) throw new Error(response.error)
+    return response.value.accounts.map((account: { name: string }) => account.name)
+  })).toContain('Old submitted account')
   await expect(reopened).toBeVisible(); await expect(reopened.locator('#name')).toHaveValue('New draft')
   await expect(reopened.getByRole('button', { name: '保存', exact: true })).toBeEnabled()
   await reopened.getByRole('button', { name: '保存', exact: true }).click()
@@ -97,7 +115,7 @@ test('a different popup keeps its draft when an already-issued write completes',
     const set = chrome.storage.sync.set.bind(chrome.storage.sync)
     let first = true
     chrome.storage.sync.set = async (values: Record<string, unknown>) => {
-      if (first && values.accountVault) { first = false; await new Promise<void>(resolve => { state.releaseWrite = resolve }) }
+      if (first && values[(globalThis as any).testVaultKey]) { first = false; await new Promise<void>(resolve => { state.releaseWrite = resolve }) }
       return set(values)
     }
   })
@@ -109,7 +127,7 @@ test('a different popup keeps its draft when an already-issued write completes',
   await other.getByRole('button', { name: '添加账户', exact: true }).click()
   await other.locator('#name').fill('Other popup draft'); await other.locator('#secret').fill(secret)
   await worker.evaluate(() => (globalThis as any).releaseWrite())
-  await expect.poll(() => worker.evaluate(async () => (await chrome.storage.sync.get('accountVault')).accountVault.accounts.map((account: { name: string }) => account.name))).toContain('Issued save')
+  await expect.poll(() => worker.evaluate(async () => (await chrome.storage.sync.get((globalThis as any).testVaultKey))[(globalThis as any).testVaultKey].record.accounts.map((account: { name: string }) => account.name))).toContain('Issued save')
   await expect(other.getByRole('dialog', { name: '添加账户', exact: true })).toBeVisible()
   await expect(other.locator('#name')).toHaveValue('Other popup draft')
   await other.getByRole('dialog').getByRole('button', { name: '取消', exact: true }).click()

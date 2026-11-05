@@ -70,7 +70,7 @@ describe('Steam import and round trips', () => {
         .toBe(await TOTP.generateTOTP(secret, 30, 'totp', 59000))
       const imported = await parseImportText(JSON.stringify([{ name, secret, type: 'totp', encoder: 'TOTP', url: uri }]))
       expect(imported[0].accounts).toEqual([{ name, secret }])
-      for (const parameter of ['digits=5', 'algorithm=SHA256', 'period=60']) {
+      for (const parameter of ['digits=5', 'algorithm=MD5', 'period=0']) {
         const bad = new URL(uri)
         const [key, value] = parameter.split('=')
         bad.searchParams.set(key, value)
@@ -188,6 +188,9 @@ describe('Steam import and round trips', () => {
     for (const parameter of ['digits=8', 'algorithm=SHA256', 'period=60', 'encoder=unknown']) {
       expect(parseOTPURI(`${legacy}&${parameter}`).issues[0].reason).toBe('unsupported')
     }
+    // SHA-256/512 remain accepted only for numeric TOTP, never for Steam.
+    expect(parseOTPURI(`${legacy.replace('Steam:demo', 'Demo')}&algorithm=SHA512`).accounts)
+      .toEqual([{ name: 'Demo', secret, algorithm: 'SHA512' }])
   })
   test('reference-style JSON URI parameters preserve Steam rather than silently generating numbers', async () => {
     const url = generateOtpauthURI('demo', secret, 'steam')
