@@ -1,395 +1,237 @@
-# TOTP 生成器 Chrome 扩展
-
-<div align="center">
+# MFA · TOTP 验证码扩展
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
 [![GitHub release](https://img.shields.io/github/v/release/titxue/mfa?label=GitHub)](https://github.com/titxue/mfa/releases)
-[![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/dhipejmoajhjflafhbibojfoeogbmjgf)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
-[![GitHub stars](https://img.shields.io/github/stars/titxue/mfa?style=social)](https://github.com/titxue/mfa)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-**现代化的双因素认证 (2FA) 解决方案**
+在 Chrome 中管理双因素认证账户，支持标准 TOTP、Steam Guard、网页填充、二维码迁移和加密备份。基于 React、TypeScript 和 Bun，使用 Chrome Extension Manifest V3。
 
-基于时间的一次性密码 (TOTP) 生成器，采用 React 19 + TypeScript + Bun 构建。
-支持离线生成验证码、网站填充、主密码保护、加密备份和 **12 种语言**。账户可通过 Chrome 同步。
+验证码生成与二维码解析在本机完成，可离线使用；账户通过 Chrome 同步，可选的 Steam 在线绑定功能需要联网。
 
-[项目官网](https://mfa.xuejy.com/zh/) · [English](README.en.md)
+[项目官网](https://mfa.xuejy.com/zh/) · [English](README.en.md) · [安装](#安装) · [使用指南](#使用指南) · [开发](#开发)
 
-[安装](#安装) • [功能](#功能特性) • [使用](#使用指南) • [开发](#开发) • [国际化](#国际化)
+## 功能
 
-</div>
+- **验证码生成**：标准 TOTP 支持 SHA1、6 位数字、30 秒周期；Steam Guard 支持 5 位字母数字验证码，每 30 秒更新。
+- **账户添加与迁移**：手动输入密钥，上传、粘贴或拖拽二维码图片，粘贴 otpauth 链接，批量导入 Google Authenticator 迁移二维码。
+- **网页填充**：点击账户填入验证码，支持单框和分格输入框；可开启填充失败时复制，以及按网站授权的输入框账户菜单。
+- **账户管理**：编辑名称、密钥、类型和网站，拖拽排序，导出单个账户的二维码或 PNG 图片。
+- **备份与保护**：普通或加密 JSON 备份、导入预览、同名账户跳过、主密码保护和手动锁定。
+- **界面设置**：12 种主界面语言，浅色、深色和跟随系统主题。
 
----
+## 安装
 
-## ✨ 功能特性
+### 从 Chrome Web Store 安装
 
-- 🔐 **TOTP 验证码生成** - 30秒间隔、RFC 6238标准、实时倒计时进度环
-- 📷 **二维码扫描** - 图片上传识别、粘贴/拖拽上传、自动填充、离线处理
-- 📤 **二维码导出** - 右键账户卡片选择“显示二维码”、支持下载 PNG 图片、便于跨设备迁移
-- 🎯 **智能自动填充** - 一键填充到网页、按设置回退复制；授权网站后可使用输入框旁的账户菜单
-- 🎨 **拖拽排序** - 自由调整账户顺序、流畅动画效果
-- 💾 **数据管理** - Chrome 账号同步、普通/加密 JSON 备份、导入数量预览、重复检测
-- 🌍 **12 种语言支持** - 中文简繁、英语、西班牙语、法语、葡萄牙语、德语、俄语、阿拉伯语、日语、韩语、印地语
-- 🎨 **现代化 UI** - shadcn/ui 设计系统、流畅动画、响应式布局
-- 🔒 **隐私安全** - 验证码和二维码在本地处理；开启主密码后加密账户，未开启时账户以明文形式写入 Chrome 同步存储
+打开 [Chrome Web Store 扩展页面](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)，点击添加到 Chrome。最低支持 Chrome 102。
 
----
+### 从源码加载
 
-## 🚀 安装
-
-### Chrome Web Store（推荐）
-
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?label=Install&style=for-the-badge&logo=googlechrome)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
-
-### 开发者模式
+准备 Bun 1.2+，执行：
 
 ```bash
 git clone https://github.com/titxue/mfa.git
 cd mfa
 bun install
 bun run build
-# Chrome → chrome://extensions/ → 开发者模式 → 加载已解压的扩展 → 选择 dist 目录
 ```
 
----
+1. 打开 `chrome://extensions/`，启用开发者模式。
+2. 点击“加载已解压的扩展程序”，选择项目的 `dist/` 目录。
+3. 将扩展固定到工具栏，点击图标打开账户列表。
 
-## 📖 使用指南
+更新开发版本时，重新构建并点击扩展管理页的“重新加载”。保留原加载目录；卸载重装会删除扩展的本地数据。商店版和开发版通常具有不同的扩展 ID，账户不会自动互通，可通过备份迁移。
+
+## 使用指南
 
 ### 添加账户
 
-**二维码扫描（推荐）**
-1. 点击 "+" 按钮
-2. 点击"扫描二维码"
-3. 上传包含 TOTP 二维码的图片
-4. 普通二维码填入表单，确认后添加；Google 迁移二维码进入批量导入预览
+点击“+”打开添加窗口，选择以下方式之一：
 
-也支持粘贴/拖拽二维码图片，或粘贴 `otpauth://totp/` URI。普通 TOTP 支持 **SHA1、6 位数字、30 秒周期**，另支持 **Steam Guard 五位字母数字验证码**；不支持的参数会明确提示。手动添加 Steam 账户时选择“Steam Guard”，明确选择 Base32 或 Base64 `shared_secret` 格式再输入密钥，避免两种字符集重合时生成错误验证码；已有账户可在编辑页面切换类型。Steam 类型会保留在二维码、同步存储和普通/加密备份中。
+- **二维码图片**：点击“扫描二维码”上传图片，也可以粘贴或拖拽图片。普通二维码解析后填入表单，确认后保存。
+- **链接**：粘贴 `otpauth://totp/` 链接，检查解析出的账户信息后保存。
+- **手动输入**：填写账户名称和密钥。普通 TOTP 使用 Base32 密钥；可选填网站信息供网页菜单匹配。
 
-**手动输入**
-1. 点击 "+" 按钮
-2. 输入账户名称和 Base32 密钥
-3. 点击"保存"
+手动添加 Steam 账户时，选择“Steam Guard”，再明确选择 Base32 或 Base64 格式。`.maFile` 中的 `shared_secret` 使用区分大小写的 Base64。不要仅凭密钥长度或字符外观判断账户类型，已有账户也可通过编辑菜单调整类型。
 
-### 使用验证码
+### 使用与管理账户
 
-- **自动填充**：左键点击账户卡片
-- **复制回退**：在设置中启用后，填充失败时复制到剪贴板
-- **删除账户**：右键点击账户卡片
+| 操作 | 方式 |
+| --- | --- |
+| 填入验证码 | 在目标网页打开扩展，点击账户卡片 |
+| 填充失败时复制 | 在设置中开启“填充失败时复制” |
+| 编辑或删除账户 | 右键账户卡片，选择对应菜单项 |
+| 显示或下载二维码 | 右键账户卡片，选择“显示二维码” |
+| 调整账户顺序 | 拖拽账户卡片 |
+| 使用网页账户菜单 | 在目标网站右键，通过扩展菜单启用自动菜单并确认授权；也可在设置的“网站授权”中启用 |
 
-### 数据管理
+网页账户菜单还受设置中的总开关控制，单个网站授权可以随时撤销。浏览器内部页和 Chrome Web Store 等受限页面无法注入填充脚本。详见[网站授权说明](docs/SITE_ACCESS.md)。
 
-- **普通备份导入**：选择 JSON → 查看文件中的账户数量 → 确认导入。重复账户会跳过。
-- **加密备份导入**：选择 JSON → 输入备份密码 → “解密并预览” → 查看数量 → 确认导入。错误密码或损坏文件不会导入。
-- **导出**：开启保护后默认加密导出；可验证当前密码后选择明文导出。
-- **语言**：设置中选择 12 种语言之一。
+### 导入、导出与迁移
 
-### 密码保护与同步
+在“设置 → 导入”中选择文件、粘贴图片或文本，也可以拖入文件。导入前先预览并选择账户，再确认保存；同名账户会跳过，不覆盖现有账户。
 
-在设置中开启密码保护，设置至少 8 位的主密码。账户名称、密钥和网站信息一起加密。解锁状态仅保留在本机浏览器会话中；关闭弹窗不会锁定，浏览器重启后需要重新解锁，也可以手动锁定。
+| 输入格式 | 支持范围 |
+| --- | --- |
+| 本扩展 JSON 备份 | 明文备份直接预览；加密备份先输入备份密码，再解密预览 |
+| otpauth 链接或二维码 | 标准 TOTP，以及兼容的 Steam 二维码 |
+| Google Authenticator 迁移二维码 | 支持 `otpauth-migration://offline`，同一批次的多张二维码需全部收齐 |
+| TXT 文件 | 每行一个支持的链接，忽略空行和以 `#` 开头的注释 |
+| 第三方 JSON 数组 | 支持 `extract_otp_secrets` 导出格式 |
+| Steam `.maFile` / JSON | 支持未加密文件，只导入 `account_name` 和 `shared_secret` |
 
-另一台设备收到加密记录后需使用同一密码解锁。离线或尚未同步的设备仍可能保留旧明文副本，开启保护不能立即远程锁定这些副本。当前不保证跨设备同时编辑无冲突，请避免多设备同时修改账户。
+迁移 Google Authenticator 账户时，先在原应用使用转移或导出功能，再逐张添加导出图片。预览会显示批次进度，重复扫描不重复计数；关闭导入窗口会清空尚未保存的预览。
 
-修改密码和关闭保护需要当前密码；关闭保护后恢复明文同步。忘记密码无法恢复加密数据，旧备份仍需导出时的密码。详见[密码保护与同步](docs/PASSWORD_PROTECTION.md)、[网站授权](docs/SITE_ACCESS.md)。
+普通 TOTP 仅支持 SHA1、6 位、30 秒。HOTP、其他算法或位数、其他周期及损坏条目会显示错误或跳过原因。目前不支持 CSV、摄像头扫描、一张图片中的多个独立二维码，以及上述格式以外的专有备份。
 
-### Steam Guard 验证码
+在“设置 → 导出”中备份账户。开启主密码保护后默认导出加密 JSON；选择明文导出需要验证当前密码。未开启保护时导出明文 JSON。加密备份始终使用导出时的密码，之后修改主密码不会改变旧备份。
 
-**扩展内在线绑定（无需本地命令）**：设置 → **绑定 Steam Guard**。独立标签页依次完成账号密码登录、邮件／手机验证、状态检查、初始化、手机核对和直接保存。没有扫码登录入口。
+### Steam Guard
 
-首次联网会申请 `api.steampowered.com` 的访问权限；该权限不会启用网页自动填充。已有有效令牌时只等待你自行决定如何处理，不会自动移除或迁移令牌。待激活密钥加密保存在本机，登录会话只保存在受信任的会话存储；关闭页面后可继续，重启浏览器后需重新登录并输入检查点密码。
+已有密钥可通过手动输入或 `.maFile` 导入。文件中的登录会话、令牌、`identity_secret` 和恢复码不会作为账户数据导入。验证码在本机生成；二维码导出使用 Steam 类型标记，接收应用也需要支持 Steam。
 
-手机绑定前可下载恢复检查点；只有手机码和令牌编号均核对通过后，才允许写入现有 vault 或导出可导入的加密备份。已存在的同名账户不会被覆盖。本地助手的检查点也可以在绑定页恢复。
+“设置 → 绑定 Steam Guard”可打开独立页面，进行账号密码登录、邮件或手机验证、状态检查、密钥初始化、手机验证码核对和保存。该流程按需申请 Steam API 权限，不授予网页自动填充权限，也不会自动解绑或转移已有验证器。不支持 Steam 扫码登录和交易确认。
 
-- **手动添加**：添加账户 → 填写账户名称并粘贴 `.maFile` 中的 **`shared_secret`（Base64，区分大小写）**，自动识别为 Steam，无需选择类型。标准 Base32 密钥仍按普通 TOTP 处理；二维码和文件以其类型标记为准。
-- **文件导入**：设置 → 导入，选择一个或多个未加密 `.maFile` / JSON 文件。读取 `account_name` 与 `shared_secret`，不保存其中的 Session、登录令牌、`identity_secret` 或恢复码。
-- Steam 验证码为 **5 位字母数字、30 秒更新**，支持复制与单框/五格输入框自动填充。使用系统时间，请保持电脑时钟准确。
-- Steam 类型会保留在明文/加密备份及二维码中；二维码使用 `encoder=steam`，接收应用也需支持 Steam。同步使用的其他设备请更新扩展，以正确识别 Steam 类型。
+待完成的绑定密钥加密保存在本机，可下载恢复检查点；浏览器重启后需重新登录并解锁检查点。核对成功后才能保存到账户库或导出可导入的加密备份。浏览器内绑定流程仍需真实账号验收，模拟测试不代表线上绑定已验证。
 
-验证码生成保持离线，在线绑定仅连接 Steam 官方接口；不包含交易确认。Steam 的登录扫码二维码不是密钥导出二维码。
+仓库另提供独立的实验性 [Steam 本地绑定助手](tools/steam-link/README.md)，用于验证与官方手机应用共用新令牌的流程，不包含在扩展发布包中。
 
-需要研究与 iPhone 共用新令牌时，可使用独立的 [Steam 本地绑定助手](tools/steam-link/README.md)。它不属于扩展运行时，已有有效令牌时可保留会话等待重新检查，不自动解绑；扩展版接口调用的真实账号全流程仍需账号持有人验证；本地助手的共用绑定流程已由用户实测通过。
+## 密码保护与同步
 
-### 从 Google Authenticator 等应用迁移
+密码保护默认关闭，账户记录在写入 Chrome 同步存储前不会由扩展加密。可以在设置中开启保护，使用至少 8 位的主密码加密账户名称、密钥和网站信息。
 
-1. 在 Google Authenticator 中使用转移/导出账户功能，获取导出二维码图片。
-2. 打开本扩展的 **设置 → 导入**，选择二维码图片（支持多选），也可以粘贴图片或拖入文件。添加账户的二维码入口同样支持迁移图片。
-3. 如果 Google 将一次导出分成多张二维码，继续添加同一次导出的所有图片。预览显示收集进度，重复扫描不会重复计数；收齐后才能导入。
-4. 检查预览、勾选需要的账户，再确认导入。同名账户跳过，不覆盖已有账户；关闭窗口会清空本次未保存的预览。
+- **锁定**：关闭弹窗不会锁定；可手动锁定，浏览器重启或扩展重载后也需重新解锁。解锁状态只保留在本机浏览器会话中。
+- **密码管理**：修改密码或关闭保护需要当前密码；关闭保护后恢复明文存储。忘记密码无法恢复，加密备份也需要对应密码。
+- **跨设备同步**：需要相同扩展 ID、同一 Chrome 账号并启用扩展数据同步。离线或关闭同步时数据保存在本机，恢复联网并启用同步后继续同步。
+- **同步边界**：本机保存成功不代表其他设备已收到更新；离线设备可能仍保留旧副本。同时在多台设备编辑不保证自动合并。
+- **容量限制**：所有账户保存在单条同步记录中，受单项约 8 KB、同步总量约 100 KB 的限制。超限会报告失败，不会截断账户。配额见 [Chrome Storage 文档](https://developer.chrome.com/docs/extensions/reference/api/storage#sync)。
 
-支持标准 `otpauth://totp/` 链接及二维码、Google `otpauth-migration://offline?data=…`、每行一个链接的 TXT（空行和 `#` 注释忽略）、[extract_otp_secrets](https://github.com/scito/extract_otp_secrets) 导出的 JSON 数组，以及本扩展的明文/加密 JSON 备份。可在导入窗口直接粘贴链接或 JSON；仅加密备份要求输入备份密码。
+二维码和备份文件包含可恢复验证码的密钥，应妥善保存。详细实现与使用边界见[密码保护与 Chrome 同步](docs/PASSWORD_PROTECTION.md)。
 
-标准账户仅支持 **SHA1、6 位、30 秒 TOTP**；另外支持 Steam 五位验证码，并兼容商店旧版使用的 `Steam:` 标签、`issuer=Steam` 和 `encoder=Steam` 等二维码形式。旧 Steam 链接的 `digits=6` 兼容标记仍按 Steam 五位码处理。HOTP、其他算法/位数/周期、未知参数枚举及损坏条目会显示跳过原因。第三方 JSON 如果包含 `url`，也会校验其中的参数；已被第三方工具丢弃的参数无法从密钥恢复。其他认证器需提供通用 otpauth 格式，除 Steam .maFile 外，不支持其他专有备份、CSV、摄像头扫描或一张图片中的多个独立二维码。
+## 开发
 
-恢复本扩展的普通或加密备份时保留原始账户名称；商店旧版可用的 Base32 密钥保持相同解码和验证码，不会因长度不同而自动切换为 Steam。商店功能覆盖与验证记录见[功能覆盖检查](docs/STORE-FEATURE-COVERAGE-20261102.md)。
+### 环境与常用命令
 
-普通 TOTP 的名称若形如 `Steam:alice`，新导出二维码使用空发行者标签（`:Steam:alice`），旧商店版和当前版本均可直接扫描，保留原名称、密钥及六位验证码，无需改用 JSON 备份。名称本身以冒号开头时也会保留。当前版本仍兼容此前带 `encoder=totp` 的二维码，以及旧 Steam 二维码。
+扩展构建需要 Bun 1.2+；完整测试和 Steam 本地助手还需要 Node.js 22+ 与 npm，与 CI 环境保持一致。以下命令在仓库根目录执行：
 
-解析在扩展内本地完成，不上传二维码、链接或密钥。导入后继续使用现有 Chrome 同步与可选密码保护。
+| 命令 | 用途 |
+| --- | --- |
+| `bun install` | 安装扩展与测试依赖 |
+| `bun run dev` | 监听源码、静态资源和构建配置，变更后重建 |
+| `bun run build` | 生成生产构建到 `dist/` |
+| `bun run type-check` | TypeScript 类型检查，首次运行前先构建以生成版本模块 |
+| `bun run test:unit` | 单元与组件测试 |
+| `bun run test:e2e` | 生产构建与 Playwright 浏览器测试 |
+| `bun run steam:link:test` | Steam 本地助手测试 |
+| `bun run steam:link:check` | Steam 本地助手类型检查 |
+| `bun run test` | 依次运行单元、Steam 助手和浏览器测试 |
+| `bun run generate-icons` | 使用 Canvas 生成扩展图标 |
 
-## 💡 为什么选择
+`bun run dev` 会合并连续变更并串行重建，失败后继续监听。重建完成后仍需在 Chrome 中手动重新加载扩展。
 
-| 特性 | 本扩展 | 说明 |
-|------|--------|------|
-| 🎨 UI 设计 | shadcn/ui + Radix UI | 现代化组件库 |
-| 🌍 多语言 | 12 种语言 | 中英日韩法德西俄阿葡印 + 繁中 |
-| 📷 二维码 | 上传/粘贴/拖拽 | 多种方式支持 |
-| 🚀 开发构建 | Bun + 文件监听 | 变更后自动重建 |
-| 📦 技术栈 | React 19 + TypeScript | 最新技术 |
-| 📝 类型安全 | 100% TypeScript | 编译时检查 |
-| 🔧 可扩展 | 自动化架构 | 添加语言超简单 | 
-
----
-
-## 🛠️ 技术栈
-
-- **前端**：React 19 + TypeScript + Tailwind CSS
-- **UI 库**：shadcn/ui（基于 Radix UI）
-- **构建**：Bun + Tailwind CSS
-- **核心**：jsQR、lucide-react、sonner
-- **标准**：Chrome Extension Manifest V3
-
----
-
-## 🌍 国际化
-
-### 支持的语言（12 种）
-
-<div align="center">
-
-| 区域 | 语言 | 代码 |
-|------|------|------|
-| 🇨🇳 | 中文（简体） | zh-CN |
-| 🇹🇼 | 中文（繁體） | zh-TW |
-| 🇺🇸 | English | en-US |
-| 🇪🇸 | Español | es-ES |
-| 🇫🇷 | Français | fr-FR |
-| 🇧🇷 | Português | pt-BR |
-| 🇩🇪 | Deutsch | de-DE |
-| 🇷🇺 | Русский | ru-RU |
-| 🇸🇦 | العربية | ar-SA |
-| 🇯🇵 | 日本語 | ja-JP |
-| 🇰🇷 | 한국어 | ko-KR |
-| 🇮🇳 | हिन्दी | hi-IN |
-
-</div>
-
-### 特性
-
-- ✅ **自动检测** - 根据浏览器语言自动切换
-- ✅ **手动切换** - 设置页面可选择任意语言
-- ✅ **完整翻译** - 所有 UI 文本 100% 翻译
-- ✅ **类型安全** - TypeScript 编译时检查
-
-### 添加新语言
-
-主界面语言通过注册表加载：
-
-1. **创建翻译文件** `src/locales/xx-XX.ts`
-2. **注册语言** 在 `src/locales/index.ts` 添加配置
-
-详见：[添加新语言指南](docs/ADD_NEW_LANGUAGE.md)
-
-语言选择 UI 根据注册表生成。安全文案、页面内联菜单与商店元信息仍需分别补齐。
-
----
-
-## 🔧 开发
-
-### 环境要求
-- Bun 1.2+
-- Chrome 102+
-
-### 开发命令
+### 运行完整检查
 
 ```bash
-bun install              # 安装依赖
-bun run dev              # 监听源码、静态资源和构建配置变化后重建
-bun run build            # 生产构建
-bun run type-check       # 类型检查
-bun run test             # 自动化测试
-bun run generate-icons   # 生成图标
-```
-
-### 关键回归测试
-
-首次运行完整测试需要 Node.js 20+，安装 Steam 本地助手依赖和独立的测试浏览器：
-
-```bash
+bun install
 npm ci --prefix tools/steam-link --ignore-scripts --no-audit --no-fund
 bunx playwright install chromium
-bun run test             # 单元/组件测试 → Steam 助手测试 → 生产构建 → 浏览器测试
-bun run test:unit        # 仅运行单元与组件测试
-bun run steam:link:check # Steam 助手类型检查
-bun run steam:link:test  # Steam 助手测试
-bun run test:e2e         # 原有 DOM 回归与真实 Chromium 扩展测试
+bun run build
+bun run type-check
+bun run steam:link:check
+bun run test
 ```
 
-覆盖 TOTP 标准向量、跨周期取码、连续排序合并保存、失败恢复、锁定失效、
-排序不清空验证码、窗口恢复刷新、主题持久化/跟随系统，以及二维码菜单与弹窗关闭。
-浏览器测试使用公开测试密钥和独立临时配置目录，不访问日常 Chrome 账户；结束后删除测试配置目录。
+Linux 环境可使用 `bunx playwright install --with-deps chromium` 安装浏览器系统依赖。浏览器测试使用合成账户和独立临时配置，不读取日常 Chrome 账户，也不验证真实 Chrome 同步或 Steam 在线绑定。
 
-PR 和 `master`/`main` 推送会运行 `.github/workflows/regression.yml`。
-失败时截图、页面上下文和 trace 保存在 `output/playwright/results/`，CI 会上传这些诊断文件。
-可通过 `bunx playwright show-trace <trace.zip 路径>` 查看失败轨迹。
+[CI](.github/workflows/regression.yml) 在 Pull Request 和 `master` / `main` 推送时执行检查。浏览器测试失败时，截图和 trace 保存在 `output/playwright/results/`；CI 会上传诊断文件。手动 DOM 回归入口见[浏览器测试说明](tests/browser/README.md)。
 
 ### 项目结构
 
-```
+```text
 src/
-├── components/          # React 组件
-├── contexts/           # React Context (I18n)
-├── hooks/              # 自定义 Hooks
-├── locales/            # 语言翻译文件
-│   ├── index.ts       # 语言注册中心（添加新语言在此）
-│   ├── zh-CN.ts       # 中文（简体）
-│   ├── en-US.ts       # English
-│   └── ...            # 其他语言
-├── utils/              # 工具函数
-└── types/              # TypeScript 类型
+├── popup/               # 扩展弹窗入口
+├── components/          # 账户、设置、导入和密码保护界面
+├── contexts/            # 语言与主题上下文
+├── hooks/               # 账户、验证码和设置状态
+├── locales/             # 主界面及功能模块文案
+├── utils/               # TOTP、二维码、导入、账户库和网页填充
+├── steam-link/          # 扩展内 Steam 绑定页面与后台逻辑
+├── types/               # TypeScript 类型
+├── background.ts        # Service Worker 入口
+├── vault-background.ts  # 账户库消息处理与来源检查
+└── content-script.ts    # 网页输入框识别、菜单和填充
+public/                  # Manifest、图标等静态资源
+scripts/                 # 开发模式文件监听
+tests/                  # 单元、组件、DOM 与扩展浏览器测试
+tools/steam-link/        # 独立 Steam 本地助手
+website/                 # 项目官网
+docs/                    # 使用指南、兼容性与发布记录
+build.ts                 # Bun 构建与版本同步
 ```
 
-### 添加新语言
+账户读写由后台 `VaultService` 统一处理，弹窗通过消息调用；网页脚本只获取授权范围内的账户摘要与验证码，不获取密钥。前端使用 React 19、TypeScript 5.9、Tailwind CSS 3.4、shadcn/ui 和 Radix UI；二维码识别使用 jsQR，二维码生成使用 qrcode，拖拽排序使用 dnd-kit。
 
-详细指南：[docs/ADD_NEW_LANGUAGE.md](docs/ADD_NEW_LANGUAGE.md)
+`package.json` 是版本号的唯一来源，构建时生成 `src/version.ts` 并更新输出的 Manifest。不要手动修改生成文件。官网在 `website/` 中单独构建：
 
-**快速步骤**：
-1. 创建 `src/locales/xx-XX.ts` 翻译文件
-2. 在 `src/locales/index.ts` 中注册（7行配置）
-3. 运行 `bun run build`
+```bash
+npm ci --prefix website
+npm --prefix website run build
+```
 
-同时补齐 `src/locales/security.ts`、网页菜单文案和 `build.ts` 的商店名称/描述映射。
+官网构建会从根目录 `package.json` 同步扩展版本。
 
-`bun run dev` 合并连续文件变更并串行重建，构建失败后继续监听；生成的 `src/version.ts` 和 `dist/` 不会触发循环构建。重建后仍需在 Chrome 扩展管理页点击“重新加载”。
+### 扩展权限
 
-账户读写由后台 `VaultService` 统一管理，Popup 通过消息请求操作；网页脚本只获取授权范围内的账户摘要与验证码，不获取密钥。
+| 权限 | 用途 |
+| --- | --- |
+| `storage` | 保存账户、设置和本机会话状态 |
+| `activeTab` | 用户打开扩展后，临时访问当前网页以填入验证码 |
+| `scripting` | 向有权限的网页注入输入框识别与填充脚本 |
+| `contextMenus` | 提供启用或禁用网站自动菜单的右键入口 |
+| 可选 HTTP / HTTPS 主机权限 | 用户逐站授权网页菜单；Steam 绑定单独按需申请 Steam API 访问 |
 
-官网位于 `website/`：使用 `npm install` 安装依赖，`npm run build` 构建，已授权 Cloudflare 的环境可执行 `npm run deploy` 发布。版本从根目录 `package.json` 自动同步。
+可选主机权限不在安装时授予所有网站访问权。用户可以在设置中查看和撤销网站授权。
 
-### 权限说明
-- `storage` - 本地/同步存储
-- `activeTab` - 自动填充
-- `scripting` - 页面脚本注入
-- `contextMenus` - 网站授权右键菜单
-- 可选 `http://*/*` / `https://*/*` 主机权限 - 用户逐站授权页面内联填充
+### 国际化
 
----
+主界面自动检测浏览器语言，也可在设置中手动选择：
 
-## ❓ 常见问题
+| 语言 | 代码 | 语言 | 代码 |
+| --- | --- | --- | --- |
+| 简体中文 | `zh-CN` | Deutsch | `de-DE` |
+| 繁體中文 | `zh-TW` | Русский | `ru-RU` |
+| English | `en-US` | العربية | `ar-SA` |
+| Español | `es-ES` | 日本語 | `ja-JP` |
+| Français | `fr-FR` | 한국어 | `ko-KR` |
+| Português | `pt-BR` | हिन्दी | `hi-IN` |
 
-<details>
-<summary><strong>如何备份数据？</strong></summary>
+添加语言时，创建 `src/locales/xx-XX.ts`，在 `src/locales/index.ts` 注册，并补齐安全、导入、Steam、网页菜单及商店元信息文案。Steam 绑定向导目前提供中文和英文，其他语言回退到英文。详见[添加新语言指南](docs/ADD_NEW_LANGUAGE.md)。
 
-开启密码保护后默认导出加密 JSON；明文导出需要验证当前密码。未开启保护时导出明文 JSON，文件包含账户密钥。加密备份需要导出时的密码才能恢复。
-</details>
+## 常见问题
 
-<details>
-<summary><strong>验证码不准确？</strong></summary>
+**验证码不正确时如何排查？**
 
-检查系统时间是否准确（TOTP基于时间）。
-</details>
+先检查电脑时间是否准确，再核对账户类型、密钥格式与服务要求的算法、位数和周期。普通 TOTP 和 Steam Guard 的编码方式不同。
 
-<details>
-<summary><strong>自动填充失败？</strong></summary>
+**为什么自动填充失败？**
 
-部分网站使用特殊输入框。开启“填充失败时复制”后可回退剪贴板；页面内联菜单需要先授予该网站访问权限。
-</details>
+目标页面可能受 Chrome 限制，或使用了无法识别的输入框。可启用“填充失败时复制”后手动粘贴。网页账户菜单需要单独授权目标网站并保持总开关开启。
 
-<details>
-<summary><strong>数据会随 Google 账号同步吗？</strong></summary>
+**为什么另一台设备没有账户？**
 
-默认使用 `chrome.storage.sync`。两台设备需使用相同扩展 ID、同一 Chrome 账号并开启扩展数据同步。关闭同步或离线时数据保存在本机，联网并启用同步后再同步。
+确认两端扩展 ID、Chrome 账号及扩展数据同步设置一致，并等待同步完成。收到加密记录后，还需要使用同一主密码解锁。
 
-- 不同扩展 ID 的数据相互独立；仅在 Manifest 中使用同一公钥，才能让不同路径加载的开发版本保持同一 ID。
-- 未开启扩展密码保护时，账户记录未经过扩展加密。
-- 当前所有账户保存在单条记录中，受单项约 8 KB 限制；同步总配额约 100 KB。超限会提示错误，不会截断账户。
-- 同步有延迟；本机保存成功不代表其他设备已经收到更新。
-</details>
+## 文档与贡献
 
----
+- [密码保护与同步](docs/PASSWORD_PROTECTION.md)
+- [网站授权与网页菜单](docs/SITE_ACCESS.md)
+- [Steam 本地绑定助手](tools/steam-link/README.md)
+- [商店功能兼容性检查](docs/STORE-FEATURE-COVERAGE-20261102.md)
+- [2.3.9 发布与升级验证记录](docs/RELEASE-2.3.9.md)
+- [GitHub Releases](https://github.com/titxue/mfa/releases)
 
-## 🤝 贡献
+欢迎通过 [Issues](https://github.com/titxue/mfa/issues) 反馈问题或提出建议，通过 [Pull Requests](https://github.com/titxue/mfa/pulls) 提交改进。问题报告请附复现步骤、浏览器版本和扩展版本，不要提交真实账户密钥、二维码或备份文件。代码改动请通过相关测试、类型检查和构建，并同步更新中英文文档。
 
-欢迎提交 Issue 和 Pull Request！
+## 许可证
 
-**开发规范**
-- 使用 TypeScript，确保类型安全
-- 遵循 React Hooks 最佳实践
-- 提交信息遵循 [Conventional Commits](https://www.conventionalcommits.org/)
-- 不要提交 console.log
-
-**贡献类型**
-
-1. **翻译贡献** - 帮助添加新语言或改进现有翻译
-   - 参考 [添加新语言指南](docs/ADD_NEW_LANGUAGE.md)
-   - 请同时检查安全文案、网页菜单和商店元信息。
-
-2. **功能开发** - 添加新功能或改进现有功能
-   - 提交前请先创建 Issue 讨论
-   - 确保通过 TypeScript 类型检查和构建
-
-3. **Bug 修复** - [报告 Bug](https://github.com/titxue/mfa/issues/new)
-   - 提供问题描述、复现步骤、浏览器版本
-
-4. **文档改进** - 完善文档、修正错误、添加示例
-
----
-
-## 📋 更新日志
-
-### v2.2.0
-
-- 主密码保护、加密账户存储、手动锁定与加密备份。
-- 网站按需授权与页面内联验证码菜单。
-- 普通备份显示账户数量；加密备份解密预览后再确认导入。
-- 拒绝不支持的 TOTP 参数，避免静默生成错误验证码。
-- 设置保存失败时恢复原值并提示；开发模式支持真实文件监听。
-- 更新中英文官网与使用指南。
-
-### v2.1.0 (2026-01-29)
-- ✨ **国际化重大更新** - 从 2 种语言扩展到 12 种语言
-  - 新增：繁体中文、西班牙语、法语、葡萄牙语、德语、俄语、阿拉伯语、日语、韩语、印地语
-  - 自动检测浏览器语言并切换
-  - 支持区域变体（如 es-MX、fr-CA、pt-PT 等）
-- 🏗️ **语言架构优化** - 自动化语言注册机制
-  - 添加新语言从 5 个文件减少到 2 个文件
-  - 类型自动生成，UI 自动更新
-  - 单一配置数据源，消除重复代码
-  - 详见 [架构文档](docs/LANGUAGE_ARCHITECTURE.md)
-
-### v2.0.5 (2026-01-07)
-- ✨ 新增二维码导出功能 - 双击账户卡片即可生成/下载二维码
-- ✨ 优化粘贴/拖拽上传体验 - 支持粘贴图片和 otpauth:// URI 文本
-- 🐛 修复拖拽排序导致单击复制失效的问题
-- ⚡️ 优化拖拽激活阈值（需移动 5px）避免误触
-
-### v2.0.1 (2025-12-21)
-- 🐛 修复二维码解析错误
-- ✨ 统一版本号管理
-- ✨ 添加图标生成系统
-- 🎨 优化设置页面 UI
-- 🧹 清理 Git 仓库和日志语句
-- 📝 完善文档
-
-### v2.0.0 (2025-12)
-- ✨ 全新架构：React 19 + TypeScript + Bun
-- ✨ 二维码扫描功能
-- ✨ shadcn/ui 设计系统
-- ✨ Manifest V3 标准
-- ⚡️ 构建速度 < 200ms
-
----
-
-## 📄 许可证
-
-MIT License
-
----
-
-<div align="center">
-
-**⭐ 如果这个项目对你有帮助，请给个 Star！**
-
-[报告 Bug](https://github.com/titxue/mfa/issues) • [功能建议](https://github.com/titxue/mfa/issues) • [贡献代码](https://github.com/titxue/mfa/pulls)
-
-Made with ❤️ by [titxue](https://github.com/titxue)
-
-</div>
+[MIT](https://opensource.org/licenses/MIT) · [titxue](https://github.com/titxue)

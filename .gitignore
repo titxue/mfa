@@ -11,6 +11,7 @@ bun.lock
 # Build output
 dist/
 /mfa-*.zip
+/mfa-*.zip.sha256
 
 # Generated files
 src/version.ts
