@@ -6,6 +6,19 @@ const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ'
 afterEach(() => { Date.now = realNow })
 const realNow = Date.now
 
+// RFC 4231 section 4.7, test case 6: a key longer than either SHA-2 block size.
+// https://www.rfc-editor.org/rfc/rfc4231.html#section-4.7
+for (const [name, hmac, expected] of [
+  ['SHA256', hmacSha256, '60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54'],
+  ['SHA512', hmacSha512, '80b24263c7c1a3ebb71493c1dd7be8b49b46d1f41b4aeec1121b013783f8f3526b56d037e05f2598bd0fd2215d6a1e5295e64f73f63f0aec8b915a985d786598'],
+] as const) {
+  test(`${name} fallback matches the published RFC 4231 long-key vector`, () => {
+    const key = new Uint8Array(131).fill(0xaa)
+    const message = new TextEncoder().encode('Test Using Larger Than Block-Size Key - Hash Key First')
+    expect(Buffer.from(hmac(key, message)).toString('hex')).toBe(expected)
+  })
+}
+
 const seed32 = TOTP.base32Encode(new TextEncoder().encode('12345678901234567890123456789012'))
 const seed64 = TOTP.base32Encode(new TextEncoder().encode('1234567890'.repeat(6) + '1234'))
 
