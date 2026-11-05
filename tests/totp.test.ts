@@ -62,8 +62,38 @@ test('pure JS fallback produces identical TOTP codes when crypto.subtle is unava
     expect(await TOTP.generateTOTP(secret, 30, 'steam', 0)).toBe('GG5F5')
     expect(await TOTP.generateTOTP(seed32, 30, 'totp', undefined, { algorithm: 'SHA256', digits: 8 })).toBe('46119246')
     expect(await TOTP.generateTOTP(seed64, 30, 'totp', undefined, { algorithm: 'SHA512', digits: 8 })).toBe('90693936')
+    for (const [algorithm, { seed, values }] of Object.entries(RFC_VECTORS)) {
+      for (const [seconds, expected] of values) {
+        expect(await TOTP.generateTOTP(seed, 30, 'totp', seconds * 1000, {
+          algorithm: algorithm as 'SHA1' | 'SHA256' | 'SHA512', digits: 8,
+        })).toBe(expected)
+      }
+    }
   } finally {
     Object.defineProperty(globalThis, 'crypto', { configurable: true, value: original })
+  }
+})
+
+test('long HMAC keys and multi-block messages match WebCrypto including TOTP fallback', async () => {
+  const original = globalThis.crypto
+  for (const algorithm of ['SHA256', 'SHA512'] as const) {
+    const hash = algorithm === 'SHA256' ? 'SHA-256' : 'SHA-512'
+    const hmac = algorithm === 'SHA256' ? hmacSha256 : hmacSha512
+    for (const length of [64, 65, 128, 129, 131, 256]) {
+      const key = Uint8Array.from({ length }, (_, i) => (i * 19 + 7) & 255)
+      const message = Uint8Array.from({ length: 257 }, (_, i) => (i * 11 + 3) & 255)
+      const nativeKey = await original.subtle.importKey('raw', key, { name: 'HMAC', hash }, false, ['sign'])
+      const expected = await original.subtle.sign('HMAC', nativeKey, message)
+      expect(Buffer.from(hmac(key, message))).toEqual(Buffer.from(expected))
+      const encoded = TOTP.base32Encode(key)
+      const nativeCode = await TOTP.generateTOTP(encoded, 45, 'totp', 1_234_567_890_000, { algorithm, digits: 8 })
+      Object.defineProperty(globalThis, 'crypto', { configurable: true, value: { subtle: undefined } })
+      try {
+        expect(await TOTP.generateTOTP(encoded, 45, 'totp', 1_234_567_890_000, { algorithm, digits: 8 })).toBe(nativeCode)
+      } finally {
+        Object.defineProperty(globalThis, 'crypto', { configurable: true, value: original })
+      }
+    }
   }
 })
 

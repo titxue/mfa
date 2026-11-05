@@ -3,6 +3,7 @@ import type { VaultRequest } from './utils/vault-client'
 import { grantedSites, sitePattern } from './utils/site-access'
 import { TOTP } from './utils/totp'
 import { StorageManager } from './utils/storage'
+import { V2_KEY, MIGRATION_PREFIX } from './utils/vault-sync'
 
 async function notify(invalidate = false, ensureInjected = false) {
   await chrome.runtime.sendMessage({ type: 'VAULT_CHANGED', invalidate }).catch(() => {})
@@ -30,11 +31,15 @@ const ready = Promise.all([
   chrome.storage.session.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }),
 ])
 chrome.storage.onChanged.addListener((changes, area) => {
-  if ((area === 'sync' && (changes[VAULT_KEY] || changes.accounts || changes.autofillSettings || changes.language)) || (area === 'session' && changes.vaultSession)) {
-    const change = changes[VAULT_KEY]
-    const before = change?.oldValue as { mode?: string; data?: { salt?: string } } | undefined
-    const after = change?.newValue as typeof before
-    const invalidate = area === 'session' || !!change && (before?.mode !== after?.mode || before?.data?.salt !== after?.data?.salt)
+  const vaultChanges = Object.entries(changes).filter(([key]) => key === VAULT_KEY || key === V2_KEY || key.startsWith(MIGRATION_PREFIX))
+  if ((area === 'sync' && (vaultChanges.length || changes.accounts || changes.autofillSettings || changes.language)) || (area === 'session' && changes.vaultSession)) {
+    const invalidate = area === 'session' || vaultChanges.some(([, change]) => {
+      const oldValue = change.oldValue as { record?: unknown } | undefined
+      const newValue = change.newValue as { record?: unknown } | undefined
+      const before = (oldValue?.record ?? oldValue) as { mode?: string; data?: { salt?: string } } | undefined
+      const after = (newValue?.record ?? newValue) as typeof before
+      return !!before && before.mode !== after?.mode || after?.mode === 'encrypted' && before?.data?.salt !== after.data?.salt
+    })
     void notify(invalidate).catch(() => {})
   }
 })
@@ -57,7 +62,7 @@ chrome.runtime.onMessage.addListener((message: VaultRequest, sender, respond) =>
       case 'snapshot': return vault.snapshot()
       case 'summaries': {
         const snapshot = await vault.snapshot()
-        return { ...snapshot, settings: await StorageManager.getSettings(), language: await StorageManager.getLanguage(), accounts: snapshot.accounts.map(({ name, website }) => ({ name, website })) }
+        return { ...snapshot, settings: await StorageManager.getSettings(), language: await StorageManager.getLanguage(), accounts: snapshot.accounts.map(({ name, website, type, period }) => ({ name, website, period: type === 'steam' ? 30 : (period ?? 30) })) }
       }
       case 'code': {
         const snapshot = await vault.snapshot()
@@ -77,12 +82,16 @@ chrome.runtime.onMessage.addListener((message: VaultRequest, sender, respond) =>
       case 'enable': case 'change': case 'disable':
         await vault.protect(m.action, m.password ?? '', m.nextPassword ?? '', m.revision!); break
       case 'backup': return vault.backup(!!m.plain, m.password ?? '')
+      case 'recoveries': return vault.recoveryState()
+      case 'recoveryBackup': return vault.recoveryBackup(m.candidateId)
+      case 'migrate': await vault.migrate(m.revision!); break
+      case 'resolve': await vault.resolve(m.candidateId!, m.revision!, m.password ?? ''); break
       default: throw new Error('invalid')
     }
     await notify(false, m.action === 'unlock')
     return vault.snapshot()
   }).then(value => respond({ ok: true, value }), error => {
-    const known = ['locked', 'conflict', 'invalid', 'passwordError', 'passwordLength', 'quota', 'denied']
+    const known = ['locked', 'conflict', 'invalid', 'passwordError', 'passwordLength', 'quota', 'denied', 'syncConflict', 'syncPending', 'migrationRequired']
     respond({ ok: false, error: known.includes(error?.message) ? error.message : 'storageError' })
   })
   return true

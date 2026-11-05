@@ -74,11 +74,12 @@ test('an old QR read cannot replace a newly reopened account draft', async ({ po
   await expect(popup.locator('.sortable-account[aria-label="Old scan"]')).toHaveCount(0)
 })
 
-function migrationPart(index: number, unsupported: boolean) {
-  const name = Buffer.from(index === 0 ? 'Unsupported entry' : 'Valid migration')
+function migrationPart(index: number, algorithm: 1 | 2 | 4, batchSize = 2) {
+  const name = Buffer.from(algorithm === 4 ? 'Unsupported entry' : algorithm === 2 ? 'SHA256 migration' : 'Valid migration')
   const key = Buffer.from('1234567890')
-  const entry = [10, key.length, ...key, 18, name.length, ...name, 32, unsupported ? 2 : 1, 40, 1, 48, 2]
-  const payload = [10, entry.length, ...entry, 16, 1, 24, 2, 32, index, 40, 42]
+  // Algorithm enum 4 is MD5; SHA256 (2) is now supported.
+  const entry = [10, key.length, ...key, 18, name.length, ...name, 32, algorithm, 40, 1, 48, 2]
+  const payload = [10, entry.length, ...entry, 16, 1, 24, batchSize, 32, index, 40, 42]
   return `otpauth-migration://offline?data=${encodeURIComponent(Buffer.from(payload).toString('base64'))}`
 }
 
@@ -88,15 +89,34 @@ test('a valid incomplete Google batch still opens import even when its first par
     const transfer = new DataTransfer()
     transfer.setData('text/plain', uri)
     element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: transfer }))
-  }, migrationPart(0, true))
+  }, migrationPart(0, 4))
   const dialog = popup.getByRole('dialog', { name: '导入账户', exact: true })
   await expect(dialog).toBeVisible()
   await expect(dialog).toContainText('已收集 1/2 张二维码')
   await expect(dialog.getByRole('button', { name: '导入 (0)', exact: true })).toBeDisabled()
   await dialog.getByRole('button', { name: '粘贴链接或 JSON', exact: true }).click()
-  await dialog.locator('#import-text').fill(migrationPart(1, false))
+  await dialog.locator('#import-text').fill(migrationPart(1, 1))
   await dialog.getByRole('button', { name: '识别文本', exact: true }).click()
   await expect(dialog).toContainText('已收集 2/2 张二维码')
   await expect(dialog).toContainText('Valid migration')
   await expect(dialog.getByRole('button', { name: '导入 (1)', exact: true })).toBeEnabled()
+})
+
+test('a SHA256 Google migration is imported and preserves its algorithm after reopening', async ({ popup }) => {
+  await popup.getByRole('button', { name: '添加账户', exact: true }).click()
+  await popup.getByRole('dialog').evaluate((element, uri) => {
+    const transfer = new DataTransfer()
+    transfer.setData('text/plain', uri)
+    element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: transfer }))
+  }, migrationPart(0, 2, 1))
+  const dialog = popup.getByRole('dialog', { name: '导入账户', exact: true })
+  await expect(dialog).toContainText('SHA256 migration')
+  await dialog.getByRole('button', { name: '导入 (1)', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  await popup.reload()
+  const card = popup.locator('.sortable-account[aria-label="SHA256 migration"]')
+  await expect(card.locator('.font-mono')).toHaveText(/^\d{3} \d{3}$/)
+  await card.click({ button: 'right', position: { x: 12, y: 12 } })
+  await popup.getByRole('menuitem', { name: '编辑', exact: true }).click()
+  await expect(popup.getByRole('dialog').locator('#algorithm')).toHaveValue('SHA256')
 })

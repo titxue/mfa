@@ -5,6 +5,7 @@ test('background rejects untrusted senders and serves only summaries/codes to au
   let handler: (message: unknown, sender: unknown, respond: (result: any) => void) => boolean
   const sync: Record<string, any> = { accounts: [
     { name: 'Example', secret: 'JBSWY3DPEHPK3PXP', website: 'example.test' },
+    { name: 'Fast', secret: 'JBSWY3DPEHPK3PXP', algorithm: 'SHA512', digits: 8, period: 15 },
     { name: 'Steam demo', secret: 'AAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQT', type: 'steam', website: 'steamcommunity.com' },
   ] }
   const session: Record<string, any> = {}
@@ -19,7 +20,7 @@ test('background rejects untrusted senders and serves only summaries/codes to au
   const notifications: number[] = []
   const area = (data: Record<string, any>) => ({
     setAccessLevel: async () => {},
-    get: async (keys: string | string[]) => Object.fromEntries((typeof keys === 'string' ? [keys] : keys).filter(k => k in data).map(k => [k, data[k]])),
+    get: async (keys: string | string[] | null) => structuredClone(keys === null ? data : Object.fromEntries((typeof keys === 'string' ? [keys] : keys).filter(k => k in data).map(k => [k, data[k]]))),
     set: async (values: Record<string, any>) => { Object.assign(data, values) },
     remove: async (keys: string | string[]) => { for (const k of typeof keys === 'string' ? [keys] : keys) delete data[k] },
     getBytesInUse: async () => 0,
@@ -50,10 +51,25 @@ test('background rejects untrusted senders and serves only summaries/codes to au
     expect(await request('snapshot', page)).toMatchObject({ ok: false, error: 'denied' })
     expect(await request('summaries', { ...page, id: 'other' })).toMatchObject({ ok: false, error: 'denied' })
     expect(await request('snapshot', { id: 'test', url: 'chrome-extension://test/other.html' })).toMatchObject({ ok: false, error: 'denied' })
+    expect(await request('migrate', page)).toMatchObject({ ok: false, error: 'denied' })
+    for (const action of ['recoveries', 'recoveryBackup', 'resolve']) {
+      expect(await request(action, page, { candidateId: 'test', revision: 'test' }))
+        .toMatchObject({ ok: false, error: 'denied' })
+    }
+    const migration = await request('snapshot', popup)
+    expect(migration.value.syncState).toBe('migration')
+    expect(await request('migrate', popup, { revision: migration.value.revision })).toMatchObject({ ok: true })
     const summary = await request('summaries', page)
     expect(await request('snapshot', { ...popup, tab: { id: 2 } })).toMatchObject({ ok: true })
     expect(summary.ok).toBe(true)
-    expect(summary.value.accounts).toEqual([{ name: 'Example', website: 'example.test' }, { name: 'Steam demo', website: 'steamcommunity.com' }])
+    expect(summary.value.accounts).toEqual([{ name: 'Example', website: 'example.test', period: 30 }, { name: 'Fast', website: undefined, period: 15 }, { name: 'Steam demo', website: 'steamcommunity.com', period: 30 }])
+    for (const account of summary.value.accounts) {
+      expect(account).not.toHaveProperty('secret')
+      expect(account).not.toHaveProperty('algorithm')
+      expect(account).not.toHaveProperty('digits')
+    }
+    const fastCode = await request('code', page, { revision: summary.value.revision, name: 'Fast' })
+    expect(fastCode.value).toMatch(/^\d{8}$/)
     expect(JSON.stringify(summary)).not.toContain('JBSWY3DPEHPK3PXP')
     const code = await request('code', page, { revision: summary.value.revision, name: 'Example' })
     expect(code.value).toMatch(/^\d{6}$/)

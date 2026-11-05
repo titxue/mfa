@@ -59,7 +59,7 @@ test('settings opens the restored Steam binding flow and completes enrollment', 
   await expect(binding.locator('#account-name')).toHaveValue('Steam demo')
   await binding.getByRole('button', { name: '添加账户', exact: true }).click()
   await expect.poll(() => worker.evaluate(async () => {
-    const vault = (await chrome.storage.sync.get('accountVault')).accountVault
+    const vault = (await chrome.storage.sync.get((globalThis as any).testVaultKey))[(globalThis as any).testVaultKey].record
     return vault.accounts.find((a: { name: string }) => a.name === 'Steam demo')
   })).toEqual({ name: 'Steam demo', type: 'steam', website: 'steamcommunity.com', secret: 'AAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQT' })
   expect(await worker.evaluate(() => (globalThis as any).steamTest.calls.filter((method: string) => method === 'AddAuthenticator').length)).toBe(1)

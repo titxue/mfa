@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test'
-import { VaultService, VAULT_KEY, browserVaultStorage, type VaultRecord, type VaultStorage } from '../src/utils/vault'
+import { VaultService, VAULT_KEY, browserVaultStorage, type VaultRecord } from '../src/utils/vault'
 import { deriveKey, newSalt, encryptAccounts, decryptAccounts } from '../src/utils/vault-crypto'
 import { ImportExportManager } from '../src/utils/import-export'
 import { securityStrings, securitySettingsStrings, unlockStrings } from '../src/locales/security'
@@ -7,27 +7,14 @@ import { LANGUAGE_CONFIGS } from '../src/locales'
 
 const accounts = [{ name: 'Test account', secret: 'JBSWY3DPEHPK3PXP', website: 'example.test' }]
 const password = 'test-password-123'
-class MemoryStorage implements VaultStorage {
-  data: Record<string, unknown> = { accounts: structuredClone(accounts), state: { secretValue: accounts[0].secret } }
-  session: Awaited<ReturnType<VaultStorage['getSession']>>
-  failWrite = false
-  failCleanup = false
-  async read() { return structuredClone(this.data) }
-  async write(record: VaultRecord) {
-    if (this.failWrite) throw new Error('storageError')
-    this.data[VAULT_KEY] = structuredClone(record)
-  }
-  async cleanup() {
-    if (this.failCleanup) throw new Error('storageError')
-    delete this.data.accounts; delete this.data.state
-  }
-  async getSession() { return structuredClone(this.session) }
-  async setSession(value?: typeof this.session) { this.session = structuredClone(value) }
+import { MemoryVaultStorage } from './fixtures/vault-memory'
+class MemoryStorage extends MemoryVaultStorage {
+  constructor() { super({ accounts: structuredClone(accounts), state: { secretValue: accounts[0].secret } }) }
 }
 const setup = async () => {
   const storage = new MemoryStorage()
   const service = new VaultService(storage)
-  await service.snapshot()
+  await service.migrate((await service.snapshot()).revision)
   return { storage, service }
 }
 const protect = async (service: VaultService) => {
@@ -49,8 +36,14 @@ describe('vault encryption and lifecycle', () => {
     const restored = await ImportExportManager.importAccounts(new File([backup], 'steam-backup.json'), [], password)
     expect(restored.newAccounts).toEqual(mixed)
   })
-  test('migrates the legacy accounts and clears secret-bearing form state', async () => {
-    const { storage, service } = await setup()
+  test('explicitly migrates legacy accounts and clears secret-bearing form state', async () => {
+    const storage = new MemoryStorage(), service = new VaultService(storage)
+    const original = structuredClone(storage.data)
+    const pending = await service.snapshot()
+    expect(pending).toMatchObject({ syncState: 'migration', locked: true, accounts: [] })
+    expect(storage.data).toEqual(original)
+    expect(storage.local).toBeUndefined()
+    await service.migrate(pending.revision)
     expect(await service.snapshot()).toMatchObject({ accounts, protected: false, locked: false })
     expect(storage.data.accounts).toBeUndefined()
     expect(storage.data.state).toBeUndefined()
@@ -58,7 +51,7 @@ describe('vault encryption and lifecycle', () => {
   test('encrypts all account fields; session is separate from persistent data', async () => {
     const { storage, service } = await setup()
     await protect(service)
-    const serialized = JSON.stringify(storage.data)
+    const serialized = JSON.stringify({ synchronized: storage.data, local: storage.local })
     for (const value of Object.values(accounts[0])) expect(serialized).not.toContain(value)
     expect(serialized).not.toContain(password)
     expect(storage.session?.key.k).toBeDefined()
@@ -74,9 +67,10 @@ describe('vault encryption and lifecycle', () => {
     const saved = structuredClone(storage.data)
     await expect(service.unlock('wrong')).rejects.toThrow('passwordError')
     expect(storage.data).toEqual(saved)
-    const record = storage.data[VAULT_KEY] as Extract<VaultRecord, { mode: 'encrypted' }>
+    const record = storage.currentRecord() as Extract<VaultRecord, { mode: 'encrypted' }>
     record.data.ciphertext = (record.data.ciphertext.startsWith('A') ? 'B' : 'A') + record.data.ciphertext.slice(1)
-    await expect(service.unlock(password)).rejects.toThrow('passwordError')
+    await expect(service.unlock(password)).rejects.toThrow('syncPending')
+    expect((await service.snapshot()).locked).toBe(true)
   })
   test('each encryption uses a different IV and ciphertext', async () => {
     const salt = newSalt(), key = await deriveKey(password, salt)
@@ -106,8 +100,8 @@ describe('vault encryption and lifecycle', () => {
   test('unknown format is preserved and cannot be overwritten', async () => {
     const { service, storage } = await setup()
     storage.data[VAULT_KEY] = { version: 42, revision: 'future' }
-    await expect(service.snapshot()).rejects.toThrow('invalid')
-    await expect(service.save([], 'future')).rejects.toThrow('invalid')
+    expect(await service.snapshot()).toMatchObject({ locked: true, syncState: 'pending', accounts: [] })
+    await expect(service.save([], 'future')).rejects.toThrow('syncPending')
     expect(storage.data[VAULT_KEY]).toEqual({ version: 42, revision: 'future' })
   })
   test('failed encryption write preserves the original record and protection mode', async () => {
@@ -120,23 +114,26 @@ describe('vault encryption and lifecycle', () => {
   })
   test('Chrome may reorder object properties on storage readback', async () => {
     const { service, storage } = await setup()
-    const write = storage.write.bind(storage)
-    storage.write = async record => {
+    const write = storage.sync.write
+    storage.sync.write = async (record, migration) => {
       const reordered = JSON.parse(JSON.stringify(record), (_key, value) => value && typeof value === 'object' && !Array.isArray(value)
         ? Object.fromEntries(Object.keys(value).sort().map(key => [key, value[key]])) : value)
-      await write(reordered)
+      await write(reordered, migration)
     }
     await protect(service)
     expect((await service.snapshot()).locked).toBe(false)
     await service.save(accounts, (await service.snapshot()).revision)
     expect((await service.snapshot()).accounts).toEqual(accounts)
   })
-  test('failed cleanup is retried without reimporting stale plaintext', async () => {
-    const { service, storage } = await setup()
-    storage.data.accounts = [{ name: 'stale', secret: 'STALE' }]
+  test('failed cleanup can be explicitly recovered without reimporting stale plaintext', async () => {
+    const storage = new MemoryStorage(), service = new VaultService(storage)
     storage.failCleanup = true
-    await expect(service.snapshot()).rejects.toThrow('storageError')
+    await expect(service.migrate((await service.snapshot()).revision)).rejects.toThrow('storageError')
+    expect(await service.snapshot()).toMatchObject({ syncState: 'pending', locked: true })
+    storage.data.accounts = [{ name: 'stale', secret: 'STALE' }]
     storage.failCleanup = false
+    const recovery = await service.recoveryState()
+    await service.resolve(storage.local!.pending!.id, recovery.revision)
     expect((await service.snapshot()).accounts).toEqual(accounts)
     expect(storage.data.accounts).toBeUndefined()
   })
@@ -177,6 +174,7 @@ describe('two devices sharing sync storage', () => {
     expect((await a.snapshot()).accounts).toEqual([...updated].reverse())
     await a.protect('disable', 'new-password-456', '', (await a.snapshot()).revision)
     expect((await b.snapshot()).protected).toBe(false)
+    expect(sb.session).toBeUndefined()
   })
   test('local operation queue survives a failure', async () => {
     const { service } = await setup()

@@ -13,12 +13,14 @@ import { vaultRequest } from '@/utils/vault-client'
 import { useI18n } from '@/contexts/I18nContext'
 import { securityError } from '@/locales/security'
 import { toast } from 'sonner'
+import { SyncRecovery } from '@/components/SyncRecovery'
 
 /**
  * 主应用组件
  */
 export function App() {
   const state = useAccounts()
+  if (!state.loading && state.syncState) return <SyncRecovery key={state.revision} reload={state.reload} />
   if (state.loading || state.locked) return <UnlockScreen loading={state.loading} error={state.error} reload={state.reload} />
   return <UnlockedApp state={state} />
 }
@@ -30,6 +32,7 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showRecovery, setShowRecovery] = useState(false)
   const [importChunks, setImportChunks] = useState<ImportChunk[] | null>(null)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   useEffect(() => {
@@ -44,6 +47,8 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
       setShowEditModal(true)
     }
   }
+
+  if (showRecovery) return <SyncRecovery key={state.revision} reload={state.reload} onClose={() => setShowRecovery(false)} />
 
   return (
     <div className="flex flex-col h-[600px] w-[380px] bg-background">
@@ -96,6 +101,7 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
         onOpenChange={setShowSettings}
         accounts={accounts}
         onOpenImport={() => { setShowSettings(false); setImportChunks([]) }}
+        onOpenRecovery={() => { setShowSettings(false); setShowRecovery(true) }}
       />
       {importChunks !== null && <ImportAccountsDialog initialChunks={importChunks} accounts={accounts}
         onImport={updateAccounts} onClose={() => setImportChunks(null)} />}

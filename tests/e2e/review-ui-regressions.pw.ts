@@ -79,7 +79,11 @@ test('an old submit cannot clear, close or leave loading on a reopened add sessi
   await reopened.locator('#name').fill('New draft'); await reopened.locator('#secret').fill(secret)
   await expect(reopened.getByRole('button', { name: '保存', exact: true })).toBeEnabled()
   await popup.evaluate(() => (window as any).releaseValidation())
-  await expect.poll(() => worker.evaluate(async () => (await chrome.storage.sync.get('accountVault')).accountVault.accounts.map((account: { name: string }) => account.name))).toContain('Old submitted account')
+  await expect.poll(() => popup.evaluate(async () => {
+    const response = await chrome.runtime.sendMessage({ type: 'MFA_VAULT', action: 'snapshot' })
+    if (!response.ok) throw new Error(response.error)
+    return response.value.accounts.map((account: { name: string }) => account.name)
+  })).toContain('Old submitted account')
   await expect(reopened).toBeVisible(); await expect(reopened.locator('#name')).toHaveValue('New draft')
   await expect(reopened.getByRole('button', { name: '保存', exact: true })).toBeEnabled()
   await reopened.getByRole('button', { name: '保存', exact: true }).click()
@@ -97,7 +101,7 @@ test('a different popup keeps its draft when an already-issued write completes',
     const set = chrome.storage.sync.set.bind(chrome.storage.sync)
     let first = true
     chrome.storage.sync.set = async (values: Record<string, unknown>) => {
-      if (first && values.accountVault) { first = false; await new Promise<void>(resolve => { state.releaseWrite = resolve }) }
+      if (first && values[(globalThis as any).testVaultKey]) { first = false; await new Promise<void>(resolve => { state.releaseWrite = resolve }) }
       return set(values)
     }
   })
@@ -109,7 +113,7 @@ test('a different popup keeps its draft when an already-issued write completes',
   await other.getByRole('button', { name: '添加账户', exact: true }).click()
   await other.locator('#name').fill('Other popup draft'); await other.locator('#secret').fill(secret)
   await worker.evaluate(() => (globalThis as any).releaseWrite())
-  await expect.poll(() => worker.evaluate(async () => (await chrome.storage.sync.get('accountVault')).accountVault.accounts.map((account: { name: string }) => account.name))).toContain('Issued save')
+  await expect.poll(() => worker.evaluate(async () => (await chrome.storage.sync.get((globalThis as any).testVaultKey))[(globalThis as any).testVaultKey].record.accounts.map((account: { name: string }) => account.name))).toContain('Issued save')
   await expect(other.getByRole('dialog', { name: '添加账户', exact: true })).toBeVisible()
   await expect(other.locator('#name')).toHaveValue('Other popup draft')
   await other.getByRole('dialog').getByRole('button', { name: '取消', exact: true }).click()

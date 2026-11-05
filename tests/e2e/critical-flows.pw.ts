@@ -23,8 +23,8 @@ test('mouse reorders stay visible, merge delayed saves, and persist the last ord
     state.testOrders = []
     const set = chrome.storage.sync.set.bind(chrome.storage.sync)
     chrome.storage.sync.set = async (values: Record<string, any>) => {
-      if (values.accountVault) {
-        state.testOrders.push(values.accountVault.accounts.map((account: { name: string }) => account.name))
+      if (values[(globalThis as any).testVaultKey]) {
+        state.testOrders.push(values[(globalThis as any).testVaultKey].record.accounts.map((account: { name: string }) => account.name))
         await new Promise(resolve => setTimeout(resolve, 2000))
       }
       return set(values)
@@ -46,7 +46,7 @@ test('mouse reorders stay visible, merge delayed saves, and persist the last ord
   await expect.poll(() => order(popup)).toEqual(['Alpha', 'Beta', 'Gamma'])
   await expect.poll(() => worker.evaluate(() => (globalThis as any).testOrders.length)).toBe(2)
   await expect.poll(() => worker.evaluate(async () => {
-    const record = (await chrome.storage.sync.get('accountVault')).accountVault
+    const record = (await chrome.storage.sync.get((globalThis as any).testVaultKey))[(globalThis as any).testVaultKey].record
     return record.accounts.map((account: { name: string }) => account.name)
   })).toEqual(['Alpha', 'Beta', 'Gamma'])
   expect(await popup.evaluate(() => (window as any).testBlankCodes)).toBe(false)
@@ -121,7 +121,7 @@ test('Steam type can be selected, persisted, displayed and copied as five charac
   await popup.getByRole('button', { name: '保存', exact: true }).click({ force: true })
   const card = popup.locator('.sortable-account[aria-label="Steam test"]')
   await expect(card.locator('.font-mono')).toHaveText('PV9M4')
-  const stored = await worker.evaluate(async () => (await chrome.storage.sync.get('accountVault')).accountVault)
+  const stored = await worker.evaluate(async () => (await chrome.storage.sync.get((globalThis as any).testVaultKey))[(globalThis as any).testVaultKey].record)
   expect(stored.accounts.find((a: { name: string }) => a.name === 'Steam test').type).toBe('steam')
   await worker.evaluate(() => {
     (globalThis as any).realNow = Date.now

@@ -301,3 +301,39 @@ describe('backup formats and compatibility', () => {
     expect(importMessage(english.summary, { selected: 1, total: 3 })).toBe('1 of 3 accounts selected')
   })
 })
+
+describe('JSON records with URI parameter overrides', () => {
+  const jsonParams = { algorithm: 'SHA256', digits: 8, period: 60 }
+  for (const [parameter, value] of [['algorithm', 'SHA1'], ['digits', '6'], ['period', '30']] as const) {
+    test(`explicit URI default ${parameter} overrides its JSON field independently`, async () => {
+      const url = `otpauth://totp/demo?secret=${secret}&${parameter}=${value}`
+      const expected: Record<string, unknown> = { name: 'demo', secret, ...jsonParams }
+      delete expected[parameter]
+      const [chunk] = await parseImportText(JSON.stringify([{ name: 'demo', secret, ...jsonParams, url }]))
+      expect(chunk.issues).toEqual([])
+      expect(chunk.accounts).toEqual([expected])
+    })
+  }
+  test('all explicit URI defaults preserve numeric SHA1 codes despite nondefault JSON metadata', async () => {
+    const url = `otpauth://totp/demo?secret=${secret}&algorithm=SHA1&digits=6&period=30`
+    const [chunk] = await parseImportText(JSON.stringify([{ name: 'demo', secret, ...jsonParams, url }]))
+    expect(chunk.accounts).toEqual([{ name: 'demo', secret }])
+    const account = chunk.accounts[0]
+    expect(await TOTP.generateTOTP(account.secret, account.period ?? 30, account.type, 59000, account))
+      .toBe(await TOTP.generateTOTP(secret, 30, 'totp', 59000))
+  })
+  test('a URI without parameter fields retains JSON metadata and otherwise uses ordinary defaults', async () => {
+    const url = `otpauth://totp/demo?secret=${secret}`
+    for (const params of [{}, jsonParams]) {
+      const [chunk] = await parseImportText(JSON.stringify([{ name: 'demo', secret, ...params, url }]))
+      expect(chunk.issues).toEqual([])
+      expect(chunk.accounts).toEqual([{ name: 'demo', secret, ...params }])
+    }
+  })
+  test('explicit nondefault URI parameters still override JSON defaults', async () => {
+    const url = `otpauth://totp/demo?secret=${secret}&algorithm=SHA512&digits=8&period=45`
+    const [chunk] = await parseImportText(JSON.stringify([{ name: 'demo', secret, algorithm: 'SHA1', digits: 6, period: 30, url }]))
+    expect(chunk.issues).toEqual([])
+    expect(chunk.accounts).toEqual([{ name: 'demo', secret, algorithm: 'SHA512', digits: 8, period: 45 }])
+  })
+})

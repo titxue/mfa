@@ -36,12 +36,14 @@ import { securityStrings, securityError } from '@/locales/security'
 import { vaultRequest } from '@/utils/vault-client'
 import { importStrings } from '@/locales/import'
 import { bindingStrings } from '@/steam-link/strings'
+import { syncRecoveryStrings } from '@/locales/sync-recovery'
 
 interface SettingsModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   accounts: Account[]
   onOpenImport: () => void
+  onOpenRecovery?: () => void
   protected: boolean
   revision: string
   reload: () => Promise<void>
@@ -55,6 +57,7 @@ export function SettingsModal({
   onOpenChange,
   accounts,
   onOpenImport,
+  onOpenRecovery,
   protected: protectedMode,
   revision,
   reload
@@ -226,6 +229,9 @@ export function SettingsModal({
             </div>
 
             <PasswordProtection protected={protectedMode} revision={revision} reload={reload} />
+            {onOpenRecovery && <Button variant="outline" className="w-full" onClick={onOpenRecovery}>
+              {syncRecoveryStrings(locale).exportAll}
+            </Button>}
 
             {/* 自动填充设置 */}
             <div className="space-y-2">

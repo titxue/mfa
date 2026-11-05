@@ -293,11 +293,13 @@ export async function parseImportText(text: string, password?: string): Promise<
         if (a.encoder !== undefined && (typeof a.encoder !== 'string' || a.encoder.toLowerCase() !== (parsed.type ?? 'totp'))) throw new Error('invalid')
       }
       const checked = checkParameters({ ...a, ...(parsed?.type === 'steam' ? { encoder: 'steam' } : {}) })
-      // URL-provided parameters win over the JSON fields when both exist.
+      // Explicit URI parameters win, including defaults omitted from the normalized account.
+      // Fields absent from the URI can still be supplied by the enclosing JSON record.
+      const uriParams = typeof a.url === 'string' ? new URL(a.url).searchParams : undefined
       const type = parsed ? (parsed.type ?? 'totp') : checked.type
-      const algorithm = parsed?.algorithm ?? checked.algorithm
-      const digits = parsed?.digits ?? checked.digits
-      const period = parsed?.period ?? checked.period
+      const algorithm = uriParams?.has('algorithm') ? (parsed?.algorithm ?? 'SHA1') : checked.algorithm
+      const digits = uriParams?.has('digits') ? (parsed?.digits ?? 6) : checked.digits
+      const period = uriParams?.has('period') ? (parsed?.period ?? 30) : checked.period
       name = foreign ? displayName(name, typeof a.issuer === 'string' ? a.issuer : '') : name
       result.accounts.push({
         name,

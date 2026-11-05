@@ -375,8 +375,9 @@ export function AddAccountModal({
                 <Label htmlFor="period">{t('form.period')}</Label>
                 <select id="period" value={period} onChange={e => setPeriod(Number(e.target.value))}
                   className="mt-2 flex h-10 w-full rounded-md border border-input bg-background px-2 text-sm">
-                  <option value="30">30</option>
-                  <option value="60">60</option>
+                  {Array.from({ length: 106 }, (_, index) => index + 15).map(seconds => (
+                    <option key={seconds} value={seconds}>{seconds}</option>
+                  ))}
                 </select>
               </div>
             </div>

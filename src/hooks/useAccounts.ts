@@ -8,7 +8,10 @@ import type { VaultSnapshot } from '@/utils/vault'
 const sameAccounts = (saved: Account[], submitted: Account[]) => saved.length === submitted.length && saved.every((account, index) => {
   const expected = submitted[index]
   return account.name === expected.name && account.secret === expected.secret && account.website === expected.website &&
-    (account.type ?? 'totp') === (expected.type ?? 'totp')
+    (account.type ?? 'totp') === (expected.type ?? 'totp') &&
+    (account.algorithm ?? 'SHA1') === (expected.algorithm ?? 'SHA1') &&
+    (account.digits ?? (account.type === 'steam' ? 5 : 6)) === (expected.digits ?? (expected.type === 'steam' ? 5 : 6)) &&
+    (account.period ?? 30) === (expected.period ?? 30)
 })
 
 export function useAccounts() {
