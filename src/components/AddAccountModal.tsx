@@ -63,7 +63,7 @@ export function AddAccountModal({
   try { if (mode === 'add' && secret.trim()) detected = parseManualSecret(secret, sourceType) } catch { /* Validate on submission. */ }
   const type = sourceType ?? (mode === 'edit' ? initialData?.type : detected?.type) ?? 'totp'
   const encoding = sourceType === undefined && detected?.type === 'steam' ? 'base64' : steamEncoding
-  const customized = type === 'steam' || algorithm !== 'SHA1' || digits !== 6 || period !== 30 || !!website.trim()
+  const customized = type === 'steam' || algorithm !== 'SHA1' || digits !== 6 || period !== 30
   const selectClassName = 'h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
   const [loading, setLoading] = useState(false)
   const [scanning, setScanning] = useState(false)
@@ -337,6 +337,13 @@ export function AddAccountModal({
               />
             </div>
 
+            <div>
+              <Label htmlFor="website">{t('form.website')}</Label>
+              <Input id="website" value={website} onChange={e => setWebsite(e.target.value)}
+                placeholder={t('form.websitePlaceholder')} aria-describedby="website-hint" className="mt-2 h-10" />
+              <p id="website-hint" className="mt-2 text-xs leading-relaxed text-muted-foreground">{t('form.websiteDesc')}</p>
+            </div>
+
             {mode === 'add' && <div>
               <Label htmlFor="secret">{t('form.secretKey')}</Label>
               <Input id="secret" value={secret} onChange={e => setSecret(e.target.value)}
@@ -401,13 +408,6 @@ export function AddAccountModal({
                 </select>
                 {encodingError && <p id="steam-format-error" role="alert" className="mt-2 text-xs text-destructive">{steam.chooseEncoding}</p>}
               </div>}
-
-              <div>
-                <Label htmlFor="website">{t('form.website')}</Label>
-                <Input id="website" value={website} onChange={e => setWebsite(e.target.value)}
-                  placeholder={t('form.websitePlaceholder')} aria-describedby="website-hint" className="mt-2 h-10" />
-                <p id="website-hint" className="mt-2 text-xs leading-relaxed text-muted-foreground">{t('form.websiteDesc')}</p>
-              </div>
             </AdvancedSettings>
           </div>
 

@@ -141,6 +141,112 @@ const messages: Record<Language, SyncRecoveryStrings> = {
   ]),
 }
 
-export function syncRecoveryStrings(locale: Language): SyncRecoveryStrings {
-  return messages[locale] ?? en
+const statusEnglish = {
+  loadingTitle: 'Checking account status',
+  loadingHint: 'This usually takes a moment.',
+  loadErrorTitle: 'Unable to read account status',
+  loadErrorHint: 'The extension could not read its recovery status. Try again. If you just updated it, reload the extension in Chrome and reopen it.',
+  chooseVersion: 'Saved version',
+  emptyHistory: 'No saved versions are available.',
+  historyTitle: 'Recovery and backup history',
+  historyHint: 'Review saved versions only when you need to recover accounts.',
+  recoveryTools: 'Recovery options',
+  retry: 'Check again',
+  back: 'Back to accounts',
+}
+const statusMessages: Record<Language, typeof statusEnglish> = {
+  'en-US': statusEnglish,
+  'zh-CN': {
+    loadingTitle: '正在检查账户状态', loadingHint: '请稍候。',
+    loadErrorTitle: '暂时无法读取恢复信息',
+    loadErrorHint: '扩展未能读取恢复状态，请重试。如果刚更新过扩展，请在 Chrome 扩展管理页重新加载扩展后再打开。',
+    chooseVersion: '已保存的版本', emptyHistory: '暂无已保存的历史版本。',
+    historyTitle: '恢复与历史备份', historyHint: '需要恢复账户时，再查看和选择已保存的版本。',
+    recoveryTools: '恢复选项', retry: '重试', back: '返回账户',
+  },
+  'zh-TW': {
+    loadingTitle: '正在檢查帳戶狀態', loadingHint: '請稍候。',
+    loadErrorTitle: '暫時無法讀取帳戶狀態',
+    loadErrorHint: '擴充功能無法讀取復原狀態，請重試。如果剛更新擴充功能，請在 Chrome 擴充功能管理頁重新載入後再開啟。',
+    chooseVersion: '已儲存的版本', emptyHistory: '暫無已儲存的歷史版本。',
+    historyTitle: '復原與歷史備份', historyHint: '需要復原帳戶時，再查看和選擇已儲存的版本。',
+    recoveryTools: '復原選項', retry: '重新檢查', back: '返回帳戶',
+  },
+  'es-ES': {
+    loadingTitle: 'Comprobando el estado de las cuentas', loadingHint: 'Espera un momento.',
+    loadErrorTitle: 'No se puede leer el estado de recuperación',
+    loadErrorHint: 'La extensión no pudo leer el estado de recuperación. Inténtalo de nuevo. Si acabas de actualizarla, recárgala desde la página de extensiones de Chrome y vuelve a abrirla.',
+    chooseVersion: 'Versión guardada', emptyHistory: 'No hay versiones guardadas disponibles.',
+    historyTitle: 'Recuperación e historial de copias', historyHint: 'Consulta las versiones guardadas cuando necesites recuperar cuentas.',
+    recoveryTools: 'Opciones de recuperación', retry: 'Reintentar', back: 'Volver a las cuentas',
+  },
+  'fr-FR': {
+    loadingTitle: 'Vérification de l’état des comptes', loadingHint: 'Veuillez patienter un instant.',
+    loadErrorTitle: 'Impossible de lire l’état de récupération',
+    loadErrorHint: 'L’extension n’a pas pu lire l’état de récupération. Réessayez. Si vous venez de la mettre à jour, rechargez-la depuis la page des extensions de Chrome, puis rouvrez-la.',
+    chooseVersion: 'Version enregistrée', emptyHistory: 'Aucune version enregistrée disponible.',
+    historyTitle: 'Récupération et historique des sauvegardes', historyHint: 'Consultez les versions enregistrées lorsque vous devez récupérer des comptes.',
+    recoveryTools: 'Options de récupération', retry: 'Réessayer', back: 'Retour aux comptes',
+  },
+  'pt-BR': {
+    loadingTitle: 'Verificando o estado das contas', loadingHint: 'Aguarde um instante.',
+    loadErrorTitle: 'Não foi possível ler o estado de recuperação',
+    loadErrorHint: 'A extensão não conseguiu ler o estado de recuperação. Tente novamente. Se você acabou de atualizá-la, recarregue-a na página de extensões do Chrome e abra-a novamente.',
+    chooseVersion: 'Versão salva', emptyHistory: 'Não há versões salvas disponíveis.',
+    historyTitle: 'Recuperação e histórico de backups', historyHint: 'Consulte as versões salvas quando precisar recuperar contas.',
+    recoveryTools: 'Opções de recuperação', retry: 'Tentar novamente', back: 'Voltar às contas',
+  },
+  'de-DE': {
+    loadingTitle: 'Kontostatus wird geprüft', loadingHint: 'Bitte einen Moment warten.',
+    loadErrorTitle: 'Wiederherstellungsstatus kann nicht gelesen werden',
+    loadErrorHint: 'Die Erweiterung konnte den Wiederherstellungsstatus nicht lesen. Versuche es erneut. Falls du sie gerade aktualisiert hast, lade sie auf der Erweiterungsseite von Chrome neu und öffne sie erneut.',
+    chooseVersion: 'Gespeicherte Version', emptyHistory: 'Keine gespeicherten Versionen verfügbar.',
+    historyTitle: 'Wiederherstellung und Sicherungsverlauf', historyHint: 'Sieh dir gespeicherte Versionen an, wenn du Konten wiederherstellen musst.',
+    recoveryTools: 'Wiederherstellungsoptionen', retry: 'Erneut versuchen', back: 'Zurück zu den Konten',
+  },
+  'ru-RU': {
+    loadingTitle: 'Проверка состояния аккаунтов', loadingHint: 'Подождите немного.',
+    loadErrorTitle: 'Не удалось прочитать состояние восстановления',
+    loadErrorHint: 'Расширению не удалось прочитать состояние восстановления. Повторите попытку. Если вы только что обновили расширение, перезагрузите его на странице расширений Chrome и откройте снова.',
+    chooseVersion: 'Сохранённая версия', emptyHistory: 'Сохранённых версий пока нет.',
+    historyTitle: 'Восстановление и история резервных копий', historyHint: 'Просматривайте сохранённые версии, когда нужно восстановить аккаунты.',
+    recoveryTools: 'Варианты восстановления', retry: 'Повторить', back: 'Вернуться к аккаунтам',
+  },
+  'ar-SA': {
+    loadingTitle: 'جارٍ التحقق من حالة الحسابات', loadingHint: 'يرجى الانتظار لحظة.',
+    loadErrorTitle: 'تعذّرت قراءة حالة الاستعادة',
+    loadErrorHint: 'تعذّر على الإضافة قراءة حالة الاستعادة. حاول مرة أخرى. إذا كنت قد حدّثتها للتو، فأعد تحميلها من صفحة الإضافات في Chrome ثم افتحها مجددًا.',
+    chooseVersion: 'النسخة المحفوظة', emptyHistory: 'لا توجد نسخ محفوظة متاحة.',
+    historyTitle: 'الاستعادة وسجل النسخ الاحتياطية', historyHint: 'راجع النسخ المحفوظة عندما تحتاج إلى استعادة الحسابات.',
+    recoveryTools: 'خيارات الاستعادة', retry: 'إعادة المحاولة', back: 'العودة إلى الحسابات',
+  },
+  'ja-JP': {
+    loadingTitle: 'アカウントの状態を確認中', loadingHint: 'しばらくお待ちください。',
+    loadErrorTitle: '復元の状態を読み取れません',
+    loadErrorHint: '拡張機能が復元の状態を読み取れませんでした。もう一度お試しください。更新直後の場合は、Chrome の拡張機能管理ページで拡張機能を再読み込みしてから開き直してください。',
+    chooseVersion: '保存済みのバージョン', emptyHistory: '保存済みのバージョンはありません。',
+    historyTitle: '復元とバックアップ履歴', historyHint: 'アカウントを復元する必要がある場合に、保存済みのバージョンを確認できます。',
+    recoveryTools: '復元オプション', retry: '再試行', back: 'アカウントに戻る',
+  },
+  'ko-KR': {
+    loadingTitle: '계정 상태 확인 중', loadingHint: '잠시 기다려 주세요.',
+    loadErrorTitle: '복구 상태를 읽을 수 없습니다',
+    loadErrorHint: '확장 프로그램이 복구 상태를 읽지 못했습니다. 다시 시도해 주세요. 방금 업데이트했다면 Chrome 확장 프로그램 관리 페이지에서 확장 프로그램을 새로고침한 뒤 다시 열어 주세요.',
+    chooseVersion: '저장된 버전', emptyHistory: '사용 가능한 저장된 버전이 없습니다.',
+    historyTitle: '복구 및 백업 기록', historyHint: '계정을 복구해야 할 때 저장된 버전을 확인하세요.',
+    recoveryTools: '복구 옵션', retry: '다시 시도', back: '계정으로 돌아가기',
+  },
+  'hi-IN': {
+    loadingTitle: 'खातों की स्थिति जाँची जा रही है', loadingHint: 'कृपया थोड़ा इंतज़ार करें।',
+    loadErrorTitle: 'रिकवरी की स्थिति नहीं पढ़ी जा सकी',
+    loadErrorHint: 'एक्सटेंशन रिकवरी की स्थिति नहीं पढ़ सका। फिर कोशिश करें। यदि आपने अभी इसे अपडेट किया है, तो Chrome के एक्सटेंशन प्रबंधन पेज से इसे दोबारा लोड करें और फिर खोलें।',
+    chooseVersion: 'सहेजा गया संस्करण', emptyHistory: 'कोई सहेजा गया संस्करण उपलब्ध नहीं है।',
+    historyTitle: 'रिकवरी और बैकअप इतिहास', historyHint: 'जब खातों को रिकवर करना हो, तब सहेजे गए संस्करण देखें।',
+    recoveryTools: 'रिकवरी के विकल्प', retry: 'फिर कोशिश करें', back: 'खातों पर वापस जाएँ',
+  },
+
+}
+
+export function syncRecoveryStrings(locale: Language): SyncRecoveryStrings & typeof statusEnglish {
+  return { ...(messages[locale] ?? en), ...(statusMessages[locale] ?? statusEnglish) }
 }
