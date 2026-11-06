@@ -5,7 +5,7 @@ Last updated: 2026-11-06 (Asia/Shanghai).
 ## Original listing
 
 - Item: `dhipejmoajhjflafhbibojfoeogbmjgf`.
-- Publisher: `37364da7-e04a-4807-a6a1-e63da317b0a7`.
+- Publisher: xuejy, `37364da7-e04a-4807-a6a1-e63da317b0a7`.
 - URL: https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf
 - Name: TOTP Authenticator - 2FA OTP Code Generator.
 - Short description: Secure and fast TOTP authenticator for 2FA login. Generate OTP codes offline and manage multiple accounts easily.
@@ -45,13 +45,13 @@ The 2.4.0 permission set is unchanged from the 2.3.9 release source. No dependen
 
 ## Privacy and data use
 
-The extension processes user-provided account names, authentication secrets, optional website addresses and preferences. These stay in browser storage and may leave the device via Chrome Sync. Password protection encrypts the active vault; historical recovery data may retain its previous protection state. Explicit exports are downloaded to the user's device.
+The developer does not collect or receive user account data. The extension processes user-provided account names, authentication secrets, optional website addresses and preferences in the browser. These stay in browser storage and may leave the device via Chrome Sync. Password protection encrypts the active vault; historical recovery data may retain its previous protection state. Explicit exports are downloaded to the user's device.
 
 Optional Steam linking sends the login information and authentication requests needed for that operation directly to Valve. Selected authentication codes are delivered to the website the user fills. No developer-operated collection endpoint, advertising or analytics is included.
 
-Data is not sold, used for unrelated purposes or used for lending/credit decisions. Do not describe the extension as making no network requests: Chrome Sync and optional Steam linking are disclosed above. Retain and verify existing store disclosure settings against these behaviors before submission.
+Data is not sold, used for unrelated purposes or used for lending/credit decisions. Do not describe the extension as making no network requests: Chrome Sync and optional Steam linking are disclosed above. The store data-collection declaration is no developer collection. Browser-managed synchronization alone is not treated as developer receipt of the data; local processing, synchronization and optional Steam requests remain disclosed in the privacy policy. The three limited-use certifications remain checked.
 
-Privacy policy URL (after the documentation commit is pushed): https://github.com/titxue/mfa/blob/master/docs/PRIVACY.md
+Privacy policy URL: https://github.com/titxue/mfa/blob/master/docs/PRIVACY.md
 
 ## Assets
 
@@ -61,7 +61,7 @@ The production package contains valid 16, 48 and 128 pixel icons. Fresh 1280×80
 
 | Version | Date | Changes | Status |
 | --- | --- | --- | --- |
-| 2.4.0 | 2026-11-06 | Configurable TOTP parameters; protected vault migration/recovery; simpler advanced settings; website field beneath name; clearer recovery status. | Prepared; not yet uploaded or submitted |
+| 2.4.0 | 2026-11-06 | Configurable TOTP parameters; protected vault migration/recovery; simpler advanced settings; website field beneath name; clearer recovery status. | Uploaded to original item; review not yet submitted |
 | 2.3.9 | Observed 2026-11-06 | Previous published version. | Published |
 
 ## Release evidence

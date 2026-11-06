@@ -4,6 +4,10 @@ Effective date: November 6, 2026.
 
 MFA (TOTP Authenticator - 2FA OTP Code Generator) generates authentication codes and helps you manage and fill them. This policy applies to Chrome Web Store item `dhipejmoajhjflafhbibojfoeogbmjgf`.
 
+## Developer data collection
+
+The developer does not collect, receive or have access to your account names, authentication secrets or website addresses through MFA. MFA has no developer-operated account-data endpoint, advertising tracker or analytics collector. Browser-managed Chrome synchronization and user-initiated requests to Steam are separate functions described below; they do not send your account vault to the developer.
+
 ## Accounts and browser storage
 
 You provide account names, authentication secrets and optional website addresses. MFA stores these, your preferences and synchronization recovery records in browser storage. Code generation runs on your device. MFA does not send your account vault to a developer-operated server and includes no advertising or analytics service.
