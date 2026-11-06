@@ -11,7 +11,7 @@ Last updated: 2026-11-06 (Asia/Shanghai).
 - Short description: Secure and fast TOTP authenticator for 2FA login. Generate OTP codes offline and manage multiple accounts easily.
 - Primary language: English; 12 extension languages.
 - Category, distribution, publisher identity and contact: retain the existing listing settings; do not create another item.
-- Public version observed on 2026-11-06: 2.3.9. Prepared update: 2.4.0.
+- Public version observed on 2026-11-06: 2.3.9. Update 2.4.0 was submitted at 11:41 Asia/Shanghai; status: In Review, automatically publish after approval.
 
 ## Updated detailed description
 
@@ -55,13 +55,13 @@ Privacy policy URL: https://github.com/titxue/mfa/blob/master/docs/PRIVACY.md
 
 ## Assets
 
-The production package contains valid 16, 48 and 128 pixel icons. Fresh 1280×800 screenshots of the account list, default add form and advanced settings are prepared in the release evidence directory. They use synthetic accounts only.
+The production package contains valid 16, 48 and 128 pixel icons. The submitted global listing uses one fresh 1280×800 account-list screenshot with synthetic accounts; the previous screenshot was replaced. Default add-form and advanced-settings screenshots remain available in the release evidence directory.
 
 ## Release history
 
 | Version | Date | Changes | Status |
 | --- | --- | --- | --- |
-| 2.4.0 | 2026-11-06 | Configurable TOTP parameters; protected vault migration/recovery; simpler advanced settings; website field beneath name; clearer recovery status. | Uploaded to original item; review not yet submitted |
+| 2.4.0 | 2026-11-06 | Configurable TOTP parameters; protected vault migration/recovery; simpler advanced settings; website field beneath name; clearer recovery status. | In Review; automatically publish after approval |
 | 2.3.9 | Observed 2026-11-06 | Previous published version. | Published |
 
 ## Release evidence
@@ -73,3 +73,5 @@ The production package contains valid 16, 48 and 128 pixel icons. Fresh 1280×80
 - 256 unit/component, 31 Steam helper and 49 isolated-browser tests passed; production build and both type checks passed.
 - GitHub CI: https://github.com/titxue/mfa/actions/runs/42148056116 (success).
 - Same-identity upgrades from rebuilt 2.3.9 release source passed for plain V1, encrypted V1 and legacy accounts (six synthetic accounts each). The original old ZIP was unavailable; only temporary Service Worker cache was cleared to reload the updated worker. This does not establish real cross-device Chrome Sync behavior or guarantee no data loss. See `docs/RELEASE-2.4.0.md`.
+
+Submission was confirmed in the original console with “已将您的扩展程序提交送审”. Nine collection categories are unchecked; the three limited-use certifications are checked. Remote code is No. The developer does not receive account data; browser-managed synchronization and optional Steam operations are described separately in the live privacy policy. Pending review is not public availability.
