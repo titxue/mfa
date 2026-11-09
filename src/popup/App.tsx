@@ -12,6 +12,7 @@ import { UnlockScreen } from '@/components/PasswordProtection'
 import { vaultRequest } from '@/utils/vault-client'
 import { useI18n } from '@/contexts/I18nContext'
 import { securityError } from '@/locales/security'
+import { legacyStrings } from '@/locales/legacy-vault'
 import { toast } from 'sonner'
 import { SyncRecovery } from '@/components/SyncRecovery'
 
@@ -58,6 +59,8 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
           catch (e) { toast.error(securityError(locale, e)) }
         } : undefined}
       />
+
+      {state.storageMode === 'legacy' && <p className="px-4 py-2 text-xs text-muted-foreground">{legacyStrings(locale).notice}</p>}
 
       {state.error && <p role="alert" className="px-4 text-xs text-destructive">{securityError(locale, state.error)}</p>}
 

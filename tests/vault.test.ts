@@ -9,7 +9,7 @@ const accounts = [{ name: 'Test account', secret: 'JBSWY3DPEHPK3PXP', website: '
 const password = 'test-password-123'
 import { MemoryVaultStorage } from './fixtures/vault-memory'
 class MemoryStorage extends MemoryVaultStorage {
-  constructor() { super({ accounts: structuredClone(accounts), state: { secretValue: accounts[0].secret } }) }
+  constructor() { super({ accounts: structuredClone(accounts) }) }
 }
 const setup = async () => {
   const storage = new MemoryStorage()
@@ -36,17 +36,34 @@ describe('vault encryption and lifecycle', () => {
     const restored = await ImportExportManager.importAccounts(new File([backup], 'steam-backup.json'), [], password)
     expect(restored.newAccounts).toEqual(mixed)
   })
-  test('explicitly migrates legacy accounts and clears secret-bearing form state', async () => {
+  test('explicitly migrates legacy accounts and removes the archived raw accounts', async () => {
     const storage = new MemoryStorage(), service = new VaultService(storage)
     const original = structuredClone(storage.data)
     const pending = await service.snapshot()
-    expect(pending).toMatchObject({ syncState: 'migration', locked: true, accounts: [] })
+    expect(pending).toMatchObject({ storageMode: 'legacy', locked: false, accounts })
+    expect(pending.syncState).toBeUndefined()
     expect(storage.data).toEqual(original)
     expect(storage.local).toBeUndefined()
     await service.migrate(pending.revision)
     expect(await service.snapshot()).toMatchObject({ accounts, protected: false, locked: false })
     expect(storage.data.accounts).toBeUndefined()
     expect(storage.data.state).toBeUndefined()
+  })
+  test('unknown synchronized state is preserved and blocks migration and writes', async () => {
+    const storage = new MemoryStorage(), service = new VaultService(storage)
+    storage.data.state = { secretValue: accounts[0].secret, unknown: 'preserve-state' }
+    const original = structuredClone(storage.data)
+    const pending = await service.snapshot()
+    expect(pending).toMatchObject({ syncState: 'pending', locked: true, accounts: [] })
+    await expect(service.migrate(pending.revision)).rejects.toThrow('conflict')
+    await expect(service.save([], pending.revision)).rejects.toThrow('syncPending')
+    await expect(service.protect('enable', '', password, pending.revision)).rejects.toThrow('syncPending')
+    expect(storage.data).toEqual(original)
+    expect(storage.local).toBeUndefined()
+    expect(storage.legacyLocal).toBeUndefined()
+    const backup = JSON.parse(await service.recoveryBackup())
+    expect(backup.legacy.state).toEqual(original.state)
+    expect(backup.legacy.accounts).toEqual(accounts)
   })
   test('encrypts all account fields; session is separate from persistent data', async () => {
     const { storage, service } = await setup()

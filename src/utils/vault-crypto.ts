@@ -58,5 +58,7 @@ export async function decryptAccounts(data: EncryptedData, key: CryptoKey): Prom
       { name: 'AES-GCM', iv: fromBase64(data.iv) }, key, fromBase64(data.ciphertext))))
   } catch { throw new Error('passwordError') }
   validateAccounts(result)
+  // A V1 envelope must not conceal OTP parameters that V1 clients calculate incorrectly.
+  if (accountDataVersion(result) > data.version) throw new Error('invalid')
   return result
 }

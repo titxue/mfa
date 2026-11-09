@@ -5,11 +5,14 @@ import { Label } from './ui/label'
 import { useI18n } from '@/contexts/I18nContext'
 import { syncRecoveryStrings } from '@/locales/sync-recovery'
 import { securityError } from '@/locales/security'
+import { legacyStrings } from '@/locales/legacy-vault'
 import { vaultRequest } from '@/utils/vault-client'
 import { ImportExportManager } from '@/utils/import-export'
 
 interface RecoveryState {
   revision: string
+  storageMode?: 'legacy'
+  legacyProtectionMismatch?: boolean
   state: 'migration' | 'conflict' | 'pending' | 'ready'
   protected?: boolean
   candidates: { id: string; label?: string; protected: boolean; accountCount?: number; accountNames?: string[] }[]
@@ -92,6 +95,13 @@ export function SyncRecovery({ reload }: { reload: () => Promise<void> }) {
   return <main className="flex h-[600px] w-[380px] flex-col gap-4 overflow-y-auto bg-background p-6" dir={locale === 'ar-SA' ? 'rtl' : undefined}>
     <h1 className="text-lg font-semibold">{loading ? s.loadingTitle : loadFailed ? s.loadErrorTitle : ready ? s.historyTitle : migration ? s.migrationTitle : conflict ? s.conflictTitle : s.pendingTitle}</h1>
     <p role="status" className="text-sm text-muted-foreground">{loading ? s.loadingHint : loadFailed ? s.loadErrorHint : ready ? s.historyHint : migration ? s.migrationHint : conflict ? s.conflictHint : s.pendingHint}</p>
+    {!loading && state?.storageMode === 'legacy' && <div className="space-y-2 text-xs text-muted-foreground">
+      <p>{legacyStrings(locale).notice}</p>
+      {!ready && <p>{legacyStrings(locale).interruption}</p>}
+    </div>}
+    {!loading && state?.legacyProtectionMismatch && <p role="alert" className="text-sm text-destructive">
+      {legacyStrings(locale).protectionMismatch}
+    </p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {!loading && migration && <Button disabled={busy} onClick={() => run(async () => {
       await vaultRequest('migrate', { revision: state!.revision }); await reload()

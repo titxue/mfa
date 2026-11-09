@@ -1,3 +1,4 @@
+import type { LegacyJournal } from '../../src/utils/vault-legacy'
 import { VAULT_KEY, type VaultRecord, type VaultStorage } from '../../src/utils/vault'
 import { V2_KEY, MIGRATION_PREFIX, type VaultSyncStorage, type RecoveryJournal } from '../../src/utils/vault-sync'
 
@@ -5,6 +6,7 @@ import { V2_KEY, MIGRATION_PREFIX, type VaultSyncStorage, type RecoveryJournal }
 export class MemoryVaultStorage implements VaultStorage {
   data: Record<string, unknown>
   local?: RecoveryJournal
+  legacyLocal?: LegacyJournal
   session: Awaited<ReturnType<VaultStorage['getSession']>>
   failWrite = false
   failCleanup = false
@@ -28,6 +30,12 @@ export class MemoryVaultStorage implements VaultStorage {
     if (this.failWrite) throw new Error('storageError')
     this.data[VAULT_KEY] = structuredClone(record)
   }
+  async writeAccounts(accounts: import('../../src/types').Account[]) {
+    if (this.failWrite) throw new Error('storageError')
+    this.data.accounts = structuredClone(accounts)
+  }
+  async readLegacyJournal() { return structuredClone(this.legacyLocal) }
+  async writeLegacyJournal(value: LegacyJournal) { this.legacyLocal = structuredClone(value) }
   async cleanup(expected?: Record<string, unknown>) {
     if (this.failCleanup) throw new Error('storageError')
     if (expected) {

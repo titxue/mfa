@@ -4,15 +4,19 @@ Version 2.4.0 supports SHA1/SHA256/SHA512, six/eight digits and integer periods 
 
 ## Compatibility tradeoff
 
-The published 2.3.9 client cannot safely interpret custom OTP parameters. It also reconstructs edited accounts without those parameters. The new client therefore uses a separate V2 sync namespace for **all** account writes, including accounts with default parameters. It never copies V2 accounts back into the old V1 key.
+The published 2.3.9 client cannot safely interpret custom OTP parameters. It also reconstructs edited accounts without those parameters. **The earlier universal V2-write requirement is superseded:** a pure legacy `accounts` array or V1 `accountVault` now remains in legacy read/write mode. Add, edit, delete, reorder, import and password changes keep the old format. Only default SHA1/six-digit/30-second TOTP and Steam targets are writable in this mode. Nondefault parameters produce the localized `legacyUnsupported` error before any persistent write; they are never silently dropped. See [Legacy storage compatibility](LEGACY-STORAGE-COMPATIBILITY.md) for recovery and password limitations.
 
-Reading V1 or legacy `accounts` does not automatically migrate or modify persistent storage. The popup asks the user to update their devices, export a recovery copy and explicitly migrate. Encrypted migration preserves the original ciphertext and password; it does not decrypt accounts into a plaintext replacement.
+Reads and unlocks do not migrate, rewrite or clean account storage. Raw-array saves stay arrays until enabling protection wraps them in encrypted V1; existing V1 stays V1, including after disabling protection. New empty installations may create V2 on their first explicit save or protection setup. Existing V2 uses its separate namespace and never falls back to legacy writing or copies V2 accounts into the V1 key. Mixed V2 evidence and a legacy recovery journal block writes.
+
+Explicit V2 migration remains a service operation only when no legacy recovery journal exists. A retained legacy journal blocks it with `legacyHistoryMigration`, including after exporting: export does not clear history. There is no popup migration shortcut. Unsupported or ambiguous legacy state cannot use migration to bypass recovery checks. Encrypted migration preserves the original ciphertext and password; it does not decrypt accounts into a plaintext replacement.
 
 Migration writes and verifies a durable local recovery journal, publishes a candidate under a unique sync key, verifies that candidate, then replaces the old `accountVault` value with a format-2 migration marker. The published client rejects this marker rather than displaying custom accounts with default OTP parameters. The old record is retained in the local recovery journal. Cleanup only follows verified persistence. Failures retain the original and/or pending candidate and block ordinary saves.
 
 A fresh installation also uses a unique candidate for its first explicit save or protection setup. Merely opening an empty or partially synced installation does not create an empty vault.
 
-## Delayed sync and conflicts
+## V2 delayed sync and conflicts
+
+This section describes the V2 protocol. Legacy writes share the published client’s keys and do not have equivalent conflict isolation or causal version recovery. Normal sequential old/new-client edits are supported, but concurrent or unseen old-client changes can be overwritten.
 
 Chrome `storage.sync` provides neither cross-device compare-and-swap nor a reliable signal that every key has arrived. A format number alone cannot protect an offline old client. The separate namespace ensures that such a client can only replace V1; it cannot replace the V2 account record.
 
@@ -23,6 +27,8 @@ Each writer saves a local pending copy before publishing. A rejected/quota-limit
 Selection deliberately does not guess how to combine conflicting renames, deletions or OTP parameter edits. Export both versions, choose a baseline and import/reconcile the remaining accounts. Same-name records require manual reconciliation; silently choosing an algorithm or key would produce incorrect codes. Choosing a plaintext recovery source while protection is active requires the current password and re-encrypts the result. An encrypted candidate requires its own password. Enabling protection also encrypts plaintext local recovery copies.
 
 ## Limits
+
+Legacy mode has an independent device-local recovery journal. It retains observed versions, but cannot archive edits never observed on this device. Final read/write and read/remove gaps remain. Its history is not automatically pruned; quota failures block writes. See [the legacy limits](LEGACY-STORAGE-COMPATIBILITY.md#limits-and-operational-guidance).
 
 This is not an atomic or lossless distributed database. Local readback verifies the local write, not its cloud delivery. Two disconnected new clients can still replace the same canonical sync key; their local journals permit conflict recovery when the other branch is delivered. A branch never delivered anywhere else may require the original device and its local recovery journal. Uninstalling that device, clearing storage or losing its password can make recovery impossible.
 
@@ -44,7 +50,7 @@ Malformed or unsupported records block normal writes and remain in the raw recov
 
 All fixtures use synthetic accounts and isolated browser profiles. Frozen 2.3.9 vault/crypto fixtures come from `8f6c307`, allowing the old reader and writer to run against simulated storage. Protocol tests simulate key arrival order and disconnected devices; they are **not** a live Chrome cloud-sync acceptance test.
 
-`tests/vault-sync-protocol.test.ts` covers third-device V1-first arrival, delayed V2, concurrent migration/saves, offline old-client writes, local/cloud quota failures, migration interruption, malformed data, protected recovery and both candidate exports. `tests/vault-compatibility.test.ts` covers published-client rejection, encrypted/plain round trips, parameter validation and code preservation. Browser tests cover explicit migration, encrypted unlock, conflict/export/retry, mixed periods, imported period editing and valid SHA256 Google migration.
+`tests/vault-sync-protocol.test.ts` covers third-device V1-first arrival, delayed V2, concurrent migration/saves, offline old-client writes, local/cloud quota failures, migration interruption, malformed data, protected recovery and both candidate exports. `tests/vault-compatibility.test.ts` covers published-client rejection, encrypted/plain round trips, parameter validation and code preservation. `tests/vault-legacy-mode.test.ts` covers legacy CRUD, passwords, published-client round trips, zero-write rejection, interrupted checkpoints and mixed-format fail-closed handling. Browser/UI coverage should be checked against the current interface, which no longer offers a migration shortcut. These coverage descriptions are not a claim that tests were run for this documentation update.
 
 The full PR and fix introduce no permissions, dependency/lockfile changes or network requests. Recovery actions are restricted to the extension popup. Content scripts receive account summaries and requested codes, not secrets or recovery exports. This scoped review does not establish the absence of every possible security defect.
 

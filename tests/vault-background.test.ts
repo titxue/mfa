@@ -9,6 +9,9 @@ test('background rejects untrusted senders and serves only summaries/codes to au
     { name: 'Steam demo', secret: 'AAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQT', type: 'steam', website: 'steamcommunity.com' },
   ] }
   const session: Record<string, any> = {}
+  const local: Record<string, any> = {}
+  let onChanged!: (changes: Record<string, any>, area: string) => void
+  const runtimeNotifications: { type: string; invalidate?: boolean }[] = []
   let origins = ['https://example.test/*']
   const tabs = [
     { id: 1, url: 'https://example.test/login' },
@@ -27,7 +30,7 @@ test('background rejects untrusted senders and serves only summaries/codes to au
   })
   globalThis.chrome = {
     runtime: { id: 'test', getURL: (path: string) => `chrome-extension://test/${path}`,
-      onMessage: { addListener: (fn: typeof handler) => { handler = fn } }, sendMessage: async () => {} },
+      onMessage: { addListener: (fn: typeof handler) => { handler = fn } }, sendMessage: async (message: { type: string; invalidate?: boolean }) => { runtimeNotifications.push(message) } },
     permissions: { getAll: async () => ({ origins }) },
     tabs: { query: async () => tabs, sendMessage: async (tabId: number, message: { type: string }) => {
       if (!injected.has(tabId)) throw new Error('Receiving end does not exist')
@@ -39,7 +42,7 @@ test('background rejects untrusted senders and serves only summaries/codes to au
       if (target.allFrames) throw new Error('Unapproved child frame')
       injected.add(target.tabId)
     } },
-    storage: { sync: area(sync), local: area({}), session: area(session), onChanged: { addListener: () => {} } },
+    storage: { sync: area(sync), local: area(local), session: area(session), onChanged: { addListener: (fn: typeof onChanged) => { onChanged = fn } } },
   } as unknown as typeof chrome
   try {
     await import('../src/vault-background')
@@ -57,7 +60,20 @@ test('background rejects untrusted senders and serves only summaries/codes to au
         .toMatchObject({ ok: false, error: 'denied' })
     }
     const migration = await request('snapshot', popup)
-    expect(migration.value.syncState).toBe('migration')
+    expect(migration.value).toMatchObject({ storageMode: 'legacy', locked: false })
+    expect(migration.value.syncState).toBeUndefined()
+    const before = structuredClone({ sync, local, session })
+    const legacySummary = await request('summaries', page)
+    expect(legacySummary.value.storageMode).toBe('legacy')
+    expect(await request('code', page, { revision: legacySummary.value.revision, name: 'Steam demo' })).toMatchObject({ ok: true })
+    expect(await request('save', popup, { revision: migration.value.revision, accounts: sync.accounts })).toMatchObject({ ok: false, error: 'legacyUnsupported' })
+    expect({ sync, local, session }).toEqual(before)
+    for (const [key, invalidate] of [['accountVaultLegacyRecovery', false], ['accountVaultV2Recovery', false], ['accounts', true], ['state', true]] as const) {
+      runtimeNotifications.length = 0
+      onChanged({ [key]: { newValue: {} } }, 'local')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(runtimeNotifications).toContainEqual({ type: 'VAULT_CHANGED', invalidate })
+    }
     expect(await request('migrate', popup, { revision: migration.value.revision })).toMatchObject({ ok: true })
     const summary = await request('summaries', page)
     expect(await request('snapshot', { ...popup, tab: { id: 2 } })).toMatchObject({ ok: true })

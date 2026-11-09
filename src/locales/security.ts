@@ -1,4 +1,5 @@
 import { syncRecoveryStrings } from './sync-recovery'
+import { legacyStrings } from './legacy-vault'
 
 // Shared by popup and content-script; no account or storage dependencies.
 const en = {
@@ -132,6 +133,7 @@ export const securityStrings = (locale: string): Strings => messages[locale] ?? 
 export const securityError = (locale: string, error: unknown): string => {
   const strings = securityStrings(locale)
   const key = error instanceof Error ? error.message : String(error)
+  if (key === 'legacyUnsupported' || key === 'legacyHistoryMigration') return legacyStrings(locale)[key]
   if (key === 'recoveryPasswordRequired') return recoveryPasswordRequiredMessages[locale] ?? recoveryPasswordRequiredMessages['en-US']
   if (key === 'syncConflict') return syncRecoveryStrings(locale).conflictHint
   if (key === 'syncPending') return syncRecoveryStrings(locale).pendingHint

@@ -3,7 +3,8 @@ import type { VaultRequest } from './utils/vault-client'
 import { grantedSites, sitePattern } from './utils/site-access'
 import { TOTP } from './utils/totp'
 import { StorageManager } from './utils/storage'
-import { V2_KEY, MIGRATION_PREFIX } from './utils/vault-sync'
+import { LEGACY_RECOVERY_KEY } from './utils/vault-legacy'
+import { V2_KEY, MIGRATION_PREFIX, RECOVERY_KEY } from './utils/vault-sync'
 
 async function notify(invalidate = false, ensureInjected = false) {
   await chrome.runtime.sendMessage({ type: 'VAULT_CHANGED', invalidate }).catch(() => {})
@@ -32,8 +33,8 @@ const ready = Promise.all([
 ])
 chrome.storage.onChanged.addListener((changes, area) => {
   const vaultChanges = Object.entries(changes).filter(([key]) => key === VAULT_KEY || key === V2_KEY || key.startsWith(MIGRATION_PREFIX))
-  if ((area === 'sync' && (vaultChanges.length || changes.accounts || changes.autofillSettings || changes.language)) || (area === 'session' && changes.vaultSession)) {
-    const invalidate = area === 'session' || vaultChanges.some(([, change]) => {
+  if ((area === 'sync' && (vaultChanges.length || changes.accounts || changes.state || changes.autofillSettings || changes.language)) || (area === 'session' && changes.vaultSession) || (area === 'local' && (changes.accounts || changes.state || changes[LEGACY_RECOVERY_KEY] || changes[RECOVERY_KEY]))) {
+    const invalidate = area === 'session' || area === 'local' && !!(changes.accounts || changes.state) || vaultChanges.some(([, change]) => {
       const oldValue = change.oldValue as { record?: unknown } | undefined
       const newValue = change.newValue as { record?: unknown } | undefined
       const before = (oldValue?.record ?? oldValue) as { mode?: string; data?: { salt?: string } } | undefined
@@ -91,7 +92,7 @@ chrome.runtime.onMessage.addListener((message: VaultRequest, sender, respond) =>
     await notify(false, m.action === 'unlock')
     return vault.snapshot()
   }).then(value => respond({ ok: true, value }), error => {
-    const known = ['locked', 'conflict', 'invalid', 'passwordError', 'passwordLength', 'recoveryPasswordRequired', 'quota', 'denied', 'syncConflict', 'syncPending', 'migrationRequired']
+    const known = ['locked', 'conflict', 'invalid', 'passwordError', 'passwordLength', 'recoveryPasswordRequired', 'quota', 'denied', 'syncConflict', 'syncPending', 'migrationRequired', 'legacyUnsupported', 'legacyHistoryMigration']
     respond({ ok: false, error: known.includes(error?.message) ? error.message : 'storageError' })
   })
   return true

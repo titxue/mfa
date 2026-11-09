@@ -1,4 +1,5 @@
 import type { Account } from '@/types'
+import { LEGACY_RECOVERY_KEY, LegacyVaultService, inspectLegacy, type LegacyJournal, type LegacyState } from './vault-legacy'
 import { browserSyncStorage, causalHeads, dominates, V2_KEY, MIGRATION_PREFIX, type VaultSyncStorage, type SyncRecord, type RecoveryJournal } from './vault-sync'
 import { accountDataVersion, decryptAccounts, deriveKey, encryptAccounts, newSalt, validateAccounts, validateEncrypted, type EncryptedData } from './vault-crypto'
 
@@ -12,12 +13,16 @@ export interface VaultSnapshot {
   locked: boolean
   accounts: Account[]
   syncState?: 'migration' | 'conflict' | 'pending'
+  storageMode?: 'legacy'
 }
 type Session = { salt: string; key: JsonWebKey }
 export interface VaultStorage {
   sync?: VaultSyncStorage
   read(): Promise<Record<string, unknown>>
   write(record: VaultRecord): Promise<void>
+  writeAccounts?(accounts: Account[]): Promise<void>
+  readLegacyJournal?(): Promise<unknown>
+  writeLegacyJournal?(journal: LegacyJournal): Promise<void>
   cleanup(expected: Record<string, unknown>): Promise<void>
   getSession(): Promise<Session | undefined>
   setSession(value?: Session): Promise<void>
@@ -46,6 +51,24 @@ export const browserVaultStorage: VaultStorage = {
       if (total - old + size > 102400) throw new Error('quota')
       await chrome.storage.sync.set({ [VAULT_KEY]: record })
     } else localStorage.setItem(VAULT_KEY, JSON.stringify(record))
+  },
+  async writeAccounts(accounts) {
+    if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+      const size = new TextEncoder().encode('accounts' + JSON.stringify(accounts)).length
+      const [total, old] = await Promise.all([chrome.storage.sync.getBytesInUse(null), chrome.storage.sync.getBytesInUse('accounts')])
+      if (size > 8192 || total - old + size > 102400) throw new Error('quota')
+      await chrome.storage.sync.set({ accounts })
+    } else localStorage.setItem('accounts', JSON.stringify(accounts))
+  },
+  async readLegacyJournal() {
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) return (await chrome.storage.local.get(LEGACY_RECOVERY_KEY))[LEGACY_RECOVERY_KEY]
+    return JSON.parse(localStorage.getItem(LEGACY_RECOVERY_KEY) ?? 'null') ?? undefined
+  },
+  async writeLegacyJournal(journal) {
+    if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+      await chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' })
+      await chrome.storage.local.set({ [LEGACY_RECOVERY_KEY]: journal })
+    } else localStorage.setItem(LEGACY_RECOVERY_KEY, JSON.stringify(journal))
   },
   async cleanup(expected) {
     // Never derive the deletion set from a fresh read: it can contain a late
@@ -99,6 +122,8 @@ interface State {
   raw: Record<string, unknown>
   syncRaw: Record<string, unknown>
   localRaw: unknown
+  legacyJournalRaw: unknown
+  legacyMode?: LegacyState
   journal?: RecoveryJournal
   remote: SyncRecord[]
   records: SyncRecord[]
@@ -128,15 +153,16 @@ export class VaultService {
     this.pending = next
     return next
   }
+  private legacyService() { return new LegacyVaultService(this.storage, () => this.state()) }
   private port() {
     if (!this.storage.sync) throw new Error('storageError')
     return this.storage.sync
   }
   private async state(): Promise<State> {
-    const [raw, syncRaw, localRaw] = await Promise.all([
-      this.storage.read(), this.storage.sync?.read() ?? Promise.resolve({}), this.storage.sync?.readLocal(),
+    const [raw, syncRaw, localRaw, legacyJournalRaw] = await Promise.all([
+      this.storage.read(), this.storage.sync?.read() ?? Promise.resolve({}), this.storage.sync?.readLocal(), this.storage.readLegacyJournal?.(),
     ])
-    let invalid = raw.localLegacy != null, journal: RecoveryJournal | undefined, legacy: SyncRecord | undefined
+    let invalid = raw.localLegacy != null || raw.state != null, journal: RecoveryJournal | undefined, legacy: SyncRecord | undefined
     const remote: SyncRecord[] = []
     for (const [key, value] of Object.entries(syncRaw)) {
       try {
@@ -180,6 +206,19 @@ export class VaultService {
       }
       if (record) legacy = { id: 'legacy:' + await fingerprint(record), vector: {}, record }
     } catch { invalid = true }
+    // Legacy mode is an independent backend, never a fallback from any V2 evidence.
+    let legacyMode: LegacyState | undefined
+    const old = raw[VAULT_KEY] as { version?: unknown } | undefined
+    const hasV2 = Object.keys(syncRaw).length > 0 || localRaw != null || old?.version === 2
+    if (legacyJournalRaw != null && hasV2) invalid = true
+    const pureLegacy = !hasV2 && (legacyJournalRaw != null || legacy && raw.state == null)
+    if (pureLegacy) {
+      try { legacyMode = await inspectLegacy(raw, legacyJournalRaw) }
+      catch { invalid = true }
+    }
+    // Only a verified legacy checkpoint can explain simultaneous old sources.
+    if (!hasV2 && raw[VAULT_KEY] != null && raw.accounts != null && !legacyMode) invalid = true
+    if (invalid) legacyMode = undefined
     const records = unique([...remote, ...[journal?.current, journal?.pending, ...(journal?.conflicts ?? [])].filter((v): v is SyncRecord => !!v)])
     const heads = causalHeads(records.filter(record => !record.recoveryOnly))
     for (const record of remote) {
@@ -191,8 +230,8 @@ export class VaultService {
     const baselineLegacy = journal?.legacySeen ?? (journal?.legacy ? 'legacy:' + await fingerprint(journal.legacy) : undefined)
     const changedLegacy = !!head && !!legacy && legacy.id !== baselineLegacy
     const state: SyncState = invalid ? 'pending' : heads.length > 1 || changedLegacy ? 'conflict' : pending ? 'pending' : head ? 'ready' : legacy ? 'migration' : 'ready'
-    const revision = await fingerprint({ raw, syncRaw, localRaw: localRaw ?? null })
-    return { revision, state, raw, syncRaw, localRaw, journal, remote, records, heads, legacy, invalid }
+    const revision = await fingerprint({ raw, syncRaw, localRaw: localRaw ?? null, legacyJournalRaw: legacyJournalRaw ?? null })
+    return { revision, state, raw, syncRaw, localRaw, legacyJournalRaw, legacyMode, journal, remote, records, heads, legacy, invalid }
   }
   private requireReady(state: State): SyncRecord {
     if (state.state !== 'ready') throw new Error(state.state === 'migration' ? 'migrationRequired' : state.state === 'conflict' ? 'syncConflict' : 'syncPending')
@@ -217,6 +256,7 @@ export class VaultService {
   }
   async snapshot(): Promise<VaultSnapshot> {
     const state = await this.state()
+    if (state.legacyMode) return this.legacyService().snapshot(state)
     if (state.state !== 'ready') return {
       revision: state.revision, protected: [...state.records, ...(state.legacy ? [state.legacy] : [])].some(v => v.record.mode === 'encrypted'),
       locked: true, accounts: [], syncState: state.state,
@@ -359,11 +399,13 @@ export class VaultService {
   async migrate(revision: string): Promise<void> {
     const state = await this.state()
     if (state.revision !== revision) throw new Error('conflict')
+    if (state.legacyJournalRaw != null) throw new Error('legacyHistoryMigration')
     if (state.state !== 'migration' || !state.legacy) throw new Error('conflict')
     await this.commit(state.legacy.record, state, true)
   }
   async save(accounts: Account[], revision: string): Promise<void> {
     validateAccounts(accounts)
+    if ((await this.state()).legacyMode) return this.legacyService().save(accounts, revision)
     const state = await this.expected(revision)
     const old = state.heads[0]?.record
     const key = old ? await this.key(old) : undefined
@@ -383,13 +425,16 @@ export class VaultService {
     await this.storage.setSession({ salt, key: await crypto.subtle.exportKey('jwk', key) })
   }
   async unlock(password: string): Promise<void> {
-    const state = await this.state(), record = this.requireReady(state).record
+    const state = await this.state()
+    if (state.legacyMode) return this.legacyService().unlock(password, state.revision)
+    const record = this.requireReady(state).record
     const key = await this.verify(record, password)
     await this.expected(record.revision)
     if (record.mode === 'encrypted') await this.remember(key, record.data.salt)
   }
   async lock(): Promise<void> { await this.storage.setSession() }
   async protect(action: 'enable' | 'change' | 'disable', password: string, nextPassword: string, revision: string): Promise<void> {
+    if ((await this.state()).legacyMode) return this.legacyService().protect(action, password, nextPassword, revision)
     const state = await this.expected(revision), existing = state.heads[0]?.record
     if (!existing && action !== 'enable') throw new Error('uninitialized')
     const old: VaultRecord = existing ?? { version: 2, revision: 'empty', mode: 'plain', accounts: [] }
@@ -411,7 +456,9 @@ export class VaultService {
     }
   }
   async backup(plain: boolean, password: string): Promise<string> {
-    const state = await this.state(), record = this.requireReady(state).record
+    const state = await this.state()
+    if (state.legacyMode) return this.legacyService().backup(plain, password, state.revision)
+    const record = this.requireReady(state).record
     const accounts = await this.accounts(record)
     if (record.mode === 'encrypted' && !plain) return JSON.stringify(record.data, null, 2)
     if (record.mode === 'encrypted') await this.verify(record, password)
@@ -420,6 +467,11 @@ export class VaultService {
   }
   async recoveryState() {
     const state = await this.state()
+    if (state.legacyMode) return { revision: state.revision, state: state.legacyMode.state, storageMode: 'legacy' as const,
+      protected: state.legacyMode.copies.some(copy => copy.record.mode === 'encrypted'),
+      legacyProtectionMismatch: state.legacyMode.record?.mode === 'encrypted' && state.legacyMode.copies.some(copy => copy.record.mode === 'plain'),
+      candidates: state.legacyMode.copies.map(copy => ({ id: copy.id, label: copy.id, protected: copy.record.mode === 'encrypted',
+        ...(copy.record.mode === 'plain' ? { accountCount: copy.record.accounts.length, accountNames: copy.record.accounts.slice(0, 3).map(a => a.name) } : {}) })) }
     const candidates = unique([...state.records, ...(state.legacy ? [state.legacy] : []),
       ...(state.journal?.legacy ? [{ id: 'source:' + await fingerprint(state.journal.legacy), vector: {}, record: state.journal.legacy }] : [])])
     return { revision: state.revision, state: state.state,
@@ -431,7 +483,12 @@ export class VaultService {
   }
   async recoveryBackup(candidateId?: string): Promise<string> {
     const state = await this.state()
-    if (!candidateId) return JSON.stringify({ format: 'mfa-recovery', version: 1, legacy: state.raw, synchronized: state.syncRaw, local: state.localRaw ?? null }, null, 2)
+    if (!candidateId) return JSON.stringify({ format: 'mfa-recovery', version: 1, legacy: state.raw, synchronized: state.syncRaw, local: state.localRaw ?? null, legacyRecovery: state.legacyJournalRaw ?? null }, null, 2)
+    if (state.legacyMode) {
+      const record = state.legacyMode.copies.find(copy => copy.id === candidateId)?.record
+      if (!record) throw new Error('invalid')
+      return JSON.stringify(record.mode === 'encrypted' ? record.data : { version: '1.0', accounts: record.accounts }, null, 2)
+    }
     const source = state.journal?.legacy
     const record = candidateId === state.legacy?.id ? state.legacy.record :
       source && candidateId === 'source:' + await fingerprint(source) ? source : state.records.find(value => value.id === candidateId)?.record
@@ -442,6 +499,7 @@ export class VaultService {
     const state = await this.state()
     if (state.revision !== revision) throw new Error('conflict')
     if (state.invalid) throw new Error('syncPending')
+    if (state.legacyMode) return this.legacyService().resolve(candidateId, revision, password)
     let selected = candidateId === state.legacy?.id ? state.legacy.record : state.records.find(value => value.id === candidateId)?.record
     const source = state.journal?.legacy
     if (!selected && source && candidateId === 'source:' + await fingerprint(source)) selected = source

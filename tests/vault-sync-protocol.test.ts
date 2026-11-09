@@ -19,15 +19,24 @@ const deliver = (from: MemoryVaultStorage, to: MemoryVaultStorage) => {
 }
 
 test('empty and legacy snapshots never initialize or migrate storage', async () => {
-  for (const data of [{}, { accounts: original, state: { draft: 'unchanged' } }]) {
+  for (const data of [{}, { accounts: original }, { accounts: original, state: { draft: 'unchanged' } }]) {
     const { storage, service } = serviceFor(data)
     const before = structuredClone(storage.data)
     for (let i = 0; i < 3; i++) { await service.snapshot(); await service.recoveryState() }
     expect(storage.data).toEqual(before)
     expect(storage.local).toBeUndefined()
-    if ('accounts' in data) {
-      expect((await service.snapshot()).syncState).toBe('migration')
-      await expect(service.save([], (await service.snapshot()).revision)).rejects.toThrow('migrationRequired')
+    expect(storage.legacyLocal).toBeUndefined()
+    if ('state' in data) {
+      expect((await service.snapshot()).syncState).toBe('pending')
+      await expect(migrate(service)).rejects.toThrow('conflict')
+      await expect(service.save([], (await service.snapshot()).revision)).rejects.toThrow('syncPending')
+      expect(JSON.parse(await service.recoveryBackup()).legacy).toEqual(before)
+      expect(storage.data).toEqual(before)
+      expect(storage.local).toBeUndefined()
+      expect(storage.legacyLocal).toBeUndefined()
+    } else if ('accounts' in data) {
+      expect(await service.snapshot()).toMatchObject({ storageMode: 'legacy', locked: false, accounts: original })
+      expect((await service.snapshot()).syncState).toBeUndefined()
     } else {
       await service.save(original, 'empty')
       expect(syncKeys(storage).every(key => key.startsWith(MIGRATION_PREFIX))).toBe(true)
@@ -43,7 +52,9 @@ test('third device seeing V1 first never promotes it over delayed V2', async () 
   const extended = [{ name: 'New SHA256', secret, algorithm: 'SHA256' as const, digits: 8 as const }]
   await a.service.save(extended, (await a.service.snapshot()).revision)
   const c = serviceFor(stale)
-  expect((await c.service.snapshot()).syncState).toBe('migration')
+  expect(await c.service.snapshot()).toMatchObject({ storageMode: 'legacy', locked: false, accounts: original })
+  expect((await c.service.snapshot()).syncState).toBeUndefined()
+  expect(c.storage.legacyLocal).toBeUndefined()
   expect(c.storage.data).toEqual(stale)
   expect(c.storage.local).toBeUndefined()
   deliver(a.storage, c.storage)
@@ -156,12 +167,11 @@ test('synchronized quota failure retains baseline and pending data for explicit 
 })
 
 test('interruption after candidate persistence never cleans the original before guard completion', async () => {
-  const { storage, service } = serviceFor({ accounts: original, state: { draft: 'old draft' } })
+  const { storage, service } = serviceFor({ accounts: original })
   const write = storage.write.bind(storage)
   storage.write = async () => { throw new Error('interrupted') }
   await expect(migrate(service)).rejects.toThrow('interrupted')
   expect(storage.data.accounts).toEqual(original)
-  expect(storage.data.state).toEqual({ draft: 'old draft' })
   expect(syncKeys(storage)).toHaveLength(1)
   expect((await new VaultService(storage).snapshot()).syncState).toBe('pending')
   storage.write = write
