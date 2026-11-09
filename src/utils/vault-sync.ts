@@ -10,6 +10,14 @@ export interface SyncRecord {
   vector: Record<string, number>
   record: VaultRecord
 }
+export interface RecoveryRekey {
+  targetId: string
+  source: string
+  checksum: string
+  conflicts: SyncRecord[]
+  legacy?: VaultRecord
+}
+
 export interface RecoveryJournal {
   deviceId: string
   counter: number
@@ -18,6 +26,7 @@ export interface RecoveryJournal {
   conflicts: SyncRecord[]
   legacy?: VaultRecord
   legacySeen?: string
+  rekey?: RecoveryRekey
 }
 export interface VaultSyncStorage {
   read(): Promise<Record<string, unknown>>

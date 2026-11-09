@@ -20,20 +20,24 @@ class SharedStorage extends MemoryVaultStorage {
 }
 const migrate = async (service: VaultService) => {
   const snapshot = await service.snapshot()
-  if (snapshot.syncState === 'migration') await service.migrate(snapshot.revision)
+  await service.migrate(snapshot.revision)
 }
 
 describe('published 2.3.9 compatibility', () => {
   for (const encrypted of [false, true]) {
-    test(`${encrypted ? 'encrypted' : 'plain'} existing accounts are read without writes and require explicit migration`, async () => {
+    test(`${encrypted ? 'encrypted' : 'plain'} existing accounts are read without writes and can be explicitly migrated`, async () => {
       const storage = new SharedStorage()
       const old = new StoreVault(storage)
       const initial = await old.snapshot()
       if (encrypted) await old.protect('enable', '', password, initial.revision)
       const saved = structuredClone(storage.data)
       const current = new VaultService(storage)
-      expect(await current.snapshot()).toMatchObject({ syncState: 'migration', locked: true, accounts: [] })
+      const compatible = await current.snapshot()
+      expect(compatible).toMatchObject({ storageMode: 'legacy', protected: encrypted, locked: false, accounts: legacy })
+      expect(compatible.syncState).toBeUndefined()
       expect(storage.data).toEqual(saved)
+      expect(storage.local).toBeUndefined()
+      expect(storage.legacyLocal).toBeUndefined()
       await migrate(current)
       if (encrypted) { await current.lock(); await current.unlock(password) }
       expect((await current.snapshot()).accounts).toEqual(legacy)

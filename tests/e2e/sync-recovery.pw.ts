@@ -1,10 +1,11 @@
 import { readFile } from 'node:fs/promises'
 import { test, expect, accounts } from './extension'
 import { V2_KEY, MIGRATION_PREFIX, RECOVERY_KEY } from '../../src/utils/vault-sync'
+import { LEGACY_RECOVERY_KEY } from '../../src/utils/vault-legacy'
 import { encryptAccounts, deriveKey, newSalt } from '../../src/utils/vault-crypto'
 
 for (const encrypted of [false, true]) {
-  test(`legacy ${encrypted ? 'encrypted' : 'plain'} vault requires explicit migration and retains accounts`, async ({ context, worker, popupUrl }) => {
+  test(`legacy ${encrypted ? 'encrypted' : 'plain'} vault stays usable without migration and retains accounts`, async ({ context, worker, popupUrl }) => {
     const password = 'synthetic-migration-password'
     const salt = newSalt()
     const record = encrypted
@@ -15,14 +16,16 @@ for (const encrypted of [false, true]) {
       await chrome.storage.sync.set({ accountVault: record, language: 'zh-CN' })
     }, record)
     const page = await context.newPage(); await page.goto(popupUrl)
-    await expect(page.getByRole('heading', { name: '升级账户同步' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: '升级账户同步' })).toHaveCount(0)
+    if (encrypted) await expect(page.locator('#unlock-password')).toBeVisible()
+    else await expect(page.locator('.sortable-account')).toHaveCount(accounts.length)
     await page.reload()
-    await expect(page.getByRole('button', { name: '迁移', exact: true })).toBeEnabled()
+    await expect(page.getByRole('button', { name: '迁移', exact: true })).toHaveCount(0)
     const before = await worker.evaluate(async () => ({ sync: await chrome.storage.sync.get(null), local: await chrome.storage.local.get(null) }))
     expect(before.sync.accountVault).toEqual(record)
     expect(Object.keys(before.sync).filter(key => key === V2_KEY || key.startsWith(MIGRATION_PREFIX))).toEqual([])
     expect(before.local[RECOVERY_KEY]).toBeUndefined()
-    await page.getByRole('button', { name: '迁移', exact: true }).click()
+    expect(before.local[LEGACY_RECOVERY_KEY]).toBeUndefined()
     if (encrypted) {
       await expect(page.locator('#unlock-password')).toBeVisible()
       await expect(page.locator('.sortable-account')).toHaveCount(0)
@@ -33,10 +36,52 @@ for (const encrypted of [false, true]) {
     const restored = await page.evaluate(async () => (await chrome.runtime.sendMessage({ type: 'MFA_VAULT', action: 'snapshot' })).value)
     expect(restored.accounts).toEqual(accounts)
     expect(restored.protected).toBe(encrypted)
+    expect(restored.storageMode).toBe('legacy')
+    expect(restored.syncState).toBeUndefined()
     await page.reload()
     await expect(page.locator('.sortable-account')).toHaveCount(accounts.length)
+    const after = await worker.evaluate(async () => ({ sync: await chrome.storage.sync.get(null), local: await chrome.storage.local.get(null) }))
+    expect(after.sync).toEqual(before.sync)
+    expect(after.local[RECOVERY_KEY]).toBeUndefined()
+    expect(after.local[LEGACY_RECOVERY_KEY]).toBeUndefined()
   })
 }
+
+test('unknown synchronized state blocks migration and remains exportable', async ({ context, worker, popupUrl }) => {
+  const draft = { draft: 'preserve until migration' }
+  await worker.evaluate(async ({ accounts, draft }) => {
+    await chrome.storage.sync.clear(); await chrome.storage.local.clear(); await chrome.storage.session.clear()
+    await chrome.storage.sync.set({ accounts, state: draft, language: 'zh-CN' })
+  }, { accounts, draft })
+  const page = await context.newPage(); await page.goto(popupUrl)
+  await expect(page.getByRole('heading', { name: '等待同步' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('button', { name: '迁移', exact: true })).toHaveCount(0)
+  await expect(page.locator('.sortable-account')).toHaveCount(0)
+  const before = await worker.evaluate(async () => ({ sync: await chrome.storage.sync.get(null), local: await chrome.storage.local.get(null) }))
+  expect(before.sync.accounts).toEqual(accounts)
+  expect(before.sync.state).toEqual(draft)
+  expect(Object.keys(before.sync).filter(key => key === V2_KEY || key.startsWith(MIGRATION_PREFIX))).toEqual([])
+  expect(before.local[RECOVERY_KEY]).toBeUndefined()
+  expect(before.local[LEGACY_RECOVERY_KEY]).toBeUndefined()
+  await page.locator('summary').filter({ hasText: '恢复选项' }).click()
+  const download = page.waitForEvent('download')
+  await page.getByRole('button', { name: '导出所有版本', exact: true }).click()
+  const backup = JSON.parse(await readFile((await (await download).path())!, 'utf8'))
+  expect(backup.legacy.accounts).toEqual(accounts)
+  expect(backup.legacy.state).toEqual(draft)
+  const blocked = await page.evaluate(async () => {
+    const snapshot = (await chrome.runtime.sendMessage({ type: 'MFA_VAULT', action: 'snapshot' })).value
+    return chrome.runtime.sendMessage({ type: 'MFA_VAULT', action: 'migrate', revision: snapshot.revision })
+  })
+  expect(blocked.ok).toBe(false)
+  expect(blocked.error).toBe('conflict')
+  const after = await worker.evaluate(async () => ({ sync: await chrome.storage.sync.get(null), local: await chrome.storage.local.get(null) }))
+  expect(after).toEqual(before)
+  await page.reload()
+  await expect(page.getByRole('heading', { name: '等待同步' })).toBeVisible()
+  await expect(page.locator('.sortable-account')).toHaveCount(0)
+})
 
 test('conflicting versions can both be exported before an explicit resolution', async ({ context, worker, popupUrl }) => {
   const left = { id: 'left', vector: { left: 1 }, record: { version: 2, revision: 'left', mode: 'plain', accounts: [accounts[0]] } }
@@ -84,7 +129,7 @@ test('a failed sync write exposes its pending version and can be retried explici
     const set = chrome.storage.sync.set.bind(chrome.storage.sync)
     let fail = true
     chrome.storage.sync.set = async values => {
-      if (fail && values[key]) { fail = false; throw new Error('Synthetic sync failure') }
+      if (fail && Object.hasOwn(values, key)) { fail = false; throw new Error('Synthetic sync failure') }
       return set(values)
     }
   }, V2_KEY)
