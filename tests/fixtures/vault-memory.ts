@@ -28,9 +28,15 @@ export class MemoryVaultStorage implements VaultStorage {
     if (this.failWrite) throw new Error('storageError')
     this.data[VAULT_KEY] = structuredClone(record)
   }
-  async cleanup() {
+  async cleanup(expected?: Record<string, unknown>) {
     if (this.failCleanup) throw new Error('storageError')
-    delete this.data.accounts; delete this.data.state
+    if (expected) {
+      if (JSON.stringify(await this.read()) !== JSON.stringify(expected)) throw new Error('syncConflict')
+      for (const key of ['accounts', 'state']) if (expected[key] != null) delete this.data[key]
+    } else {
+      // The published-client fixture uses its original, unconditional API.
+      delete this.data.accounts; delete this.data.state
+    }
   }
   async getSession() { return structuredClone(this.session) }
   async setSession(value?: typeof this.session) { this.session = structuredClone(value) }

@@ -111,7 +111,7 @@ async function expectNoWritesOnRejection(
   const write = storage.write.bind(storage), cleanup = storage.cleanup.bind(storage), session = storage.setSession.bind(storage)
   const remote = storage.sync.write, local = storage.sync.writeLocal, remove = storage.sync.removeCandidates
   storage.write = async value => { writes.push('legacy'); await write(value) }
-  storage.cleanup = async () => { writes.push('cleanup'); await cleanup() }
+  storage.cleanup = async expected => { writes.push('cleanup'); await cleanup(expected) }
   storage.setSession = async value => { writes.push('session'); await session(value) }
   storage.sync.write = async (value, migration) => { writes.push('remote'); await remote(value, migration) }
   storage.sync.writeLocal = async value => { writes.push('local'); await local(value) }

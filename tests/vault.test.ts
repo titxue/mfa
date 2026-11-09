@@ -125,12 +125,24 @@ describe('vault encryption and lifecycle', () => {
     await service.save(accounts, (await service.snapshot()).revision)
     expect((await service.snapshot()).accounts).toEqual(accounts)
   })
-  test('failed cleanup can be explicitly recovered without reimporting stale plaintext', async () => {
+  test('failed cleanup refuses to discard untracked plaintext when selecting the prepared version', async () => {
     const storage = new MemoryStorage(), service = new VaultService(storage)
     storage.failCleanup = true
     await expect(service.migrate((await service.snapshot()).revision)).rejects.toThrow('storageError')
     expect(await service.snapshot()).toMatchObject({ syncState: 'pending', locked: true })
     storage.data.accounts = [{ name: 'stale', secret: 'STALE' }]
+    storage.failCleanup = false
+    const recovery = await service.recoveryState()
+    const before = structuredClone({ data: storage.data, local: storage.local })
+    await expect(service.resolve(storage.local!.pending!.id, recovery.revision)).rejects.toThrow('syncConflict')
+    expect({ data: storage.data, local: storage.local }).toEqual(before)
+    expect(await service.recoveryBackup()).toContain('stale')
+    expect((await service.snapshot()).syncState).toBe('pending')
+  })
+  test('failed cleanup can resume while the original archived plaintext is unchanged', async () => {
+    const storage = new MemoryStorage(), service = new VaultService(storage)
+    storage.failCleanup = true
+    await expect(service.migrate((await service.snapshot()).revision)).rejects.toThrow('storageError')
     storage.failCleanup = false
     const recovery = await service.recoveryState()
     await service.resolve(storage.local!.pending!.id, recovery.revision)

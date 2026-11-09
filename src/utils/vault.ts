@@ -18,7 +18,7 @@ export interface VaultStorage {
   sync?: VaultSyncStorage
   read(): Promise<Record<string, unknown>>
   write(record: VaultRecord): Promise<void>
-  cleanup(): Promise<void>
+  cleanup(expected: Record<string, unknown>): Promise<void>
   getSession(): Promise<Session | undefined>
   setSession(value?: Session): Promise<void>
 }
@@ -26,7 +26,15 @@ let previewSession: Session | undefined
 export const browserVaultStorage: VaultStorage = {
   sync: browserSyncStorage,
   async read() {
-    if (typeof chrome !== 'undefined' && chrome.storage?.sync) return chrome.storage.sync.get([VAULT_KEY, 'accounts', 'state'])
+    if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
+      const [synced, local] = await Promise.all([
+        chrome.storage.sync.get([VAULT_KEY, 'accounts', 'state']),
+        chrome.storage.local.get(['accounts', 'state']),
+      ])
+      // These unversioned local copies were never part of the sync journal.
+      // Expose them for recovery, but do not silently migrate or delete them.
+      return { ...synced, ...(Object.keys(local).length ? { localLegacy: local } : {}) }
+    }
     return Object.fromEntries([VAULT_KEY, 'accounts', 'state'].map(k => [k, JSON.parse(localStorage.getItem(k) ?? 'null')]))
   },
   async write(record) {
@@ -39,18 +47,20 @@ export const browserVaultStorage: VaultStorage = {
       await chrome.storage.sync.set({ [VAULT_KEY]: record })
     } else localStorage.setItem(VAULT_KEY, JSON.stringify(record))
   },
-  async cleanup() {
+  async cleanup(expected) {
+    // Never derive the deletion set from a fresh read: it can contain a late
+    // legacy write that was not archived by this transaction. Chrome Sync has
+    // no CAS; the comparison below does not make get/remove atomic.
+    if (canonical(await this.read()) !== canonical(expected)) throw new Error('syncConflict')
+    if (expected.localLegacy != null) throw new Error('syncPending')
+    const keys = ['accounts', 'state'].filter(key => expected[key] != null)
     if (typeof chrome !== 'undefined' && chrome.storage?.sync) {
-      for (const area of [chrome.storage.sync, chrome.storage.local]) {
-        const values = await area.get(['accounts', 'state'])
-        const keys = Object.keys(values)
-        if (keys.length) await area.remove(keys)
-        if (Object.keys(await area.get(['accounts', 'state'])).length) throw new Error('storageError')
-      }
+      if (keys.length) await chrome.storage.sync.remove(keys)
     } else {
-      localStorage.removeItem('accounts'); localStorage.removeItem('state')
-      if (localStorage.getItem('accounts') !== null || localStorage.getItem('state') !== null) throw new Error('storageError')
+      keys.forEach(key => localStorage.removeItem(key))
     }
+    const cleaned = await this.read()
+    if (cleaned.accounts != null || cleaned.state != null || cleaned.localLegacy != null) throw new Error('syncConflict')
   },
   async getSession() {
     if (typeof chrome !== 'undefined' && chrome.storage?.session) return (await chrome.storage.session.get(SESSION_KEY))[SESSION_KEY] as Session | undefined
@@ -126,7 +136,7 @@ export class VaultService {
     const [raw, syncRaw, localRaw] = await Promise.all([
       this.storage.read(), this.storage.sync?.read() ?? Promise.resolve({}), this.storage.sync?.readLocal(),
     ])
-    let invalid = false, journal: RecoveryJournal | undefined, legacy: SyncRecord | undefined
+    let invalid = raw.localLegacy != null, journal: RecoveryJournal | undefined, legacy: SyncRecord | undefined
     const remote: SyncRecord[] = []
     for (const [key, value] of Object.entries(syncRaw)) {
       try {
@@ -279,8 +289,10 @@ export class VaultService {
     const latest = await this.state()
     if (latest.revision !== baseline.revision) throw new Error('conflict')
     if (latest.invalid) throw new Error('syncPending')
-    // A guarded vault must not silently delete an untracked legacy plaintext copy.
-    if (seal?.recoveryPasswords && latest.raw.accounts != null && !latest.legacy) throw new Error('syncConflict')
+    // Only a matching, already tracked plaintext source can be cleaned up.
+    // A failed migration may still have the source in its durable journal.
+    if (latest.raw.accounts != null && ![latest.legacy?.record, latest.journal?.legacy].some(source =>
+      source?.mode === 'plain' && canonical(latest.raw.accounts) === canonical(source.accounts))) throw new Error('syncConflict')
     let previous: RecoveryJournal = latest.journal ?? { deviceId: crypto.randomUUID(), counter: 0, conflicts: [] }
     const resume = resolving && previous.rekey?.targetId === record.revision ? previous.rekey : undefined
     const replacements = new Map(resume?.conflicts.map(value => [value.id, value]) ?? [])
@@ -321,12 +333,14 @@ export class VaultService {
     if (canonical(checked.localRaw) !== canonical(journal) || canonical(checked.raw) !== canonical(latest.raw)) throw new Error('conflict')
     if (checked.invalid || checked.state === 'conflict' || checked.heads.length !== 1 || checked.heads[0].id !== id) throw new Error('syncConflict')
     // The original data is now recoverable locally and in V2 before old clients are stopped.
-    await this.storage.write({ version: 2, revision: id, mode: 'migrated', target: V2_KEY } as unknown as VaultRecord)
-    const guard = (await this.storage.read())[VAULT_KEY] as { mode?: string; revision?: string } | undefined
-    if (guard?.mode !== 'migrated' || guard.revision !== id) throw new Error('storageError')
-    await this.storage.cleanup()
+    const guard = { version: 2, revision: id, mode: 'migrated', target: V2_KEY }
+    await this.storage.write(guard as unknown as VaultRecord)
+    const guarded = await this.storage.read()
+    if (canonical(guarded[VAULT_KEY]) !== canonical(guard)) throw new Error('storageError')
+    if (canonical(guarded) !== canonical({ ...latest.raw, [VAULT_KEY]: guard })) throw new Error('syncConflict')
+    await this.storage.cleanup(guarded)
     const cleaned = await this.storage.read()
-    if (cleaned.accounts != null || cleaned.state != null) throw new Error('storageError')
+    if (cleaned.accounts != null || cleaned.state != null || cleaned.localLegacy != null) throw new Error('storageError')
     const removed = latest.remote.filter(old => dominates(candidate, old)).map(old => old.id)
     await this.port().removeCandidates(removed)
     const remaining = await this.port().read()

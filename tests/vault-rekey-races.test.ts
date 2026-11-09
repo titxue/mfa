@@ -80,7 +80,7 @@ test('legacy plaintext arriving after cleanup is detected by the final state rea
   const { storage, service } = await setup()
   const read = storage.read.bind(storage), cleanup = storage.cleanup.bind(storage)
   let afterCleanup = false, readsAfterCleanup = 0
-  storage.cleanup = async () => { await cleanup(); afterCleanup = true }
+  storage.cleanup = async expected => { await cleanup(expected); afterCleanup = true }
   storage.read = async () => {
     // The first read verifies cleanup. The second is commit's final state read.
     if (afterCleanup && ++readsAfterCleanup === 2) storage.data.accounts = structuredClone(concurrentAccounts)
