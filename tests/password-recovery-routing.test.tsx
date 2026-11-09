@@ -76,10 +76,13 @@ beforeEach(async () => {
 })
 afterEach(async () => {
   await act(async () => root.unmount())
+  // Radix defers FocusScope's unmount event with a zero-delay timer. Let it
+  // finish before another suite restores different DOM event constructors.
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)) })
   host.remove(); success.mockRestore(); failure.mockRestore()
 })
-afterAll(() => {
-  browser.happyDOM.abort()
+afterAll(async () => {
+  await browser.happyDOM.abort()
   for (const [key, descriptor] of originals) {
     if (descriptor) Object.defineProperty(globalThis, key, descriptor)
     else Reflect.deleteProperty(globalThis, key)
