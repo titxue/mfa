@@ -91,7 +91,7 @@ chrome.runtime.onMessage.addListener((message: VaultRequest, sender, respond) =>
     await notify(false, m.action === 'unlock')
     return vault.snapshot()
   }).then(value => respond({ ok: true, value }), error => {
-    const known = ['locked', 'conflict', 'invalid', 'passwordError', 'passwordLength', 'quota', 'denied', 'syncConflict', 'syncPending', 'migrationRequired']
+    const known = ['locked', 'conflict', 'invalid', 'passwordError', 'passwordLength', 'recoveryPasswordRequired', 'quota', 'denied', 'syncConflict', 'syncPending', 'migrationRequired']
     respond({ ok: false, error: known.includes(error?.message) ? error.message : 'storageError' })
   })
   return true

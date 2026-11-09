@@ -113,10 +113,26 @@ const messages: Record<string, Strings> = {
     'डेटा सहेज या लोड नहीं कर सके। फिर से लोड करके प्रयास करें।','लॉक है। पहले एक्सटेंशन अनलॉक करें।','पहुँच अस्वीकृत।','सहेजा गया',
   ]),
 }
+// Kept separate so adding a recovery error cannot shift the positional translations above.
+const recoveryPasswordRequiredMessages: Record<string, string> = {
+  'zh-CN': '有些恢复副本使用其他密码或已损坏，本次未修改密码或数据',
+  'zh-TW': '部分復原副本使用其他密碼或已損壞，本次未修改密碼或資料。',
+  'en-US': 'Some recovery copies use another password or are damaged. This attempt did not change your password or data.',
+  'es-ES': 'Algunas copias de recuperación usan otra contraseña o están dañadas. Este intento no cambió tu contraseña ni tus datos.',
+  'fr-FR': 'Certaines copies de récupération utilisent un autre mot de passe ou sont endommagées. Cette tentative n’a modifié ni votre mot de passe ni vos données.',
+  'pt-BR': 'Algumas cópias de recuperação usam outra senha ou estão danificadas. Esta tentativa não alterou sua senha nem seus dados.',
+  'de-DE': 'Einige Wiederherstellungskopien verwenden ein anderes Passwort oder sind beschädigt. Bei diesem Versuch wurden weder dein Passwort noch deine Daten geändert.',
+  'ru-RU': 'Некоторые копии для восстановления защищены другим паролем или повреждены. При этой попытке ваш пароль и данные не изменились.',
+  'ar-SA': 'تستخدم بعض نسخ الاسترداد كلمة مرور أخرى أو أنها تالفة. لم تُغيّر هذه المحاولة كلمة مرورك أو بياناتك.',
+  'ja-JP': '一部の復元用コピーは別のパスワードを使用しているか、破損しています。今回の操作ではパスワードもデータも変更されていません。',
+  'ko-KR': '일부 복구 사본은 다른 비밀번호를 사용하거나 손상되었습니다. 이번 시도로 비밀번호나 데이터가 변경되지 않았습니다.',
+  'hi-IN': 'कुछ पुनर्प्राप्ति प्रतियाँ किसी अन्य पासवर्ड से सुरक्षित हैं या खराब हैं। इस प्रयास में आपका पासवर्ड या डेटा नहीं बदला गया।',
+}
 export const securityStrings = (locale: string): Strings => messages[locale] ?? en
 export const securityError = (locale: string, error: unknown): string => {
   const strings = securityStrings(locale)
   const key = error instanceof Error ? error.message : String(error)
+  if (key === 'recoveryPasswordRequired') return recoveryPasswordRequiredMessages[locale] ?? recoveryPasswordRequiredMessages['en-US']
   if (key === 'syncConflict') return syncRecoveryStrings(locale).conflictHint
   if (key === 'syncPending') return syncRecoveryStrings(locale).pendingHint
   if (key === 'migrationRequired') return syncRecoveryStrings(locale).migrationHint

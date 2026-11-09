@@ -129,7 +129,10 @@ for (const selection of ['original', 'replacement'] as const) {
     await service.lock()
     await service.unlock(selection === 'original' ? oldPassword : newPassword)
     expect((await service.snapshot()).accounts).toEqual(accounts)
-    expect(await restore(await service.recoveryBackup(oldId), oldPassword)).toEqual(accounts)
+    // Completing the replacement must also rotate its retained historical copy.
+    const historicalPassword = selection === 'replacement' ? newPassword : oldPassword
+    expect(await restore(await service.recoveryBackup(oldId), historicalPassword)).toEqual(accounts)
+    if (selection === 'replacement') await expect(restore(await service.recoveryBackup(oldId), oldPassword)).rejects.toThrow('passwordError')
     expect(await restore(await service.recoveryBackup(newId), newPassword)).toEqual(accounts)
   })
 }

@@ -45,8 +45,12 @@ export const browserVaultStorage: VaultStorage = {
         const values = await area.get(['accounts', 'state'])
         const keys = Object.keys(values)
         if (keys.length) await area.remove(keys)
+        if (Object.keys(await area.get(['accounts', 'state'])).length) throw new Error('storageError')
       }
-    } else { localStorage.removeItem('accounts'); localStorage.removeItem('state') }
+    } else {
+      localStorage.removeItem('accounts'); localStorage.removeItem('state')
+      if (localStorage.getItem('accounts') !== null || localStorage.getItem('state') !== null) throw new Error('storageError')
+    }
   },
   async getSession() {
     if (typeof chrome !== 'undefined' && chrome.storage?.session) return (await chrome.storage.session.get(SESSION_KEY))[SESSION_KEY] as Session | undefined
@@ -75,6 +79,8 @@ function canonical(value: unknown): string {
     .map(k => JSON.stringify(k) + ':' + canonical((value as Record<string, unknown>)[k])).join(',') + '}'
   return JSON.stringify(value)
 }
+
+type Protection = { key: CryptoKey; salt: string; recoveryPasswords?: string[] }
 
 type SyncState = 'migration' | 'conflict' | 'pending' | 'ready'
 interface State {
@@ -135,6 +141,19 @@ export class VaultService {
         if (!j || typeof j.deviceId !== 'string' || !j.deviceId || !Number.isSafeInteger(j.counter) || j.counter < 0 || !Array.isArray(j.conflicts)) throw new Error('invalid')
         for (const record of [j.current, j.pending, ...j.conflicts].filter(Boolean)) validateSync(record)
         if (j.legacy) validateRecord(j.legacy)
+        if (j.rekey) {
+          const { checksum, ...checkpoint } = j.rekey
+          if (checksum !== await fingerprint(checkpoint) || !!j.rekey.legacy !== !!j.legacy ||
+            canonical(j.rekey.conflicts?.map(v => ({ id: v.id, vector: v.vector }))) !==
+            canonical(j.conflicts.map(v => ({ id: v.id, vector: v.vector })))) throw new Error('invalid')
+          if (j.rekey.targetId !== j.pending?.id || typeof j.rekey.source !== 'string' ||
+            !Array.isArray(j.rekey.conflicts) || await fingerprint({ ...j, rekey: undefined }) !== j.rekey.source) throw new Error('invalid')
+          for (const record of j.rekey.conflicts) {
+            validateSync(record)
+            if (!record.recoveryOnly || record.record.mode !== 'encrypted') throw new Error('invalid')
+          }
+          if (j.rekey.legacy) { validateRecord(j.rekey.legacy); if (j.rekey.legacy.mode !== 'encrypted') throw new Error('invalid') }
+        }
         journal = j
       } catch { invalid = true }
     }
@@ -219,41 +238,109 @@ export class VaultService {
       ...(journal.legacy ? { legacy: await seal(journal.legacy) } : {}),
     }
   }
-  private async commit(record: VaultRecord, baseline: State, migration = false, seal?: { key: CryptoKey; salt: string }, resolving = false): Promise<void> {
+  /** No persistent writes until every historical account set can be re-encrypted. */
+  private async rekeyJournal(journal: RecoveryJournal, protection: Protection): Promise<RecoveryJournal> {
+    const keys = new Map<string, Promise<CryptoKey>>()
+    const copies = new Map<string, Promise<VaultRecord>>()
+    const seal = (record: VaultRecord): Promise<VaultRecord> => {
+      const identity = canonical(record)
+      if (!copies.has(identity)) copies.set(identity, (async () => {
+        let accounts: Account[]
+        if (record.mode === 'plain') accounts = record.accounts
+        else {
+          let opened: Account[] | undefined
+          if (record.data.salt === protection.salt) {
+            try { await decryptAccounts(record.data, protection.key); return record } catch { /* Try the supplied passwords below. */ }
+          }
+          for (const [index, password] of (protection.recoveryPasswords ?? []).entries()) {
+            if (opened) break
+            const id = `${index}:${record.data.salt}`
+            if (!keys.has(id)) keys.set(id, deriveKey(password, record.data.salt))
+            try { opened = await decryptAccounts(record.data, await keys.get(id)!) } catch { /* A historical version may use another password. */ }
+          }
+          if (!opened) throw new Error('recoveryPasswordRequired')
+          accounts = opened
+        }
+        const data = await encryptAccounts(accounts, protection.key, protection.salt)
+        await decryptAccounts(data, protection.key)
+        return { version: 2, revision: record.revision, mode: 'encrypted', data }
+      })())
+      return copies.get(identity)!
+    }
+    const copy = async (value?: SyncRecord): Promise<SyncRecord | undefined> => value && {
+      ...value, recoveryOnly: true, record: await seal(value.record),
+    }
+    return { ...journal, rekey: undefined, current: await copy(journal.current), pending: journal.pending,
+      conflicts: await Promise.all(journal.conflicts.map(async value => (await copy(value))!)),
+      ...(journal.legacy ? { legacy: await seal(journal.legacy) } : {}),
+    }
+  }
+  private async commit(record: VaultRecord, baseline: State, migration = false, seal?: Protection, resolving = false): Promise<void> {
     const latest = await this.state()
     if (latest.revision !== baseline.revision) throw new Error('conflict')
     if (latest.invalid) throw new Error('syncPending')
-    const previous = latest.journal ?? { deviceId: crypto.randomUUID(), counter: 0, conflicts: [] }
+    // A guarded vault must not silently delete an untracked legacy plaintext copy.
+    if (seal?.recoveryPasswords && latest.raw.accounts != null && !latest.legacy) throw new Error('syncConflict')
+    let previous: RecoveryJournal = latest.journal ?? { deviceId: crypto.randomUUID(), counter: 0, conflicts: [] }
+    const resume = resolving && previous.rekey?.targetId === record.revision ? previous.rekey : undefined
+    const replacements = new Map(resume?.conflicts.map(value => [value.id, value]) ?? [])
+    if (resume) previous = { ...previous, conflicts: resume.conflicts, legacy: resume.legacy }
+    previous = { ...previous, rekey: undefined }
     const vector: Record<string, number> = {}
     for (const head of latest.heads) for (const [device, count] of Object.entries(head.vector)) vector[device] = Math.max(vector[device] ?? 0, count)
     const counter = Math.max(previous.counter, vector[previous.deviceId] ?? 0) + 1
     vector[previous.deviceId] = counter
     const id = crypto.randomUUID()
     const candidate: SyncRecord = { id, vector, record: { ...record, version: 2, revision: id } }
-    const archived = resolving ? [...latest.records, ...(latest.legacy ? [latest.legacy] : [])].map(value => ({
-      ...value, recoveryOnly: true, vector: Object.keys(value.vector).length ? value.vector : vector,
-      record: { ...value.record, revision: value.id },
-    })) : []
+    const archived = resolving || seal?.recoveryPasswords ? [...latest.records, ...(latest.legacy ? [latest.legacy] : [])].map(original => {
+      const value = replacements.get(original.id) ?? original
+      return { ...value, recoveryOnly: true, vector: Object.keys(value.vector).length ? value.vector : vector,
+        record: { ...value.record, revision: value.id } }
+    }) : []
     let journal: RecoveryJournal = {
-      ...previous, counter, current: latest.heads[0] ?? previous.current, pending: candidate,
+      ...previous, counter, current: latest.heads[0] ? (replacements.get(latest.heads[0].id) ?? latest.heads[0]) : previous.current, pending: candidate,
       conflicts: unique([...previous.conflicts, ...archived]),
       ...(migration && latest.legacy ? { legacy: latest.legacy.record } : {}),
       ...(latest.legacy ? { legacySeen: latest.legacy.id } : {}),
     }
+    // Keep the original versions until publishing/cleanup succeeds. The checkpoint lets
+    // explicit recovery finish the replacement password without retaining old ciphertext.
+    const rekeyed = seal?.recoveryPasswords ? await this.rekeyJournal(journal, seal) : undefined
     if (seal) journal = await this.sealJournal(journal, seal.key, seal.salt)
+    if (rekeyed) {
+      const checkpoint = { targetId: id, source: await fingerprint(journal),
+        conflicts: rekeyed.conflicts, ...(rekeyed.legacy ? { legacy: rekeyed.legacy } : {}) }
+      journal.rekey = { ...checkpoint, checksum: await fingerprint(checkpoint) }
+    }
+    if ((await this.state()).revision !== latest.revision) throw new Error('conflict')
     await this.writeLocal(journal)
     await this.port().write(candidate, migration)
     const written = (await this.port().read())[migration ? MIGRATION_PREFIX + id : V2_KEY]
     if (canonical(written) !== canonical(candidate)) throw new Error('conflict')
     const checked = await this.state()
+    if (canonical(checked.localRaw) !== canonical(journal) || canonical(checked.raw) !== canonical(latest.raw)) throw new Error('conflict')
     if (checked.invalid || checked.state === 'conflict' || checked.heads.length !== 1 || checked.heads[0].id !== id) throw new Error('syncConflict')
     // The original data is now recoverable locally and in V2 before old clients are stopped.
     await this.storage.write({ version: 2, revision: id, mode: 'migrated', target: V2_KEY } as unknown as VaultRecord)
     const guard = (await this.storage.read())[VAULT_KEY] as { mode?: string; revision?: string } | undefined
     if (guard?.mode !== 'migrated' || guard.revision !== id) throw new Error('storageError')
     await this.storage.cleanup()
-    await this.port().removeCandidates(latest.remote.filter(old => dominates(candidate, old)).map(old => old.id))
-    await this.writeLocal({ ...journal, current: candidate, pending: undefined })
+    const cleaned = await this.storage.read()
+    if (cleaned.accounts != null || cleaned.state != null) throw new Error('storageError')
+    const removed = latest.remote.filter(old => dominates(candidate, old)).map(old => old.id)
+    await this.port().removeCandidates(removed)
+    const remaining = await this.port().read()
+    if (removed.some(old => remaining[MIGRATION_PREFIX + old] !== undefined)) throw new Error('storageError')
+    if (canonical(remaining[migration ? MIGRATION_PREFIX + id : V2_KEY]) !== canonical(candidate)) throw new Error('conflict')
+    // A newly arrived branch was not included in this transaction's recovery archive.
+    // Never erase it or claim that its old-password ciphertext has been replaced.
+    if (rekeyed && Object.entries(remaining).some(([key, value]) =>
+      key !== (migration ? MIGRATION_PREFIX + id : V2_KEY) || canonical(value) !== canonical(candidate))) throw new Error('syncConflict')
+    const finalState = await this.state()
+    if (canonical(finalState.localRaw) !== canonical(journal) || canonical(finalState.raw) !== canonical(cleaned) ||
+      canonical(finalState.syncRaw) !== canonical(remaining)) throw new Error('conflict')
+    if (finalState.invalid || finalState.state === 'conflict' || finalState.heads.length !== 1 || finalState.heads[0].id !== id) throw new Error('syncConflict')
+    await this.writeLocal({ ...(rekeyed ?? journal), rekey: undefined, current: candidate, pending: undefined })
   }
   async migrate(revision: string): Promise<void> {
     const state = await this.state()
@@ -305,7 +392,7 @@ export class VaultService {
       const salt = newSalt(), key = await deriveKey(nextPassword, salt)
       const data = await encryptAccounts(accounts, key, salt)
       await decryptAccounts(data, key)
-      await this.commit({ version: 2, revision: '', mode: 'encrypted', data }, state, !existing, { key, salt })
+      await this.commit({ version: 2, revision: '', mode: 'encrypted', data }, state, !existing, { key, salt, recoveryPasswords: action === 'change' ? [...new Set([password, nextPassword])] : [nextPassword] })
       await this.remember(key, salt)
     }
   }
@@ -345,7 +432,7 @@ export class VaultService {
     const source = state.journal?.legacy
     if (!selected && source && candidateId === 'source:' + await fingerprint(source)) selected = source
     if (!selected) throw new Error('invalid')
-    let protection: { key: CryptoKey; salt: string } | undefined
+    let protection: Protection | undefined
     if (selected.mode === 'encrypted') protection = { key: await this.verify(selected, password), salt: selected.data.salt }
     else {
       const protectedRecord = [state.journal?.current, ...state.heads].find(value => value?.record.mode === 'encrypted')?.record
@@ -354,6 +441,7 @@ export class VaultService {
         selected = { version: 2, revision: '', mode: 'encrypted', data: await encryptAccounts(selected.accounts, protection.key, protection.salt) }
       }
     }
+    if (protection && state.journal?.rekey?.targetId === candidateId) protection.recoveryPasswords = [password]
     await this.commit(selected, state, !state.remote.length, protection, true)
     if (protection) await this.remember(protection.key, protection.salt)
     else await this.lock()
