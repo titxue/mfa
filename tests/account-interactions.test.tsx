@@ -7,7 +7,6 @@ import { TOTP } from '../src/utils/totp'
 import type { VaultSnapshot } from '../src/utils/vault'
 import type { VaultRequest } from '../src/utils/vault-client'
 import { I18nProvider } from '../src/contexts/I18nContext'
-import { AccountItem } from '../src/components/AccountItem'
 import { ThemeProvider, useTheme } from '../src/contexts/ThemeContext'
 import { StorageManager } from '../src/utils/storage'
 
@@ -19,6 +18,9 @@ for (const key of globals.filter(key => !['chrome', 'IS_REACT_ACT_ENVIRONMENT'].
 }
 Object.defineProperty(globalThis, 'IS_REACT_ACT_ENVIRONMENT', { configurable: true, value: true })
 const { createRoot } = await import('react-dom/client')
+// Radix selects its browser layout effect when first imported. Load components
+// after the DOM exists so later dialog suites cannot inherit its SSR no-op.
+const { AccountItem } = await import('../src/components/AccountItem')
 let root: ReturnType<typeof createRoot>
 let host: HTMLDivElement
 const initial = [
