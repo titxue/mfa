@@ -11,7 +11,7 @@ Last updated: 2026-11-10 (Asia/Shanghai).
 - Short description: Secure and fast TOTP authenticator for 2FA login. Generate OTP codes offline and manage multiple accounts easily.
 - Primary language: English; 12 extension languages.
 - Category, distribution, publisher identity and contact: retain the existing listing settings; do not create another item.
-- Public version observed on 2026-11-10: 2.4.0. Update 2.4.1 is prepared for the same listing; submission is not yet confirmed.
+- Public version observed on 2026-11-10: 2.4.0. Update 2.4.1 was submitted for review at 2026-11-10 18:27 Asia/Shanghai; status: In Review, automatically publish after approval.
 
 ## Updated detailed description
 
@@ -53,7 +53,7 @@ Optional Steam linking sends the login information and authentication requests n
 
 Data is not sold, used for unrelated purposes or used for lending/credit decisions. Do not describe the extension as making no network requests: Chrome Sync and optional Steam linking are disclosed above. The store data-collection declaration is no developer collection. Browser-managed synchronization alone is not treated as developer receipt of the data; local processing, synchronization and optional Steam requests remain disclosed in the privacy policy. The three limited-use certifications remain checked.
 
-Privacy policy URL: https://github.com/titxue/mfa/blob/master/docs/PRIVACY.md
+Privacy policy URL: https://raw.githubusercontent.com/titxue/mfa/master/docs/PRIVACY.md
 
 ## Assets
 
@@ -63,15 +63,16 @@ The production package contains valid 16, 48 and 128 pixel icons. The submitted 
 
 | Version | Date | Changes | Status |
 | --- | --- | --- | --- |
-| 2.4.1 | 2026-11-10 | Re-encrypt observed recovery copies during password changes; preserve legacy account reads and writes without forced migration; retain unknown data and block unsafe writes. | Prepared; submission not yet confirmed |
+| 2.4.1 | 2026-11-10 | Re-encrypt observed recovery copies during password changes; preserve legacy account reads and writes without forced migration; retain unknown data and block unsafe writes. | In Review; automatically publish after approval |
 | 2.4.0 | 2026-11-06 | Configurable TOTP parameters; protected vault migration/recovery; simpler advanced settings; website field beneath name; clearer recovery status. | Published; observed 2026-11-10 |
 | 2.3.9 | Observed 2026-11-06 | Previous published version. | Published |
 
 ## 2.4.1 validation
 
-- Application source: `5a6dd36` (PR #7), with the package version updated to 2.4.1.
+- Release commit: `31c768a3cb747eb5a7968f8aa914db8068861a6e`; application source: `5a6dd36` (PR #7), with the package version updated to 2.4.1.
 - 369 unit/component, 31 Steam helper and 50 isolated-browser tests passed, 450 in total. Production build and both type checks passed.
 - Packaging, upgrade verification and submission results: [Release 2.4.1](docs/RELEASE-2.4.1.md).
+- Console confirmation: “已将您的扩展程序提交送审”, followed by item status “待审核”. Automatic publication remains enabled. The privacy-policy URL now directly serves the same public document because the GitHub page repeatedly timed out during submission.
 
 ## Previous release evidence (2.4.0)
 
