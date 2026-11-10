@@ -1,6 +1,6 @@
 # Chrome Web Store — MFA
 
-Last updated: 2026-11-06 (Asia/Shanghai).
+Last updated: 2026-11-10 (Asia/Shanghai).
 
 ## Original listing
 
@@ -11,7 +11,7 @@ Last updated: 2026-11-06 (Asia/Shanghai).
 - Short description: Secure and fast TOTP authenticator for 2FA login. Generate OTP codes offline and manage multiple accounts easily.
 - Primary language: English; 12 extension languages.
 - Category, distribution, publisher identity and contact: retain the existing listing settings; do not create another item.
-- Public version observed on 2026-11-06: 2.3.9. Update 2.4.0 was submitted at 11:41 Asia/Shanghai; status: In Review, automatically publish after approval.
+- Public version observed on 2026-11-10: 2.4.0. Update 2.4.1 is prepared for the same listing; submission is not yet confirmed.
 
 ## Updated detailed description
 
@@ -25,9 +25,11 @@ Back up and restore accounts with JSON, including password-encrypted backups. Im
 
 Code generation works offline. Accounts and settings use browser storage and may synchronize through your Chrome account. Optional Steam linking contacts Valve's official services only when you use that feature. Filling sends the selected code to the website you choose. There is no developer-operated account server, advertising or analytics.
 
-Update your devices to the same extension version. Version 2.4.0 asks you to confirm the existing account-vault upgrade; protected accounts continue to require their original password. If synchronization is incomplete or conflicting, the extension keeps recovery data and asks you to resolve it. Export any versions you need before choosing a conflict resolution. Browser synchronization cannot guarantee atomic updates across offline devices, so keep a safe backup of important accounts.
+Existing compatible accounts stay usable after updating, without a forced account-vault migration. Older account stores retain standard six-digit, 30-second TOTP and Steam support. Custom parameters are rejected when the existing storage format cannot preserve them. Protected accounts continue to require their original password.
 
-Plain backups and recovery exports may contain account secrets. Keep them private. Password protection does not retroactively encrypt every historical copy or an offline device's older copy.
+Changing your vault password also re-encrypts the recovery copies observed on this device. If a retained copy cannot be unlocked, MFA asks you to resolve it before changing protection. If synchronization is incomplete or conflicting, the extension keeps recovery data and asks you to resolve it. Export any versions you need before choosing a conflict resolution. Update your devices to the same extension version, wait for synchronization and avoid editing accounts on several devices at once.
+
+Plain backups and recovery exports may contain account secrets. Keep them private. Password changes cannot update previously exported backups or copies on offline devices. Browser synchronization cannot guarantee atomic updates across devices, so keep a safe backup of important accounts.
 
 Support: https://github.com/titxue/mfa/issues
 
@@ -41,11 +43,11 @@ Support: https://github.com/titxue/mfa/issues
 | contextMenus | Offer site access and code-filling actions from the browser context menu. |
 | Optional `https://*/*`, `http://*/*` | Let the user grant individual websites persistent code-filling access. Optional Steam linking requests access to Valve's official API. No blanket website grant is required for ordinary code generation. |
 
-The 2.4.0 permission set is unchanged from the 2.3.9 release source. No dependency or network endpoint was added by this update.
+The 2.4.1 permission set, dependencies and network endpoints are unchanged from 2.4.0.
 
 ## Privacy and data use
 
-The developer does not collect or receive user account data. The extension processes user-provided account names, authentication secrets, optional website addresses and preferences in the browser. These stay in browser storage and may leave the device via Chrome Sync. Password protection encrypts the active vault; historical recovery data may retain its previous protection state. Explicit exports are downloaded to the user's device.
+The developer does not collect or receive user account data. The extension processes user-provided account names, authentication secrets, optional website addresses and preferences in the browser. These stay in browser storage and may leave the device via Chrome Sync. Successful password operations update the active vault and the retained recovery copies included in that operation. Interrupted operations, previously exported backups and copies on other devices may retain their previous protection state. Explicit exports are downloaded to the user's device.
 
 Optional Steam linking sends the login information and authentication requests needed for that operation directly to Valve. Selected authentication codes are delivered to the website the user fills. No developer-operated collection endpoint, advertising or analytics is included.
 
@@ -61,10 +63,17 @@ The production package contains valid 16, 48 and 128 pixel icons. The submitted 
 
 | Version | Date | Changes | Status |
 | --- | --- | --- | --- |
-| 2.4.0 | 2026-11-06 | Configurable TOTP parameters; protected vault migration/recovery; simpler advanced settings; website field beneath name; clearer recovery status. | In Review; automatically publish after approval |
+| 2.4.1 | 2026-11-10 | Re-encrypt observed recovery copies during password changes; preserve legacy account reads and writes without forced migration; retain unknown data and block unsafe writes. | Prepared; submission not yet confirmed |
+| 2.4.0 | 2026-11-06 | Configurable TOTP parameters; protected vault migration/recovery; simpler advanced settings; website field beneath name; clearer recovery status. | Published; observed 2026-11-10 |
 | 2.3.9 | Observed 2026-11-06 | Previous published version. | Published |
 
-## Release evidence
+## 2.4.1 validation
+
+- Application source: `5a6dd36` (PR #7), with the package version updated to 2.4.1.
+- 369 unit/component, 31 Steam helper and 50 isolated-browser tests passed, 450 in total. Production build and both type checks passed.
+- Packaging, upgrade verification and submission results: [Release 2.4.1](docs/RELEASE-2.4.1.md).
+
+## Previous release evidence (2.4.0)
 
 - Source commit: `9129bdbb2acc4a4a952818bb30a952e620222228`.
 - Archive: `mfa-2.4.0-release.zip`, 24 files, 591,582 bytes.

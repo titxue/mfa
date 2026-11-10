@@ -1,6 +1,6 @@
 # MFA privacy policy
 
-Effective date: November 6, 2026.
+Effective date: November 10, 2026.
 
 MFA (TOTP Authenticator - 2FA OTP Code Generator) generates authentication codes and helps you manage and fill them. This policy applies to Chrome Web Store item `dhipejmoajhjflafhbibojfoeogbmjgf`.
 
@@ -14,7 +14,7 @@ You provide account names, authentication secrets and optional website addresses
 
 When Chrome Sync is enabled, synchronized account records and preferences can be transmitted to and stored by Google through Chrome's synchronization service. Google's policies and your Chrome synchronization settings apply. This is off-device transmission, even though MFA has no account server of its own.
 
-Optional password protection encrypts the active account vault. Unlock keys and sessions stay local. Existing historical recovery records and older copies on offline devices may retain their previous protection state; enabling protection does not retroactively encrypt every historical copy. Browser synchronization cannot provide atomic writes across all devices.
+Optional password protection encrypts the active account vault. Unlock keys and sessions stay local. Before successfully enabling or changing protection, MFA validates and re-encrypts the retained recovery copies observed and included in that operation. Disabling protection makes those validated copies plain. A copy that cannot be unlocked blocks the operation before writes begin. Interrupted operations may retain copies under their previous protection state until recovery is completed. Previously exported backups, system/browser backups and copies on offline devices are not remotely re-encrypted. Browser synchronization cannot provide atomic writes across all devices.
 
 ## Website access and filling
 
