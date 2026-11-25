@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="一键演示，随时接手。在 MFA 的真实界面里，体验账户添加、验证码填入、密码保护与加密备份。支持中文和英文。">
+  <meta name="theme-color" content="#fafaf7">
+  <meta name="robots" content="noindex">
+  <title>MFA · 交互式使用指南</title>
+  <link rel="icon" href="./media/icon.png">
+  <script src="./embed.js"></script>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#guide" data-i18n="skip">跳到交互演示</a>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="MFA" data-home><img src="./media/icon.png" width="34" height="34" alt=""><span>MFA</span><span class="brand-divider"></span><span class="brand-caption" data-i18n="brandCaption">交互指南</span></a>
+    <nav class="header-actions" aria-label="主导航" data-i18n-aria="mainNav">
+      <button class="text-button video-open" data-open-video aria-label="原视频" data-i18n-aria="video"><svg aria-hidden="true"><use href="#i-video"></use></svg><span data-i18n="video">原视频</span></button>
+      <label class="language-control" for="language"><svg aria-hidden="true"><use href="#i-globe"></use></svg><span class="sr-only" data-i18n="language">语言</span><select id="language" name="language" class="choice-select"><option value="zh" lang="zh-CN">中文</option><option value="en" lang="en">English</option></select></label>
+      <a class="install-link" href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf" target="_blank" rel="noopener" aria-label="安装扩展" data-i18n-aria="install"><span class="install-full" data-i18n="install">安装扩展</span><span class="install-short" data-i18n="installShort">安装</span><svg aria-hidden="true"><use href="#i-arrow-up"></use></svg></a>
+    </nav>
+  </header>
+  <main id="guide" tabindex="-1">
+    <div class="workspace">
+      <section class="narrative">
+        <p class="eyebrow"><span class="status-dot"></span><span data-i18n="eyebrow">MFA 实境体验</span></p>
+        <h1 data-i18n-html="hero"><span class="headline-line"><span>验证码，</span></span><span class="headline-line"><span>就在浏览器里。</span></span></h1>
+        <p class="hero-copy" data-i18n="heroCopy">一键看完整流程，也可以随时接手。<br>在真实界面里，试着添加你的第一个账户。</p>
+        <div class="primary-actions">
+          <button id="play" class="primary-button"><span data-i18n="play">一键演示</span><span class="button-orb"><svg aria-hidden="true"><use href="#i-play"></use></svg></span></button>
+          <button id="explore" class="secondary-button"><span data-i18n="explore">自己试试</span><svg aria-hidden="true"><use href="#i-pointer"></use></svg></button>
+        </div>
+        <div class="play-options">
+          <button id="sound" class="text-button" aria-pressed="true"><svg aria-hidden="true"><use href="#i-volume"></use></svg><span data-i18n="sound">讲解声音</span></button>
+          <label class="speed-control" for="speed"><span class="sr-only" data-i18n="speed">播放速度</span><select id="speed" name="speed" class="choice-select"><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label>
+          <span id="player-state" class="player-state" data-i18n="playerReady">随时暂停，随时接手</span>
+        </div>
+        <section class="chapter-detail">
+          <div class="chapter-overline"><span id="chapter-count">01 / 07</span><span id="chapter-name"></span></div>
+          <h2 id="chapter-title"></h2>
+          <p id="chapter-description"></p>
+          <div id="chapter-tools" class="chapter-tools"></div>
+          <form id="login-preview" class="login-preview" hidden>
+            <p class="sample-caption"><svg aria-hidden="true"><use href="#i-shield"></use></svg><span data-i18n="sampleLogin">示例登录页</span><span class="sample-domain">example.com</span></p>
+            <label for="demo-otp" data-i18n="otpLabel">验证码</label>
+            <div class="otp-row"><input id="demo-otp" name="demo-otp" inputmode="numeric" autocomplete="off" maxlength="6" pattern="[0-9]{6}" placeholder="000 000" required aria-describedby="login-help"><button type="submit" class="small-button" data-i18n="verify">验证</button></div>
+            <p id="login-help" data-i18n="loginHelp">点击右侧 GitHub 账户，看看验证码如何填进来。</p>
+          </form>
+          <div id="backup-preview" class="backup-preview" hidden><svg aria-hidden="true"><use href="#i-file"></use></svg><div><strong data-i18n="backupReady">演示备份已生成</strong><p id="backup-meta"></p></div><button id="download-backup" class="text-button" data-i18n="download">下载</button></div>
+        </section>
+      </section>
+      <section class="demo-stage" aria-label="扩展演示" data-i18n-aria="demoArea">
+        <div class="stage-label"><span class="status-dot"></span><span data-i18n="stageLabel">可以直接操作</span><span class="stage-version">v2.4.1</span></div>
+        <div class="stage-art" aria-hidden="true"><span class="orbit orbit-outer"></span><span class="orbit orbit-inner"></span><span class="orbit-center"></span></div>
+        <div class="browser-shell">
+          <div class="browser-top"><span class="browser-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="browser-title"><svg aria-hidden="true"><use href="#i-lock"></use></svg> MFA</span><button id="reset" class="icon-button" aria-label="重置示例" data-i18n-aria="reset"><svg aria-hidden="true"><use href="#i-reset"></use></svg></button></div>
+          <div class="extension-viewport"><iframe id="extension" title="MFA 示例账户交互界面" data-i18n-title="frameTitle" src="about:blank"></iframe></div>
+        </div>
+        <p class="demo-note"><svg aria-hidden="true"><use href="#i-shield"></use></svg><span data-i18n="demoNote">仅使用示例数据，请勿输入真实密钥。</span></p>
+      </section>
+    </div>
+    <section class="tour-player" aria-label="演示章节" data-i18n-aria="chapters">
+      <div class="progress-line"><progress id="progress" class="sr-only" value="0" max="1" aria-label="演示进度" data-i18n-aria="progress"></progress><span id="progress-fill" aria-hidden="true"></span></div>
+      <div class="player-footer"><span class="player-caption" data-i18n="chaptersLabel">跟着走一遍</span><div class="step-arrows"><button id="previous" class="icon-button" aria-label="上一节" data-i18n-aria="previous"><svg aria-hidden="true"><use href="#i-left"></use></svg></button><button id="next" class="icon-button" aria-label="下一节" data-i18n-aria="next"><svg aria-hidden="true"><use href="#i-right"></use></svg></button></div></div>
+      <nav id="chapter-nav" class="chapter-nav" aria-label="章节导航" data-i18n-aria="chapterNav"></nav>
+      <p id="captions" class="captions"></p>
+    </section>
+  </main>
+  <footer class="site-footer"><p data-i18n="footer">真实界面，示例账户。生成验证码、密码保护与备份均可亲手体验。</p><div><button class="text-button" data-open-transcript data-i18n="transcript">文字讲解</button><a href="https://github.com/titxue/mfa" target="_blank" rel="noopener" data-i18n="source">查看源码</a><span>MFA © 2026</span></div></footer>
+  <div id="announcer" class="sr-only" role="status" aria-live="polite"></div>
+  <audio id="narration" preload="none"></audio>
+  <dialog id="video-dialog" class="media-dialog" aria-labelledby="video-title" closedby="any"><div class="dialog-header"><h2 id="video-title" data-i18n="videoTitle">MFA 新手引导 · 原视频</h2><form method="dialog"><button class="icon-button" aria-label="关闭" data-i18n-aria="close"><svg aria-hidden="true"><use href="#i-close"></use></svg></button></form></div><video id="original-video" controls playsinline preload="none" poster="./media/poster.png"><source src="./media/mfa-guide.mp4" type="video/mp4"><track kind="captions" src="./media/zh.vtt" srclang="zh-CN" label="中文"><track kind="captions" src="./media/en.vtt" srclang="en" label="English"></video><p class="video-note" data-i18n="videoNote">原视频为中文配音。交互演示支持中文与英文讲解。</p></dialog>
+  <dialog id="transcript-dialog" class="transcript-dialog" aria-labelledby="transcript-title" closedby="any"><div class="dialog-header"><h2 id="transcript-title" data-i18n="transcript">文字讲解</h2><form method="dialog"><button class="icon-button" aria-label="关闭" data-i18n-aria="close"><svg aria-hidden="true"><use href="#i-close"></use></svg></button></form></div><div id="transcript-content"></div></dialog>
+  <svg class="svg-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" stroke-width="3.5"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3Z"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12"/></symbol>
+    <symbol id="i-pointer" viewBox="0 0 24 24"><path d="m4 3 4 17 4-7 7-4Z"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5ZM15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="m11 4-6 5H2v6h3l6 5ZM16 9l6 6M22 9l-6 6"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 3 8M3 4v7h7"/></symbol>
+    <symbol id="i-left" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+    <symbol id="i-right" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9ZM14 3v6h6M8 13h8M8 17h5"/></symbol>
+  </defs></svg>
+</body>
+</html>

@@ -31,3 +31,27 @@ summary {
 summary::-webkit-details-marker {
   display: none;
 }
+
+.interactive-demo {
+  scroll-margin-top: 80px;
+}
+
+.interactive-demo-frame {
+  display: block;
+  width: 100%;
+  height: 940px;
+  border: 0;
+  background: #fafaf7;
+}
+
+@media (max-width: 790px) {
+  .interactive-demo-frame {
+    height: 1450px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

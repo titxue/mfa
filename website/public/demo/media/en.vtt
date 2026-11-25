@@ -1,0 +1,61 @@
+WEBVTT
+
+00:00:00.320 --> 00:00:03.909
+Meet MFA, your verification codes right in your browser.
+
+00:00:04.109 --> 00:00:06.558
+Let us walk through your first account together.
+
+00:00:07.553 --> 00:00:11.399
+First, install MFA from the Chrome Web Store and pin it to your toolbar.
+
+00:00:11.599 --> 00:00:14.129
+Click its icon to open your account list.
+
+00:00:15.120 --> 00:00:19.335
+First, turn on two-step verification on the website you want to protect, and save its QR code.
+
+00:00:19.535 --> 00:00:25.099
+In MFA, select Add Account, then Scan QR Code, and choose the image.
+
+00:00:25.299 --> 00:00:28.276
+Review the account details and select Save.
+
+00:00:28.476 --> 00:00:32.112
+You can also paste a QR image or link, or enter a secret manually.
+
+00:00:33.087 --> 00:00:36.003
+Each account card shows a code and the time remaining.
+
+00:00:36.203 --> 00:00:42.350
+On a sign-in page, open MFA and click the matching account to try filling the code.
+
+00:00:42.550 --> 00:00:45.955
+You can enable clipboard fallback in Settings if filling is not available.
+
+00:00:46.953 --> 00:00:49.407
+Drag account cards to change their order.
+
+00:00:49.607 --> 00:00:54.810
+Right-click an account to edit it, view its QR code, or download a QR image.
+
+00:00:55.787 --> 00:00:59.326
+Open Password protection in Settings. Set and confirm your master password.
+
+00:00:59.526 --> 00:01:04.863
+You can now lock your vault with the button at the top. Enter your password to unlock it again.
+
+00:01:05.063 --> 00:01:06.619
+Keep your master password somewhere safe.
+
+00:01:07.620 --> 00:01:13.014
+Finally, select Export in Settings. With password protection enabled, the default is an encrypted backup.
+
+00:01:13.214 --> 00:01:17.972
+On your next device, select Import, decrypt the file, review your accounts, and confirm.
+
+00:01:18.953 --> 00:01:21.991
+MFA. Your verification codes, right in your browser.
+
+00:01:22.191 --> 00:01:24.418
+Now you are ready to add your first account.

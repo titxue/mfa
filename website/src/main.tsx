@@ -12,12 +12,14 @@ import {
   KeyRound,
   Languages,
   LockKeyhole,
+  PlayCircle,
   Copy,
   QrCode,
   ShieldCheck,
   Upload,
 } from 'lucide-react'
 import { extensionMetadata } from './generated/extensionMetadata'
+import { InteractiveDemo } from './InteractiveDemo'
 import './styles.css'
 
 type Locale = 'zh-CN' | 'en-US'
@@ -47,6 +49,7 @@ type TrustSignal = {
 type Copy = {
   nav: {
     features: string
+    demo: string
     guide: string
     privacy: string
     faq: string
@@ -57,6 +60,7 @@ type Copy = {
     lead: string
     install: string
     github: string
+    demo: string
     proof: string[]
     trustSignals: TrustSignal[]
     usersSuffix: string
@@ -102,6 +106,7 @@ const copy: Record<Locale, Copy> = {
   'zh-CN': {
     nav: {
       features: '功能',
+      demo: '交互演示',
       guide: '使用指南',
       privacy: '隐私安全',
       faq: '常见问题',
@@ -113,6 +118,7 @@ const copy: Record<Locale, Copy> = {
         '离线生成 2FA 验证码，支持主密码保护、加密备份、网站填充和 12 种语言。导入前查看账户数量，管理账户更清楚。',
       install: '安装扩展',
       github: '查看源码',
+      demo: '先试用一下',
       proof: ['本地生成验证码', '支持密码保护', '支持 Chrome 同步存储'],
       trustSignals: [
         { label: '用户数量', value: 'Chrome Web Store', dynamic: 'users' },
@@ -245,6 +251,7 @@ const copy: Record<Locale, Copy> = {
   'en-US': {
     nav: {
       features: 'Features',
+      demo: 'Live demo',
       guide: 'Guide',
       privacy: 'Privacy',
       faq: 'FAQ',
@@ -256,6 +263,7 @@ const copy: Record<Locale, Copy> = {
         'Generate 2FA codes offline with password protection, encrypted backups, website filling, and 12 languages. Preview the account count before confirming an import.',
       install: 'Install extension',
       github: 'View source',
+      demo: 'Try the live demo',
       proof: ['Codes generated locally', 'Password protection available', 'Chrome sync storage support'],
       trustSignals: [
         { label: 'Users', value: 'Chrome Web Store', dynamic: 'users' },
@@ -518,6 +526,9 @@ function App() {
             <a className="hover:text-ink" href="#features">
               {t.nav.features}
             </a>
+            <a className="hidden hover:text-ink lg:inline" href="#demo">
+              {t.nav.demo}
+            </a>
             <a className="hover:text-ink" href="#guide">
               {t.nav.guide}
             </a>
@@ -529,7 +540,7 @@ function App() {
             </a>
           </nav>
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-ink shadow-sm transition hover:border-mint hover:text-mint"
+            className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-ink shadow-sm transition hover:border-mint hover:text-mint-ink"
             type="button"
             onClick={switchLocale}
           >
@@ -543,7 +554,7 @@ function App() {
         <section className="relative overflow-hidden bg-white">
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1fr_460px] lg:px-8 lg:py-24">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-mint/20 bg-mint/10 px-4 py-2 text-sm font-semibold text-mint">
+              <div className="inline-flex items-center gap-2 rounded-full border border-mint/20 bg-mint/10 px-4 py-2 text-sm font-semibold text-mint-ink">
                 <ShieldCheck className="h-4 w-4" />
                 {t.hero.badge}
               </div>
@@ -551,7 +562,7 @@ function App() {
                 {t.hero.title}
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700">{t.hero.lead}</p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <a className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-ink px-5 text-base font-semibold text-white shadow-panel transition hover:bg-slate-800" href={chromeStoreUrl}>
                   <Chrome className="h-5 w-5" />
                   {t.hero.install}
@@ -561,11 +572,15 @@ function App() {
                   <Github className="h-5 w-5" />
                   {t.hero.github}
                 </a>
+                <a className="inline-flex h-12 items-center justify-center gap-2 rounded-md px-4 text-base font-semibold text-mint-ink transition hover:bg-mint/10" href="#demo">
+                  <PlayCircle className="h-5 w-5" aria-hidden="true" />
+                  {t.hero.demo}
+                </a>
               </div>
               <div className="mt-8 grid gap-3 text-sm font-medium text-slate-700 sm:grid-cols-3">
                 {t.hero.proof.map((item) => (
                   <div className="flex items-start gap-2" key={item}>
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-mint" />
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-mint-ink" />
                     <span>{item}</span>
                   </div>
                 ))}
@@ -573,7 +588,7 @@ function App() {
               <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 {t.hero.trustSignals.map((item) => (
                   <div className="rounded-lg border border-slate-200 bg-cloud px-4 py-3" key={item.label}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">{item.label}</p>
                     <p className="mt-1 text-sm font-bold text-ink">
                       {formatTrustSignal(item, storeStats, siteMetadata, t)}
                     </p>
@@ -585,6 +600,8 @@ function App() {
             <ExtensionMockup copy={t.mockup} />
           </div>
         </section>
+
+        <InteractiveDemo locale={locale} />
 
         <SectionHeader id="features" title={t.sections.features} lead={t.sections.featuresLead} />
         <section className="mx-auto grid max-w-7xl gap-4 px-4 pb-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8">
@@ -704,7 +721,7 @@ function SectionHeader({ id, title, lead }: { id: string; title: string; lead: s
 
 function FeatureCard({ feature, tone = 'feature' }: { feature: Feature; tone?: 'feature' | 'privacy' }) {
   const Icon = feature.icon
-  const iconClass = tone === 'privacy' ? 'bg-ink text-white' : 'bg-mint/10 text-mint'
+  const iconClass = tone === 'privacy' ? 'bg-ink text-white' : 'bg-mint/10 text-mint-ink'
 
   return (
     <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
@@ -756,7 +773,7 @@ function ExtensionMockup({ copy: mockup }: { copy: Copy['mockup'] }) {
         </div>
 
         <div className="mt-5 flex items-start gap-3 rounded-lg bg-mint/10 p-4 text-sm leading-6 text-slate-700">
-          <QrCode className="mt-0.5 h-5 w-5 shrink-0 text-mint" />
+          <QrCode className="mt-0.5 h-5 w-5 shrink-0 text-mint-ink" />
           <p>{mockup.hint}</p>
         </div>
       </div>
