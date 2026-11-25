@@ -10,16 +10,16 @@
 </p>
 
 <p align="center">
-  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf"><img src="https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?style=flat-square&amp;label=Chrome%20Web%20Store&amp;color=334155" alt="Chrome Web Store version"></a>
+  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=readme_en"><img src="https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?style=flat-square&amp;label=Chrome%20Web%20Store&amp;color=334155" alt="Chrome Web Store version"></a>
   <a href="https://github.com/titxue/mfa/actions/workflows/regression.yml"><img src="https://img.shields.io/github/actions/workflow/status/titxue/mfa/regression.yml?branch=master&amp;style=flat-square&amp;label=tests" alt="Regression test status"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-334155?style=flat-square" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf"><img src="https://img.shields.io/badge/Install-Chrome_Web_Store-2563eb?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=white" alt="Install from Chrome Web Store"></a>
+  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=readme_en"><img src="https://img.shields.io/badge/Install-Chrome_Web_Store-2563eb?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=white" alt="Install from Chrome Web Store"></a>
 </p>
 
-<p align="center"><a href="https://mfa.xuejy.com/">Website</a> &nbsp;·&nbsp; <a href="#installation">Get started</a> &nbsp;·&nbsp; <a href="#usage">Usage</a> &nbsp;·&nbsp; <a href="#development">Development</a> &nbsp;·&nbsp; <a href="README.md">简体中文</a></p>
+<p align="center"><a href="https://mfa.xuejy.com/">Website</a> &nbsp;·&nbsp; <a href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/">Setup guide</a> &nbsp;·&nbsp; <a href="#installation">Get started</a> &nbsp;·&nbsp; <a href="#usage">Usage</a> &nbsp;·&nbsp; <a href="#development">Development</a> &nbsp;·&nbsp; <a href="README.md">简体中文</a></p>
 
 <p align="center">
   <img src="docs/assets/preview-light.png" width="320" alt="MFA in light mode, showing TOTP and Steam demo accounts">
@@ -50,7 +50,7 @@ Generate codes and read QR images locally, even offline. Use Chrome sync across 
 
 ## Installation
 
-1. **Install** — Add MFA from the [Chrome Web Store](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf) and pin it to the toolbar. Requires Chrome 102+.
+1. **Install** — Add MFA from the [Chrome Web Store](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&utm_medium=referral&utm_campaign=readme_en) and pin it to the toolbar. Requires Chrome 102+.
 2. **Add an account** — Click “+”, then upload or paste a QR image, paste an otpauth link, or enter a secret. Review and save.
 3. **Use a code** — Open MFA on your sign-in page and click an account to fill its code. Clipboard fallback can be enabled in settings.
 

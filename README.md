@@ -10,16 +10,16 @@
 </p>
 
 <p align="center">
-  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf"><img src="https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?style=flat-square&amp;label=Chrome%20Web%20Store&amp;color=334155" alt="Chrome Web Store version"></a>
+  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=readme_zh"><img src="https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?style=flat-square&amp;label=Chrome%20Web%20Store&amp;color=334155" alt="Chrome Web Store version"></a>
   <a href="https://github.com/titxue/mfa/actions/workflows/regression.yml"><img src="https://img.shields.io/github/actions/workflow/status/titxue/mfa/regression.yml?branch=master&amp;style=flat-square&amp;label=tests" alt="Regression test status"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-334155?style=flat-square" alt="MIT license"></a>
 </p>
 
 <p align="center">
-  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf"><img src="https://img.shields.io/badge/Install-Chrome_Web_Store-2563eb?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=white" alt="从 Chrome Web Store 安装"></a>
+  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=readme_zh"><img src="https://img.shields.io/badge/Install-Chrome_Web_Store-2563eb?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=white" alt="从 Chrome Web Store 安装"></a>
 </p>
 
-<p align="center"><a href="https://mfa.xuejy.com/zh/">项目官网</a> &nbsp;·&nbsp; <a href="#安装">开始使用</a> &nbsp;·&nbsp; <a href="#使用指南">使用指南</a> &nbsp;·&nbsp; <a href="#开发">开发文档</a> &nbsp;·&nbsp; <a href="README.en.md">English</a></p>
+<p align="center"><a href="https://mfa.xuejy.com/zh/">项目官网</a> &nbsp;·&nbsp; <a href="https://mfa.xuejy.com/zh/guide/how-to-use-totp-authenticator/">中文使用教程</a> &nbsp;·&nbsp; <a href="#安装">开始使用</a> &nbsp;·&nbsp; <a href="#使用指南">使用指南</a> &nbsp;·&nbsp; <a href="#开发">开发文档</a> &nbsp;·&nbsp; <a href="README.en.md">English</a></p>
 
 <p align="center">
   <img src="docs/assets/preview-light.png" width="320" alt="MFA 浅色主题，展示 TOTP 与 Steam 示例账户">
@@ -50,7 +50,7 @@
 
 ## 安装
 
-1. **安装扩展** — 从 [Chrome Web Store](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf) 添加 MFA，并固定到工具栏。需要 Chrome 102 或更新版本。
+1. **安装扩展** — 从 [Chrome Web Store](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&utm_medium=referral&utm_campaign=readme_zh) 添加 MFA，并固定到工具栏。需要 Chrome 102 或更新版本。
 2. **添加账户** — 点击“+”，上传或粘贴二维码图片、粘贴 otpauth 链接，或手动输入密钥，确认后保存。
 3. **填入验证码** — 在登录页面打开 MFA，点击账户即可尝试填入；也可在设置中开启填充失败时复制。
 
