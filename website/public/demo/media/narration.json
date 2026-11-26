@@ -1,0 +1,256 @@
+{
+  "zh": {
+    "intro": {
+      "duration": 7.233,
+      "cues": [
+        {
+          "start": 0.32,
+          "end": 3.909,
+          "text": "这是 MFA，一款浏览器里的验证码工具。"
+        },
+        {
+          "start": 4.109,
+          "end": 6.558,
+          "text": "接下来，一起完成第一次使用。"
+        }
+      ]
+    },
+    "add": {
+      "duration": 17.967,
+      "cues": [
+        {
+          "start": 0.32,
+          "end": 4.535,
+          "text": "先在目标网站开启两步验证，取得网站提供的二维码。"
+        },
+        {
+          "start": 4.735,
+          "end": 10.299,
+          "text": "回到 MFA，点击添加账户，再点扫描二维码，选择图片。"
+        },
+        {
+          "start": 10.499,
+          "end": 13.476,
+          "text": "确认识别出的账户信息，点击保存。"
+        },
+        {
+          "start": 13.676,
+          "end": 17.312,
+          "text": "也可以粘贴二维码、链接，或手动填写密钥。"
+        }
+      ]
+    },
+    "use": {
+      "duration": 13.867,
+      "cues": [
+        {
+          "start": 0.32,
+          "end": 3.236,
+          "text": "账户卡片会显示验证码和剩余时间。"
+        },
+        {
+          "start": 3.436,
+          "end": 9.583,
+          "text": "回到登录页面，打开 MFA，点击对应账户，即可尝试填入验证码。"
+        },
+        {
+          "start": 9.783,
+          "end": 13.188,
+          "text": "填充失败时，可在设置中启用复制回退。"
+        }
+      ]
+    },
+    "manage": {
+      "duration": 8.833,
+      "cues": [
+        {
+          "start": 0.32,
+          "end": 2.774,
+          "text": "账户多了，可以拖拽调整顺序。"
+        },
+        {
+          "start": 2.974,
+          "end": 8.177,
+          "text": "右键账户，还能编辑信息、显示二维码，或下载二维码图片。"
+        }
+      ]
+    },
+    "protect": {
+      "duration": 11.833,
+      "cues": [
+        {
+          "start": 0.32,
+          "end": 3.859,
+          "text": "在设置中打开密码保护，设置并确认主密码。"
+        },
+        {
+          "start": 4.059,
+          "end": 9.396,
+          "text": "保存后，可通过顶部按钮锁定账户库，再次使用时输入密码解锁。"
+        },
+        {
+          "start": 9.596,
+          "end": 11.152,
+          "text": "请妥善保管主密码。"
+        }
+      ]
+    },
+    "backup": {
+      "duration": 11.333,
+      "cues": [
+        {
+          "start": 0.32,
+          "end": 5.714,
+          "text": "最后，在设置中选择导出。开启密码保护后，默认导出加密备份。"
+        },
+        {
+          "start": 5.914,
+          "end": 10.672,
+          "text": "以后换设备时，选择导入，解密并预览，再确认保存。"
+        }
+      ]
+    },
+    "end": {
+      "duration": 6.467,
+      "cues": [
+        {
+          "start": 0.32,
+          "end": 3.358,
+          "text": "MFA，验证码，就在浏览器里。"
+        },
+        {
+          "start": 3.558,
+          "end": 5.785,
+          "text": "现在，添加你的第一个账户吧。"
+        }
+      ]
+    }
+  },
+  "en": {
+    "intro": {
+      "duration": 6.872,
+      "cues": [
+        {
+          "start": 0.25,
+          "end": 3.911,
+          "text": "Meet MFA, your verification codes right in your browser."
+        },
+        {
+          "start": 4.061,
+          "end": 6.422,
+          "text": "Let us walk through your first account together."
+        }
+      ]
+    },
+    "add": {
+      "duration": 19.48,
+      "cues": [
+        {
+          "start": 0.25,
+          "end": 6.556,
+          "text": "First, turn on two-step verification on the website you want to protect, and save its QR code."
+        },
+        {
+          "start": 6.706,
+          "end": 11.776,
+          "text": "In MFA, select Add Account, then Scan QR Code, and choose the image."
+        },
+        {
+          "start": 11.926,
+          "end": 14.476,
+          "text": "Review the account details and select Save."
+        },
+        {
+          "start": 14.626,
+          "end": 19.03,
+          "text": "You can also paste a QR image or link, or enter a secret manually."
+        }
+      ]
+    },
+    "use": {
+      "duration": 12.897,
+      "cues": [
+        {
+          "start": 0.25,
+          "end": 3.104,
+          "text": "Each account card shows a code and the time remaining."
+        },
+        {
+          "start": 3.254,
+          "end": 8.275,
+          "text": "On a sign-in page, open MFA and click the matching account to try filling the code."
+        },
+        {
+          "start": 8.425,
+          "end": 12.447,
+          "text": "You can enable clipboard fallback in Settings if filling is not available."
+        }
+      ]
+    },
+    "manage": {
+      "duration": 8.199,
+      "cues": [
+        {
+          "start": 0.25,
+          "end": 2.588,
+          "text": "Drag account cards to change their order."
+        },
+        {
+          "start": 2.738,
+          "end": 7.749,
+          "text": "Right-click an account to edit it, view its QR code, or download a QR image."
+        }
+      ]
+    },
+    "protect": {
+      "duration": 13.093,
+      "cues": [
+        {
+          "start": 0.25,
+          "end": 4.922,
+          "text": "Open Password protection in Settings. Set and confirm your master password."
+        },
+        {
+          "start": 5.072,
+          "end": 10.057,
+          "text": "You can now lock your vault with the button at the top. Enter your password to unlock it again."
+        },
+        {
+          "start": 10.207,
+          "end": 12.643,
+          "text": "Keep your master password somewhere safe."
+        }
+      ]
+    },
+    "backup": {
+      "duration": 13.907,
+      "cues": [
+        {
+          "start": 0.25,
+          "end": 7.09,
+          "text": "Finally, select Export in Settings. With password protection enabled, the default is an encrypted backup."
+        },
+        {
+          "start": 7.24,
+          "end": 13.457,
+          "text": "On your next device, select Import, decrypt the file, review your accounts, and confirm."
+        }
+      ]
+    },
+    "end": {
+      "duration": 7.123,
+      "cues": [
+        {
+          "start": 0.25,
+          "end": 4.101,
+          "text": "MFA. Your verification codes, right in your browser."
+        },
+        {
+          "start": 4.251,
+          "end": 6.673,
+          "text": "Now you are ready to add your first account."
+        }
+      ]
+    }
+  }
+}

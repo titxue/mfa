@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>TOTP Authenticator 官网首页与交互演示优化 PRD</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #132238;
+      --body: #334155;
+      --muted: #526477;
+      --teal: #0f766e;
+      --line: #d8e1e8;
+      --wash: #f6f8fb;
+      --white: #fff;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", "PingFang SC",
+        "Microsoft YaHei", sans-serif;
+      color: var(--body);
+      background: var(--white);
+      line-height: 1.7;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-padding-top: 24px; }
+    body { margin: 0; overflow-wrap: break-word; }
+    a { color: var(--teal); text-underline-offset: .18em; }
+    a:hover { text-decoration-thickness: 2px; }
+    :focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+    button { font: inherit; }
+    .skip {
+      position: absolute; top: 6px; left: 12px; z-index: 2;
+      padding: 6px 14px; background: white; transform: translateY(-150%);
+    }
+    .skip:focus { transform: translateY(0); }
+    .bar { border-bottom: 1px solid var(--line); }
+    .bar-inner, .layout {
+      width: min(1160px, calc(100% - 72px)); margin-inline: auto;
+    }
+    .bar-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 64px; gap: 12px;
+    }
+    .brand { color: var(--ink); font-size: 17px; font-weight: 700; }
+    .print {
+      display: inline-flex; align-items: center; min-height: 38px;
+      padding: 4px 15px; border: 1px solid #bfccd7; border-radius: 6px;
+      background: white; color: var(--ink); font-size: 14px; cursor: pointer;
+    }
+    .print:hover { background: var(--wash); }
+    .layout {
+      display: grid; grid-template-columns: 176px minmax(0, 850px);
+      justify-content: space-between; gap: clamp(28px, 5vw, 82px);
+      padding-block: 50px 72px;
+    }
+    .contents { align-self: start; position: sticky; top: 26px; }
+    .contents-title { margin: 0 0 9px; color: var(--ink); font-size: 14px; font-weight: 700; }
+    .contents ul { margin: 0; padding: 0; list-style: none; border-left: 1px solid var(--line); }
+    .contents a {
+      display: block; padding: 6px 14px; color: var(--muted);
+      font-size: 14px; text-decoration: none;
+    }
+    .contents a:hover, .contents a:focus-visible { color: var(--teal); background: #f0f7f6; }
+    main { min-width: 0; }
+    h1, h2, h3, strong { color: var(--ink); }
+    h1, h2, h3 { margin: 0; line-height: 1.35; }
+    h1 { font-size: clamp(30px, 3.3vw, 44px); letter-spacing: -.035em; }
+    h2 { font-size: clamp(23px, 2.5vw, 29px); letter-spacing: -.02em; }
+    h3 { font-size: 17px; }
+    p { margin: 0; }
+    .meta {
+      display: flex; flex-wrap: wrap; gap: 5px 14px; align-items: center;
+      margin: 0 0 10px; font-size: 13px; color: var(--muted);
+    }
+    .meta strong { color: var(--teal); }
+    .lead { max-width: 43em; margin: 16px 0 0; font-size: 19px; line-height: 1.7; }
+    .scope { margin-top: 12px; color: var(--muted); font-size: 14px; }
+    section {
+      margin-top: 32px; padding-top: 27px; border-top: 1px solid var(--line);
+    }
+    section > h2 { margin-bottom: 14px; }
+    .evidence {
+      padding: 14px 18px; margin-top: 17px; background: var(--wash);
+      border-left: 3px solid #acd4ce; font-size: 14px;
+    }
+    .evidence a { white-space: nowrap; }
+    .sequence, .cases { margin: 0; padding: 0; }
+    .sequence { list-style: decimal; padding-left: 1.6em; }
+    .sequence li { padding-left: .3em; margin: 7px 0; }
+    .sequence li::marker { color: var(--teal); font-weight: 700; }
+    .sequence strong { margin-right: .35em; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+    .device { padding: 14px 16px; background: var(--wash); border-radius: 8px; }
+    .device h3 { margin-bottom: 5px; }
+    .device p { font-size: 15px; }
+    .flows { margin: 0; }
+    .flow {
+      display: grid; grid-template-columns: minmax(145px, 27%) 1fr; gap: 18px;
+      padding-block: 12px; border-bottom: 1px solid var(--line);
+    }
+    .flow:first-child { padding-top: 0; }
+    .flow dt { color: var(--ink); font-weight: 650; }
+    .flow dt small { display: block; margin-top: 2px; color: var(--muted); font-size: 13px; font-weight: 450; }
+    .flow dd { margin: 0; }
+    .subnote { font-size: 15px; margin-top: 14px; }
+    .specs { display: grid; gap: 10px; margin: 0; }
+    .specs > div { display: grid; grid-template-columns: 88px 1fr; gap: 12px; }
+    .specs dt { color: var(--ink); font-weight: 650; }
+    .specs dd { margin: 0; }
+    code {
+      color: var(--ink); background: #eef2f5; border-radius: 3px;
+      padding: .05em .3em; font-family: ui-monospace, Consolas, monospace; font-size: .92em;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 15px; }
+    th, td { padding: 11px 13px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    thead th { color: var(--ink); background: var(--wash); }
+    tbody th { width: 24%; color: var(--ink); font-weight: 600; }
+    .priority { display: inline-block; margin-right: 5px; color: var(--teal); font-size: .88em; }
+    .check-context { color: var(--muted); font-size: 14px; }
+    @media (max-width: 900px) {
+      .bar-inner, .layout { width: min(100% - 40px, 760px); }
+      .layout { display: flex; flex-direction: column; gap: 25px; padding-block: 24px 50px; }
+      .contents { position: static; align-self: stretch; }
+      .contents-title { margin-bottom: 3px; }
+      .contents ul { display: flex; flex-wrap: wrap; gap: 1px 16px; border: 0; }
+      .contents a { padding: 4px 0; text-decoration: underline; }
+    }
+    @media (max-width: 560px) {
+      .bar-inner, .layout { width: calc(100% - 32px); }
+      .bar-inner { min-height: 54px; }
+      .brand { font-size: 15px; }
+      .lead { font-size: 17px; }
+      section { margin-top: 25px; padding-top: 22px; }
+      .two-col { grid-template-columns: 1fr; gap: 8px; }
+      .flow, .specs > div { grid-template-columns: 1fr; gap: 3px; }
+      .flow dt small { display: inline; margin-left: 6px; }
+      th, td { padding: 9px 7px; font-size: 14px; }
+      tbody th { width: 29%; }
+      .priority { display: block; }
+    }
+    @page { size: A4; margin: 17mm 18mm; }
+    @media print {
+      :root { font-size: 10pt; line-height: 1.55; }
+      .bar, .contents, .skip { display: none; }
+      .layout { display: block; width: auto; padding: 0; }
+      h1 { font-size: 24pt; }
+      h2 { font-size: 16pt; }
+      h3 { font-size: 11pt; }
+      .meta, .scope, .check-context { font-size: 9pt; }
+      .lead { font-size: 12pt; margin-top: 8pt; }
+      .evidence, .subnote, .device p, th, td { font-size: 10pt; }
+      section { margin-top: 13pt; padding-top: 10pt; }
+      section > h2 { margin-bottom: 6pt; }
+      h1, h2, h3 { break-after: avoid; }
+      .flow, .device, .evidence, tr { break-inside: avoid; }
+      .flow { padding-block: 5pt; }
+      thead { display: table-header-group; }
+      th, td { padding: 5pt 6pt; }
+      .two-col { margin-top: 8pt; }
+      .device { padding: 8pt; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">跳到正文</a>
+  <header class="bar">
+    <div class="bar-inner">
+      <span class="brand">TOTP Authenticator</span>
+      <button class="print" type="button" onclick="window.print()">打印文档</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="contents" aria-label="文档目录">
+      <p class="contents-title">文档目录</p>
+      <ul>
+        <li><a href="#decision">改动与依据</a></li>
+        <li><a href="#layout">首页布局</a></li>
+        <li><a href="#actions">入口与操作</a></li>
+        <li><a href="#visual">控件样式</a></li>
+        <li><a href="#acceptance">验收清单</a></li>
+      </ul>
+    </nav>
+    <main id="main" tabindex="-1">
+      <header>
+        <p class="meta"><strong>产品需求文档</strong><span>v1.7</span><time datetime="2026-11-23">2026 年 11 月 23 日</time></p>
+        <h1>官网首页与交互演示优化</h1>
+        <p class="lead">移除首页右侧的静态扩展预览，把可操作的演示移到安装与试用按钮下方。想看效果的访客点一次「先试用一下」，就能动手体验。</p>
+        <p class="scope">适用范围为中英文首页、首页内嵌的演示，以及演示在独立页面中的入口。</p>
+      </header>
+
+      <section id="decision" aria-labelledby="decision-title">
+        <h2 id="decision-title">改动与依据</h2>
+        <p><strong>P0</strong>　移除静态预览的黑色外框、上传箭头、固定验证码卡片和底部点击提示，同时收回它占用的桌面右栏。首页的产品界面由现有交互演示提供。「添加账户」放在演示内的扩展工具栏。</p>
+        <p class="subnote"><strong>P1</strong>　把用户数、评分和版本放在首屏简介下方，方便访客在安装前查看。官网与演示区共用主要和次要按钮样式。</p>
+        <p class="evidence">11 月 23 日的中文版实测中，首屏上传箭头点击后没有反馈，同页演示里的「＋ 添加账户」能打开表单。在 390 × 844 的视口中，五张资料卡排在旧预览前，预览顶边位于页面第 1118 像素处。
+          <a href="https://mfa.xuejy.com/zh/">线上首页</a> · <a href="https://mfa.xuejy.com/demo/?lang=zh">独立演示</a>
+        </p>
+      </section>
+
+      <section id="layout" aria-labelledby="layout-title">
+        <h2 id="layout-title">首页布局</h2>
+        <ol class="sequence">
+          <li><strong>产品介绍。</strong>产品名下用一句话说明用途，「在 Chrome 中离线生成 2FA 验证码，支持主密码保护。」</li>
+          <li><strong>产品数据与入口。</strong>简介下面展示用户数、评分和版本，再放安装与试用按钮。卡片右侧边缘露出一部分防伪水印，青色亮纹自动扫过细线。中等宽度的窗口将水印收在右下方，窄屏只保留一角。装饰沿用首屏留白，开启减少动态效果时显示静态纹样。</li>
+          <li><strong>交互演示。</strong>紧接首屏展示现有演示，保留 <code>#demo</code> 锚点。桌面在左侧集中展示说明、播放和章节选择，右侧放可操作的扩展面板。小屏把章节目录移到面板下方。</li>
+          <li><strong>其余内容。</strong>继续展示功能、使用指南、隐私安全和常见问题。页脚提供源码、许可证和完整使用指南入口。</li>
+        </ol>
+        <div class="two-col">
+          <div class="device">
+            <h3>桌面</h3>
+            <p>1024 px 及以上采用紧凑的介绍区，下接通栏演示。演示内部左侧放操作说明，右侧放可操作的扩展面板。1440 × 900 首屏应可看到第一张账户卡。</p>
+          </div>
+          <div class="device">
+            <h3>平板与手机</h3>
+            <p>1024 px 以下按单列阅读。在 390 × 844 首屏内，完整展示「一键演示」按钮。点「先试用一下」后，直接看到扩展内的「添加账户」及第一张账户卡。</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="actions" aria-labelledby="actions-title">
+        <h2 id="actions-title">入口与操作</h2>
+        <dl class="flows">
+          <div class="flow"><dt>安装扩展<small>Install extension</small></dt><dd>打开现有 Chrome Web Store 扩展详情页。访客可以从首页直接前往商店。</dd></div>
+          <div class="flow"><dt>先试用一下<small>Try the demo</small></dt><dd>滚动到同页的扩展面板并进入手动模式。正在播放的讲解暂停。首次试用时聚焦「添加账户」。再次进入时恢复当前示例。如果表单已打开，保留输入和表单焦点。</dd></div>
+          <div class="flow"><dt>一键演示<small>自动讲解</small></dt><dd>访客主动点击后开始引导。保留现有章节、暂停和倍速操作，访客可随时切换到「自己试试」。</dd></div>
+          <div class="flow"><dt>＋ 添加账户<small>Add account</small></dt><dd>访客在演示工具栏点击后，打开同语言的示例表单。保留公开示例提示。取消或按 Esc 后，焦点回到原按钮。</dd></div>
+        </dl>
+        <p class="subnote"><strong>演示加载中或失败时。</strong> 点击试用即在演示区显示「正在加载演示…」。加载失败或等待超过 5 秒时提供「重试」和「打开独立演示」。重试成功后进入手动模式，独立入口沿用当前语言。安装入口始终可用。</p>
+      </section>
+
+      <section id="visual" aria-labelledby="visual-title">
+        <h2 id="visual-title">控件样式</h2>
+        <dl class="specs">
+          <div><dt>主要按钮</dt><dd>「安装扩展」与「一键演示」共用深蓝底 <code>#132238</code>、白字、高 48 px、字号 16 px、字重 600、圆角 6 px。</dd></div>
+          <div><dt>次要按钮</dt><dd>「先试用一下」与「自己试试」沿用主要按钮的尺寸和圆角，使用白底、深蓝字和 1 px 描边 <code>#CBD5E1</code>。</dd></div>
+          <div><dt>链接与焦点</dt><dd>文字链接和可见的键盘焦点使用深青色 <code>#0F766E</code>。当前章节与播放状态同时提供文字或图标提示。</dd></div>
+        </dl>
+        <p class="subnote">这套规格用于官网和演示外围。演示内的验证码、倒计时环和表单直接使用扩展自身的组件。</p>
+      </section>
+
+      <section id="acceptance" aria-labelledby="acceptance-title">
+        <h2 id="acceptance-title">验收清单</h2>
+        <p class="check-context">中文和英文各走一遍。浏览器缩放设为 100%，先从页顶检查首屏，再点击试用，检查操作控件是否可见。</p>
+        <table aria-label="首页改版的验收场景及通过条件">
+          <thead><tr><th scope="col">验收场景</th><th scope="col">通过条件</th></tr></thead>
+          <tbody>
+            <tr><th scope="row"><span class="priority">P0</span> 静态预览移除</th><td>桌面和手机都已移除旧预览及其空白占位，首页只有一份演示。已有的「交互演示」导航和首屏的试用入口都能到达该区域。</td></tr>
+            <tr><th scope="row"><span class="priority">P0</span> 一次点击试用</th><td>首次点击「先试用一下」后可直接操作，当前视口同时可见「添加账户」和第一张账户卡。再点「添加账户」才展开表单。重复点击试用保留示例状态。</td></tr>
+            <tr><th scope="row"><span class="priority">P0</span> 安装与异常恢复</th><td>安装按钮到达原商店详情页。模拟演示加载失败或超过 5 秒，两个恢复入口可用。重试只加载一份演示，独立入口打开所选语言。</td></tr>
+            <tr><th scope="row"><span class="priority">P1</span> 手机首屏</th><td>390 × 844 时，简介、同一行的三项数据和安装及试用入口都在演示前。「一键演示」完整可见，其底边距视口顶端不超过 844 px。</td></tr>
+            <tr><th scope="row"><span class="priority">P1</span> 桌面与平板</th><td>1440 × 900 首屏可见安装、试用和演示中的第一张账户卡。在 360、768、1024 和 1440 px 宽度下，文字及控件可见，页面无横向滚动。</td></tr>
+            <tr><th scope="row"><span class="priority">P1</span> 样式与键盘</th><td>对照两组按钮的颜色、高度和圆角。用 Tab、Enter、Esc 完成试用、打开及关闭表单，能看清焦点，固定页头不会遮住操作。</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,31 @@
+.site-action.site-action-primary,
+.site-action.site-action-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.site-action.site-action-primary { background: #132238; border-color: #132238; color: white; box-shadow: 0 2px 4px #14312c1a, inset 0 1px 0 #ffffff14; }
+.site-action.site-action-secondary { background: white; border-color: #cbd5e1; color: #132238; }
+.site-action svg { width: 18px; height: 18px; flex: none; }
+.site-action:focus-visible { outline: 2px solid #0f766e; outline-offset: 3px; }
+.site-action:disabled { opacity: .6; cursor: wait; }
+@media (hover: hover) and (pointer: fine) {
+  .site-action.site-action-primary:hover:not(:disabled) { background: #243950; border-color: #243950; transform: none; }
+  .site-action.site-action-secondary:hover { background: #f6f8fb; border-color: #8598a9; }
+}
+@media (prefers-reduced-motion: no-preference) and (pointer: fine) {
+  .site-action:active:not(:focus-visible):not(:disabled) { transform: scale(.98); }
+}

@@ -9,6 +9,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
+        demo: 'demo/index.html',
         zh: 'zh/index.html',
         guide: 'guide/how-to-use-totp-authenticator/index.html',
         zhGuide: 'zh/guide/how-to-use-totp-authenticator/index.html',

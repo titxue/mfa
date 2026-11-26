@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import {
   ArrowRight,
-  CheckCircle2,
+  ChevronDown,
   Chrome,
   Clock3,
   CloudOff,
@@ -15,9 +15,9 @@ import {
   Copy,
   QrCode,
   ShieldCheck,
-  Upload,
 } from 'lucide-react'
 import { extensionMetadata } from './generated/extensionMetadata'
+import { InteractiveDemo } from './InteractiveDemo'
 import './styles.css'
 
 type Locale = 'zh-CN' | 'en-US'
@@ -38,35 +38,19 @@ type Step = {
   body: string
 }
 
-type TrustSignal = {
-  label: string
-  value: string
-  dynamic?: 'users' | 'rating' | 'version'
-}
-
 type Copy = {
   nav: {
+    demo: string
     features: string
     guide: string
     privacy: string
     faq: string
   }
   hero: {
-    badge: string
     title: string
     lead: string
     install: string
-    github: string
-    proof: string[]
-    trustSignals: TrustSignal[]
-    usersSuffix: string
-    ratingSuffix: string
-  }
-  mockup: {
-    title: string
-    add: string
-    accounts: Array<{ name: string; code: string; time: string }>
-    hint: string
+    stats: { users: string; rating: string; version: string; verifiedOn: string }
   }
   sections: {
     features: string
@@ -97,42 +81,26 @@ const chromeStoreUsersUrl =
   'https://img.shields.io/chrome-web-store/users/dhipejmoajhjflafhbibojfoeogbmjgf.json'
 const chromeStoreRatingUrl =
   'https://img.shields.io/chrome-web-store/rating/dhipejmoajhjflafhbibojfoeogbmjgf.json'
+const verifiedStoreStats = { users: '2k', rating: '5/5', date: '2026-11-23' }
+const storeStatFormats = {
+  users: /^(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?[kmb]?\+?$/i,
+  rating: /^(?:[0-4](?:\.\d+)?|5(?:\.0+)?)\s*\/\s*5$/,
+}
 
 const copy: Record<Locale, Copy> = {
   'zh-CN': {
     nav: {
+      demo: '交互演示',
       features: '功能',
       guide: '使用指南',
       privacy: '隐私安全',
       faq: '常见问题',
     },
     hero: {
-      badge: 'Chrome 扩展 · 离线生成 · 密码保护',
       title: 'TOTP Authenticator',
-      lead:
-        '离线生成 2FA 验证码，支持主密码保护、加密备份、网站填充和 12 种语言。导入前查看账户数量，管理账户更清楚。',
+      lead: '在 Chrome 中离线生成 2FA 验证码，支持主密码保护。',
       install: '安装扩展',
-      github: '查看源码',
-      proof: ['本地生成验证码', '支持密码保护', '支持 Chrome 同步存储'],
-      trustSignals: [
-        { label: '用户数量', value: 'Chrome Web Store', dynamic: 'users' },
-        { label: '评分', value: 'Chrome Web Store', dynamic: 'rating' },
-        { label: '版本', value: '自动同步', dynamic: 'version' },
-        { label: '源代码', value: 'GitHub 开源' },
-        { label: '许可证', value: 'MIT License' },
-      ],
-      usersSuffix: '用户',
-      ratingSuffix: '评分',
-    },
-    mockup: {
-      title: 'TOTP 生成器',
-      add: '添加账户',
-      accounts: [
-        { name: 'GitHub', code: '482 917', time: '18s' },
-        { name: 'Cloudflare', code: '036 884', time: '24s' },
-        { name: 'Google', code: '719 430', time: '09s' },
-      ],
-      hint: '点击账户尝试填充验证码，也可按设置回退复制。',
+      stats: { users: '用户数', rating: '评分', version: '版本', verifiedOn: 'Chrome 应用商店核对日期' },
     },
     sections: {
       features: '为日常登录做得足够顺手',
@@ -244,38 +212,17 @@ const copy: Record<Locale, Copy> = {
   },
   'en-US': {
     nav: {
+      demo: 'Demo',
       features: 'Features',
       guide: 'Guide',
       privacy: 'Privacy',
       faq: 'FAQ',
     },
     hero: {
-      badge: 'Chrome extension · Offline codes · Password protection',
       title: 'TOTP Authenticator',
-      lead:
-        'Generate 2FA codes offline with password protection, encrypted backups, website filling, and 12 languages. Preview the account count before confirming an import.',
+      lead: 'Generate 2FA codes offline in Chrome and protect your accounts with a password.',
       install: 'Install extension',
-      github: 'View source',
-      proof: ['Codes generated locally', 'Password protection available', 'Chrome sync storage support'],
-      trustSignals: [
-        { label: 'Users', value: 'Chrome Web Store', dynamic: 'users' },
-        { label: 'Rating', value: 'Chrome Web Store', dynamic: 'rating' },
-        { label: 'Version', value: 'Synced from package.json', dynamic: 'version' },
-        { label: 'Source code', value: 'Open source on GitHub' },
-        { label: 'License', value: 'MIT License' },
-      ],
-      usersSuffix: 'users',
-      ratingSuffix: 'rating',
-    },
-    mockup: {
-      title: 'TOTP Generator',
-      add: 'Add account',
-      accounts: [
-        { name: 'GitHub', code: '482 917', time: '18s' },
-        { name: 'Cloudflare', code: '036 884', time: '24s' },
-        { name: 'Google', code: '719 430', time: '09s' },
-      ],
-      hint: 'Click an account to fill a code, with optional copy fallback.',
+      stats: { users: 'Users', rating: 'Rating', version: 'Version', verifiedOn: 'Chrome Web Store · verified on' },
     },
     sections: {
       features: 'Made for everyday sign-ins',
@@ -413,34 +360,22 @@ function useChromeWebStoreStats() {
   React.useEffect(() => {
     let ignore = false
 
-    async function loadStats() {
+    async function loadStat(key: keyof typeof stats, url: string) {
       try {
-        const [usersResponse, ratingResponse] = await Promise.all([
-          fetch(chromeStoreUsersUrl),
-          fetch(chromeStoreRatingUrl),
-        ])
-
-        if (!usersResponse.ok || !ratingResponse.ok) {
-          return
-        }
-
-        const users = (await usersResponse.json()) as { value?: string; message?: string }
-        const rating = (await ratingResponse.json()) as { value?: string; message?: string }
-
-        if (!ignore) {
-          setStats({
-            users: users.value ?? users.message,
-            rating: rating.value ?? rating.message,
-          })
-        }
+        const response = await fetch(url)
+        if (!response.ok) return
+        const data = await response.json() as { value?: unknown; message?: unknown; isError?: boolean }
+        const rawValue = data.value ?? data.message
+        if (data.isError || typeof rawValue !== 'string') return
+        const value = rawValue.trim()
+        if (!ignore && storeStatFormats[key].test(value)) setStats(current => ({ ...current, [key]: value }))
       } catch {
-        if (!ignore) {
-          setStats({})
-        }
+        return
       }
     }
 
-    void loadStats()
+    void loadStat('users', chromeStoreUsersUrl)
+    void loadStat('rating', chromeStoreRatingUrl)
 
     return () => {
       ignore = true
@@ -507,29 +442,22 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-cloud text-ink">
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <a className="flex min-w-0 items-center gap-3" href="#top" aria-label="TOTP Authenticator">
-            <img className="h-9 w-9 shrink-0" src="/icon128.png" alt="" />
-            <span className="truncate text-base font-semibold sm:text-lg">TOTP Authenticator</span>
+    <div className="homepage">
+      <header className="masthead">
+        <div className="site-width masthead-inner">
+          <a className="brand-link" href="#top" aria-label="TOTP Authenticator">
+            <img width="36" height="36" src="/icon128.png" alt="" />
+            <span>TOTP Authenticator</span>
           </a>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
-            <a className="hover:text-ink" href="#features">
-              {t.nav.features}
-            </a>
-            <a className="hover:text-ink" href="#guide">
-              {t.nav.guide}
-            </a>
-            <a className="hover:text-ink" href="#privacy">
-              {t.nav.privacy}
-            </a>
-            <a className="hover:text-ink" href="#faq">
-              {t.nav.faq}
-            </a>
+          <nav className="masthead-nav">
+            <a href="#demo">{t.nav.demo}</a>
+            <a href="#features">{t.nav.features}</a>
+            <a href="#guide">{t.nav.guide}</a>
+            <a href="#privacy">{t.nav.privacy}</a>
+            <a href="#faq">{t.nav.faq}</a>
           </nav>
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-sm font-semibold text-ink shadow-sm transition hover:border-mint hover:text-mint"
+            className="language-button"
             type="button"
             onClick={switchLocale}
           >
@@ -540,129 +468,77 @@ function App() {
       </header>
 
       <main id="top">
-        <section className="relative overflow-hidden bg-white">
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[1fr_460px] lg:px-8 lg:py-24">
-            <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-mint/20 bg-mint/10 px-4 py-2 text-sm font-semibold text-mint">
-                <ShieldCheck className="h-4 w-4" />
-                {t.hero.badge}
-              </div>
-              <h1 className="mt-7 max-w-3xl text-4xl font-bold leading-tight text-ink sm:text-5xl lg:text-6xl">
-                {t.hero.title}
-              </h1>
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700">{t.hero.lead}</p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-ink px-5 text-base font-semibold text-white shadow-panel transition hover:bg-slate-800" href={chromeStoreUrl}>
-                  <Chrome className="h-5 w-5" />
-                  {t.hero.install}
-                  <ArrowRight className="h-4 w-4" />
-                </a>
-                <a className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-5 text-base font-semibold text-ink transition hover:border-saffron hover:text-saffron" href={githubUrl}>
-                  <Github className="h-5 w-5" />
-                  {t.hero.github}
-                </a>
-              </div>
-              <div className="mt-8 grid gap-3 text-sm font-medium text-slate-700 sm:grid-cols-3">
-                {t.hero.proof.map((item) => (
-                  <div className="flex items-start gap-2" key={item}>
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-mint" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {t.hero.trustSignals.map((item) => (
-                  <div className="rounded-lg border border-slate-200 bg-cloud px-4 py-3" key={item.label}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
-                    <p className="mt-1 text-sm font-bold text-ink">
-                      {formatTrustSignal(item, storeStats, siteMetadata, t)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+        <InteractiveDemo
+          key={locale}
+          locale={locale}
+          hero={t.hero}
+          productStats={[
+            ...(['users', 'rating'] as const).map(key => ({
+              label: t.hero.stats[key],
+              value: storeStats[key] ?? verifiedStoreStats[key],
+              title: storeStats[key] === undefined ? `${t.hero.stats.verifiedOn} ${verifiedStoreStats.date}` : undefined,
+            })),
+            { label: t.hero.stats.version, value: `v${siteMetadata.version}` },
+          ]}
+          installUrl={chromeStoreUrl}
+        />
 
-            <ExtensionMockup copy={t.mockup} />
+        <section id="features" className="site-width info-section" aria-labelledby="features-heading">
+          <SectionHeader id="features-heading" title={t.sections.features} lead={t.sections.featuresLead} />
+          <div className="feature-grid">
+            {t.features.map(feature => <FeatureCard key={feature.title} feature={feature} />)}
           </div>
         </section>
 
-        <SectionHeader id="features" title={t.sections.features} lead={t.sections.featuresLead} />
-        <section className="mx-auto grid max-w-7xl gap-4 px-4 pb-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-3 lg:px-8">
-          {t.features.map((feature) => (
-            <FeatureCard key={feature.title} feature={feature} />
-          ))}
-        </section>
-
-        <section id="guide" className="bg-white py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              <h2 className="text-3xl font-bold leading-tight text-ink sm:text-4xl">{t.sections.guide}</h2>
-              <p className="mt-4 text-lg leading-8 text-slate-700">{t.sections.guideLead}</p>
-            </div>
-            <div className="mt-10 grid gap-4 lg:grid-cols-4">
+        <section id="guide" className="guide-band" aria-labelledby="guide-heading">
+          <div className="site-width info-section">
+            <SectionHeader id="guide-heading" title={t.sections.guide} lead={t.sections.guideLead} />
+            <ol className="guide-steps">
               {t.steps.map((step, index) => (
-                <article className="rounded-lg border border-slate-200 bg-cloud p-5" key={step.title}>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-md bg-saffron text-sm font-bold text-ink">
-                    {index + 1}
-                  </div>
-                  <h3 className="mt-5 text-lg font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-slate-700">{step.body}</p>
-                </article>
+                <li key={step.title}>
+                  <span className="step-number" aria-hidden="true">{index + 1}</span>
+                  <h3>{step.title}</h3>
+                  <p>{step.body}</p>
+                </li>
               ))}
+            </ol>
+            <a className="text-link guide-link" href={guideUrl}>{t.footer.guide}<ArrowRight aria-hidden="true" /></a>
+          </div>
+        </section>
+
+        <section id="privacy" className="site-width info-section" aria-labelledby="privacy-heading">
+          <div className="privacy-panel">
+            <SectionHeader id="privacy-heading" title={t.sections.privacy} lead={t.sections.privacyLead} />
+            <div className="privacy-grid">
+              {t.privacy.map(feature => <FeatureCard key={feature.title} feature={feature} />)}
             </div>
           </div>
         </section>
 
-        <SectionHeader id="privacy" title={t.sections.privacy} lead={t.sections.privacyLead} />
-        <section className="mx-auto grid max-w-7xl gap-4 px-4 pb-16 sm:px-6 lg:grid-cols-3 lg:px-8">
-          {t.privacy.map((feature) => (
-            <FeatureCard key={feature.title} feature={feature} tone="privacy" />
-          ))}
-        </section>
-
-        <section id="faq" className="bg-white py-16">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold text-ink sm:text-4xl">{t.sections.faq}</h2>
-              <p className="mt-4 text-lg leading-8 text-slate-700">{t.sections.faqLead}</p>
-            </div>
-            <div className="mt-10 space-y-3">
-              {t.faqs.map((item) => (
-                <details className="group rounded-lg border border-slate-200 bg-cloud p-5" key={item.question}>
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-semibold text-ink">
-                    {item.question}
-                    <ArrowRight className="h-4 w-4 shrink-0 transition group-open:rotate-90" />
-                  </summary>
-                  <p className="mt-4 text-sm leading-6 text-slate-700">{item.answer}</p>
-                </details>
-              ))}
-            </div>
+        <section id="faq" className="site-width info-section faq-section" aria-labelledby="faq-heading">
+          <SectionHeader id="faq-heading" title={t.sections.faq} lead={t.sections.faqLead} />
+          <div className="faq-list">
+            {t.faqs.map(item => (
+              <details key={item.question}>
+                <summary>{item.question}<ChevronDown aria-hidden="true" /></summary>
+                <p>{item.answer}</p>
+              </details>
+            ))}
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-ink text-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <div className="flex items-center gap-3">
-            <img className="h-10 w-10" src="/icon128.png" alt="" />
-            <div>
-              <p className="font-semibold">TOTP Authenticator</p>
-              <p className="text-sm text-slate-300">{t.footer.summary}</p>
-            </div>
+      <footer className="home-footer">
+        <div className="site-width footer-inner">
+          <div className="footer-brand">
+            <a className="brand-link" href="#top"><img width="36" height="36" src="/icon128.png" alt="" />TOTP Authenticator</a>
+            <p>{t.footer.summary}</p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <a className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-white/25 px-4 text-sm font-semibold text-white" href={guideUrl}>
-              <ArrowRight className="h-4 w-4" />
-              {t.footer.guide}
-            </a>
-            <a className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-white px-4 text-sm font-semibold text-ink" href={chromeStoreUrl}>
-              <Chrome className="h-4 w-4" />
-              {t.footer.install}
-            </a>
-            <a className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-white/25 px-4 text-sm font-semibold text-white" href={githubUrl}>
-              <Github className="h-4 w-4" />
-              {t.footer.source}
-            </a>
+          <div className="footer-links">
+            <a href={guideUrl}>{t.footer.guide}</a>
+            <a href={chromeStoreUrl}><Chrome aria-hidden="true" />{t.footer.install}</a>
+            <a href={githubUrl}><Github aria-hidden="true" />{t.footer.source}</a>
+            {siteMetadata.license === 'MIT' && <a href="https://opensource.org/license/mit">MIT License</a>}
           </div>
         </div>
       </footer>
@@ -670,97 +546,24 @@ function App() {
   )
 }
 
-function formatTrustSignal(
-  signal: TrustSignal,
-  stats: { users?: string; rating?: string },
-  metadata: typeof extensionMetadata,
-  t: Copy,
-) {
-  if (signal.dynamic === 'users' && stats.users) {
-    return `${stats.users} ${t.hero.usersSuffix}`
-  }
-
-  if (signal.dynamic === 'rating' && stats.rating) {
-    return `${stats.rating} ${t.hero.ratingSuffix}`
-  }
-
-  if (signal.dynamic === 'version') {
-    return `v${metadata.version}`
-  }
-
-  return signal.value
-}
-
 function SectionHeader({ id, title, lead }: { id: string; title: string; lead: string }) {
   return (
-    <section id={id} className="mx-auto max-w-7xl px-4 pb-10 pt-16 sm:px-6 lg:px-8">
-      <div className="max-w-3xl">
-        <h2 className="text-3xl font-bold leading-tight text-ink sm:text-4xl">{title}</h2>
-        <p className="mt-4 text-lg leading-8 text-slate-700">{lead}</p>
-      </div>
-    </section>
-  )
-}
-
-function FeatureCard({ feature, tone = 'feature' }: { feature: Feature; tone?: 'feature' | 'privacy' }) {
-  const Icon = feature.icon
-  const iconClass = tone === 'privacy' ? 'bg-ink text-white' : 'bg-mint/10 text-mint'
-
-  return (
-    <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-      <div className={`flex h-11 w-11 items-center justify-center rounded-md ${iconClass}`}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <h3 className="mt-5 text-lg font-semibold text-ink">{feature.title}</h3>
-      <p className="mt-3 text-sm leading-6 text-slate-700">{feature.body}</p>
-    </article>
-  )
-}
-
-function ExtensionMockup({ copy: mockup }: { copy: Copy['mockup'] }) {
-  return (
-    <div className="mx-auto w-full max-w-[460px] rounded-[28px] border border-slate-200 bg-slate-950 p-3 shadow-panel">
-      <div className="rounded-[20px] bg-white p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <img className="h-10 w-10 shrink-0" src="/icon128.png" alt="" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-ink">{mockup.title}</p>
-              <p className="text-xs text-slate-500">2FA OTP Code Generator</p>
-            </div>
-          </div>
-          <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-ink text-white" type="button" aria-label={mockup.add}>
-            <Upload className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="mt-6 space-y-3">
-          {mockup.accounts.map((account, index) => (
-            <div className="rounded-lg border border-slate-200 bg-cloud p-4" key={account.name}>
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-ink">{account.name}</p>
-                  <p className="mt-2 font-mono text-2xl font-bold text-ink">{account.code}</p>
-                </div>
-                <div className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-[5px] border-slate-200">
-                  <div
-                    className={`absolute inset-[-5px] rounded-full border-[5px] ${
-                      index === 2 ? 'border-saffron' : 'border-mint'
-                    } border-l-transparent border-b-transparent`}
-                  />
-                  <span className="text-xs font-bold text-slate-700">{account.time}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-5 flex items-start gap-3 rounded-lg bg-mint/10 p-4 text-sm leading-6 text-slate-700">
-          <QrCode className="mt-0.5 h-5 w-5 shrink-0 text-mint" />
-          <p>{mockup.hint}</p>
-        </div>
-      </div>
+    <div className="section-heading">
+      <h2 id={id}>{title}</h2>
+      <p>{lead}</p>
     </div>
+  )
+}
+
+function FeatureCard({ feature }: { feature: Feature }) {
+  const Icon = feature.icon
+
+  return (
+    <article className="feature-card">
+      <span className="feature-icon" aria-hidden="true"><Icon /></span>
+      <h3>{feature.title}</h3>
+      <p>{feature.body}</p>
+    </article>
   )
 }
 

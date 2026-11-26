@@ -1,0 +1,39 @@
+@font-face {
+  font-family: Inter;
+  src: url('/demo/media/inter.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+* { box-sizing: border-box; }
+html {
+  color-scheme: light;
+  font-family: Inter, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #142c32;
+  background: #f4f8f4;
+}
+body { margin: 0; }
+a { color: #08675e; text-underline-offset: 4px; }
+:focus-visible { outline: 2px solid #0f766e; outline-offset: 3px; }
+header, footer { width: min(1216px, calc(100% - 64px)); margin-inline: auto; }
+header { display: flex; min-height: 68px; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #d1e2d9; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: #142c32; font-size: 17px; font-weight: 680; letter-spacing: -.04em; }
+.brand img { width: 36px; height: 36px; border-radius: 9px; }
+header > a:last-child { border: 1px solid #c7dad1; border-radius: 20px; padding: 7px 14px; text-decoration: none; background: white; font-size: 14px; }
+main { width: min(850px, calc(100% - 40px)); margin: clamp(22px, 4vw, 54px) auto; }
+.panel { padding: clamp(22px, 5vw, 62px); background: white; border: 1px solid #d4e2da; border-radius: 18px; }
+.panel p:first-child { margin-top: 0; font-size: 14px; }
+h1 { margin: 16px 0; font-size: clamp(32px, 4vw, 56px); line-height: 1.14; letter-spacing: -.045em; text-wrap: balance; }
+h1 > span { display: inline-block; }
+h2 { margin: 34px 0 12px; padding-top: 22px; border-top: 1px solid #dbe8df; font-size: clamp(21px, 2.3vw, 27px); letter-spacing: -.03em; }
+p, li { font-size: 16px; line-height: 1.85; color: #425c58; overflow-wrap: anywhere; }
+.panel > .site-action { margin-top: 3px; }
+footer { padding-block: 12px 26px; border-top: 1px solid #d1e2d9; }
+footer p { font-size: 14px; }
+@media (max-width: 620px) {
+  header, footer, main { width: calc(100% - 28px); }
+  header { min-height: 58px; }
+  .brand { font-size: 16px; }
+  .brand img { width: 32px; height: 32px; }
+  .panel { padding: 20px 16px; border-radius: 12px; }
+  h1 { font-size: 31px; }
+}
