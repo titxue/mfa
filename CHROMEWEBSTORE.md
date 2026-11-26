@@ -1,6 +1,6 @@
 # Chrome Web Store — MFA
 
-Last updated: 2026-11-10 (Asia/Shanghai).
+Last updated: 2026-11-25 (Asia/Shanghai).
 
 ## Original listing
 
@@ -11,7 +11,7 @@ Last updated: 2026-11-10 (Asia/Shanghai).
 - Short description: Secure and fast TOTP authenticator for 2FA login. Generate OTP codes offline and manage multiple accounts easily.
 - Primary language: English; 12 extension languages.
 - Category, distribution, publisher identity and contact: retain the existing listing settings; do not create another item.
-- Public version observed on 2026-11-10: 2.4.0. Update 2.4.1 was submitted for review at 2026-11-10 18:27 Asia/Shanghai; status: In Review, automatically publish after approval.
+- Public version observed on 2026-11-25: 2.4.1. The store lists November 11 as the update date. The November 25 listing-only update is in review with automatic publication enabled.
 
 ## Updated detailed description
 
@@ -59,11 +59,21 @@ Privacy policy URL: https://raw.githubusercontent.com/titxue/mfa/master/docs/PRI
 
 The production package contains valid 16, 48 and 128 pixel icons. The submitted global listing uses one fresh 1280×800 account-list screenshot with synthetic accounts; the previous screenshot was replaced. Default add-form and advanced-settings screenshots remain available in the release evidence directory.
 
+### November 25 listing update
+
+The English listing has a new first screenshot in its localized media slot. It shows the extension with demonstration accounts and the public tutorial QR. The 1280×800 RGB PNG was checked with the extension's QR decoder against the tutorial image. [English screenshot](docs/assets/store/en-qr-to-code.png)
+
+The Simplified Chinese, Japanese and Korean long descriptions now explain how to paste a setup QR, generate codes offline and fill a selected website. They cover the 12 main-interface languages, Chrome Sync, optional Steam linking to Valve and the handling of backups. Each description was checked after saving and switching back to the locale in the dashboard.
+
+A second English screenshot demonstrates selecting the GitHub sample account and filling the matching six-digit code in the sample sign-in form. It is reserved for a later experiment. [Select-and-fill screenshot](docs/assets/store/en-select-and-fill.png)
+
+The dashboard confirmed submission and showed 待审核 on November 25. Measure the screenshot experiment from its first verified public appearance.
+
 ## Release history
 
 | Version | Date | Changes | Status |
 | --- | --- | --- | --- |
-| 2.4.1 | 2026-11-10 | Re-encrypt observed recovery copies during password changes; preserve legacy account reads and writes without forced migration; retain unknown data and block unsafe writes. | In Review; automatically publish after approval |
+| 2.4.1 | 2026-11-10 | Re-encrypt observed recovery copies during password changes; preserve legacy account reads and writes without forced migration; retain unknown data and block unsafe writes. | Published; verified 2026-11-25 |
 | 2.4.0 | 2026-11-06 | Configurable TOTP parameters; protected vault migration/recovery; simpler advanced settings; website field beneath name; clearer recovery status. | Published; observed 2026-11-10 |
 | 2.3.9 | Observed 2026-11-06 | Previous published version. | Published |
 

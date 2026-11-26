@@ -28,11 +28,13 @@ export function InteractiveDemo({ locale, hero, productStats, installUrl }: Prop
   const frame = useRef<HTMLIFrameElement>(null)
   const pendingExplore = useRef(false)
   const [attempt, setAttempt] = useState(0)
-  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [status, setStatus] = useState<'loading' | 'slow' | 'ready' | 'error'>('loading')
 
   useEffect(() => {
     const iframe = frame.current!
-    const timeout = window.setTimeout(() => setStatus('error'), 5000)
+    const timeout = window.setTimeout(() => {
+      setStatus(current => current === 'loading' ? 'slow' : current)
+    }, 5000)
     function receive(event: MessageEvent) {
       if (event.origin !== location.origin || event.source !== iframe.contentWindow || !event.data) return
       const { type, height, offset } = event.data
@@ -121,7 +123,10 @@ export function InteractiveDemo({ locale, hero, productStats, installUrl }: Prop
         </div>
         {status !== 'ready' && (
           <div role="status" className="mb-3 flex flex-wrap items-center gap-3 rounded-md bg-cloud px-4 py-2 text-sm text-slate-700">
-            {status === 'error' ? <>{text.unavailable}<button className="font-semibold text-teal-700 underline" type="button" onClick={retry}>{text.retry}</button></> : text.loading}
+            {status === 'error' ? text.unavailable : text.loading}
+            {(status === 'slow' || status === 'error') && (
+              <button className="font-semibold text-teal-700 underline" type="button" onClick={retry}>{text.retry}</button>
+            )}
           </div>
         )}
         <div className={status === 'error' ? 'h-0 overflow-hidden' : undefined} inert={status === 'error'}>
