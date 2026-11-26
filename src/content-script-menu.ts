@@ -10,6 +10,7 @@ import { TOTP } from '@/utils/totp'
 export interface MenuAccount {
   name: string
   website?: string
+  period?: number
 }
 
 export interface MenuStrings {
@@ -475,12 +476,16 @@ function renderMenu(menuEl: HTMLElement, opts: InlineMenuOptions): () => void {
     }
   })
 
-  // 实时刷新验证码（随 30s 周期更新，仅更新文本不重建 DOM）
+  // Check each public period boundary without requesting unchanged account codes.
+  const steps = new Map<MenuAccount, number>()
   const refreshCodes = (): void => {
     for (const [account, el] of codeEls) {
+      const step = Math.floor(Date.now() / ((account.period ?? 30) * 1000))
+      if (steps.get(account) === step) continue
+      steps.set(account, step)
       opts.getCode(account)
         .then((code) => {
-          if (el.isConnected) el.textContent = TOTP.formatCode(code)
+          if (el.isConnected && steps.get(account) === step) el.textContent = TOTP.formatCode(code)
         })
         .catch(() => {
           // ignore
@@ -507,13 +512,8 @@ function openMenu(): void {
   doc.documentElement.appendChild(menuHost)
   menuRefresh = renderMenu(menuEl, options)
   positionMenu(menuEl)
-  let lastStep = Math.floor(Date.now() / 30000)
   refreshTimer = window.setInterval(() => {
-    const step = Math.floor(Date.now() / 30000)
-    if (step !== lastStep) {
-      lastStep = step
-      if (menuRefresh) menuRefresh()
-    }
+    if (menuRefresh) menuRefresh()
   }, 1000)
 }
 

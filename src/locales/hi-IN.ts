@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const hiIN: Translations = {
+  'qr.show_button': 'QR कोड दिखाएँ',
+  'settings.appearance': 'दिखावट',
+  'settings.theme.light': 'लाइट',
+  'settings.theme.dark': 'डार्क',
+  'settings.theme.system': 'सिस्टम',
   // पृष्ठ शीर्षक और बटन
   'title': 'TOTP जनरेटर',
   'addAccount': 'खाता जोड़ें',
@@ -18,6 +23,15 @@ export const hiIN: Translations = {
   'form.title_edit': 'खाता संपादित करें',
   'form.title': 'खाता जोड़ें',
   'form.accountName': 'खाता नाम',
+  'form.codeType': 'कोड प्रकार',
+  'form.codeTypeTotp': 'मानक TOTP',
+  'form.algorithm': 'एल्गोरिथम',
+  'form.digits': 'अंक',
+  'form.period': 'अवधि (सेकंड)',
+  'form.advancedSettings': 'उन्नत सेटिंग्स',
+  'form.advancedHint': 'कोड की सेटिंग्स केवल तभी बदलें जब आपका सेवा प्रदाता ऐसा करने को कहे।',
+  'form.customSettings': 'कस्टम सेटिंग्स',
+  'form.steamSecretDesc': 'Steam की Base32 कुंजी या Base64 shared_secret दर्ज करें।',
   'form.secretKey': 'गुप्त कुंजी',
   'form.accountInfo': 'खाता जानकारी',
   'form.accountNameDesc': 'इस खाते के लिए एक आसानी से पहचाने जाने वाला नाम सेट करें',
@@ -28,7 +42,7 @@ export const hiIN: Translations = {
   'form.secretKeyPlaceholder': 'Base32 प्रारूप में कुंजी दर्ज करें',
   'form.scanQRCode': 'QR कोड स्कैन करें',
   'form.scanQRCodeDesc': 'TOTP QR कोड वाली छवि अपलोड करें',
-  'form.pasteQRCodeHint': 'या छवि/टोकन पेस्ट करने के लिए Ctrl+V दबाएं',
+  'form.pasteQRCodeHint': 'QR कोड या लिंक पेस्ट करें, या चित्र खींचकर यहाँ छोड़ें।',
   'form.dropImageHere': 'छवि अपलोड करने के लिए छोड़ें',
   'form.dropImageDesc': 'QR कोड वाली छवि को यहां खींचें और छोड़ें',
   'form.website': 'वेबसाइट',
@@ -42,6 +56,8 @@ export const hiIN: Translations = {
 
   // सेटिंग्स
   'settings.title': 'सेटिंग्स',
+  'settings.advancedHint': 'सिंक रिकवरी और अतिरिक्त सेटिंग्स',
+  'settings.recovery': 'रिकवरी और बैकअप इतिहास',
   'settings.accountManagement': 'खाता प्रबंधन',
   'settings.language': 'भाषा सेटिंग्स',
   'settings.about': 'ऐप के बारे में',
@@ -104,7 +120,7 @@ export const hiIN: Translations = {
   'toast.qr_scanning': 'QR कोड स्कैन किया जा रहा है...',
   'toast.qr_success': 'QR कोड सफलतापूर्वक पहचाना गया',
   'toast.qr_no_code': 'QR कोड नहीं मिला, कृपया पुनः प्रयास करें',
-  'toast.unsupported_totp': 'यह सेटिंग समर्थित नहीं है। केवल SHA1, 6 अंक और 30 सेकंड की अवधि समर्थित है।',
+  'toast.unsupported_totp': 'यह सेटिंग समर्थित नहीं है। 30 सेकंड अवधि के SHA1 में 6 अंकों का कोड या Steam Guard समर्थित है।',
   'toast.qr_invalid_format': 'अमान्य QR कोड प्रारूप',
   'toast.qr_parse_failed': 'QR कोड पार्स करने में विफल',
   'toast.qr_invalid_file_type': 'असमर्थित फ़ाइल प्रकार, कृपया एक छवि फ़ाइल अपलोड करें',

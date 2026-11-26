@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const ruRU: Translations = {
+  'qr.show_button': 'Показать QR-код',
+  'settings.appearance': 'Оформление',
+  'settings.theme.light': 'Светлое',
+  'settings.theme.dark': 'Тёмное',
+  'settings.theme.system': 'Системное',
   // Заголовок страницы и кнопки
   'title': 'Генератор TOTP',
   'addAccount': 'Добавить аккаунт',
@@ -18,6 +23,15 @@ export const ruRU: Translations = {
   'form.title_edit': 'Редактировать аккаунт',
   'form.title': 'Добавить аккаунт',
   'form.accountName': 'Имя аккаунта',
+  'form.codeType': 'Тип кода',
+  'form.codeTypeTotp': 'Стандартный TOTP',
+  'form.algorithm': 'Алгоритм',
+  'form.digits': 'Цифры',
+  'form.period': 'Период (секунды)',
+  'form.advancedSettings': 'Дополнительные настройки',
+  'form.advancedHint': 'Меняйте настройки кода только по требованию поставщика сервиса.',
+  'form.customSettings': 'Изменено',
+  'form.steamSecretDesc': 'Введите ключ Steam Base32 или shared_secret Base64.',
   'form.secretKey': 'Секретный ключ',
   'form.accountInfo': 'Информация об аккаунте',
   'form.accountNameDesc': 'Установите узнаваемое имя для этого аккаунта',
@@ -28,7 +42,7 @@ export const ruRU: Translations = {
   'form.secretKeyPlaceholder': 'Введите ключ в формате Base32',
   'form.scanQRCode': 'Сканировать QR-код',
   'form.scanQRCodeDesc': 'Загрузите изображение с QR-кодом TOTP',
-  'form.pasteQRCodeHint': 'или нажмите Ctrl+V, чтобы вставить изображение/токен',
+  'form.pasteQRCodeHint': 'Вставьте QR-код или ссылку либо перетащите изображение.',
   'form.dropImageHere': 'Отпустите для загрузки изображения',
   'form.dropImageDesc': 'Перетащите сюда изображение с QR-кодом',
   'form.website': 'Веб-сайт',
@@ -42,6 +56,8 @@ export const ruRU: Translations = {
 
   // Настройки
   'settings.title': 'Настройки',
+  'settings.advancedHint': 'Восстановление синхронизации и другие настройки',
+  'settings.recovery': 'Восстановление и история копий',
   'settings.accountManagement': 'Управление аккаунтами',
   'settings.language': 'Настройки языка',
   'settings.about': 'О приложении',
@@ -104,7 +120,7 @@ export const ruRU: Translations = {
   'toast.qr_scanning': 'Сканирование QR-кода...',
   'toast.qr_success': 'QR-код успешно распознан',
   'toast.qr_no_code': 'QR-код не найден, попробуйте снова',
-  'toast.unsupported_totp': 'Неподдерживаемые параметры. Поддерживаются только SHA1, 6 цифр и период 30 секунд.',
+  'toast.unsupported_totp': 'Неподдерживаемые параметры. Поддерживается SHA1 с периодом 30 секунд: 6 цифр или Steam Guard.',
   'toast.qr_invalid_format': 'Неверный формат QR-кода',
   'toast.qr_parse_failed': 'Не удалось разобрать QR-код',
   'toast.qr_invalid_file_type': 'Неподдерживаемый тип файла, загрузите изображение',

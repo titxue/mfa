@@ -57,6 +57,65 @@ describe('Steam Guard generation', () => {
 })
 
 describe('Steam import and round trips', () => {
+  test('ambiguous ordinary Steam labels round trip without changing type, key, code or name', async () => {
+    for (const name of ['Steam:alice', 'sTeAm:alice', 'Steam: alice', 'Steam:alice account', ':Steam:alice', '::alice']) {
+      const uri = generateOtpauthURI(name, secret, 'totp')
+      expect(new URL(uri).searchParams.has('encoder')).toBe(false)
+      expect(decodeURIComponent(new URL(uri).pathname)).toBe(`/:${name}`)
+      const result = parseOTPURI(uri)
+      expect(result.issues).toEqual([])
+      expect(result.accounts).toEqual([{ name, secret }])
+      expect(TOTP.base32Decode(result.accounts[0].secret)).toEqual(TOTP.base32Decode(secret))
+      expect(await TOTP.generateTOTP(result.accounts[0].secret, 30, result.accounts[0].type, 59000))
+        .toBe(await TOTP.generateTOTP(secret, 30, 'totp', 59000))
+      const imported = await parseImportText(JSON.stringify([{ name, secret, type: 'totp', encoder: 'TOTP', url: uri }]))
+      expect(imported[0].accounts).toEqual([{ name, secret }])
+      for (const parameter of ['digits=5', 'algorithm=MD5', 'period=0']) {
+        const bad = new URL(uri)
+        const [key, value] = parameter.split('=')
+        bad.searchParams.set(key, value)
+        expect(parseOTPURI(bad.href).issues[0].reason).toBe('unsupported')
+      }
+    }
+  })
+  test('previous explicit numeric encoders retain literal labels and reject unsupported parameters', () => {
+    for (const name of ['Steam:alice', ':Steam:alice']) {
+      const uri = `otpauth://totp/${encodeURIComponent(name)}?${new URLSearchParams({ secret, encoder: 'TOTP', digits: '6' })}`
+      expect(parseOTPURI(uri).accounts).toEqual([{ name, secret }])
+      expect(parseOTPURI(uri.replace('digits=6', 'digits=5')).issues[0].reason).toBe('unsupported')
+    }
+  })
+  test('explicit Steam exports retain literal colon names and conflict with an explicit numeric encoder', async () => {
+    const name = 'Steam:alice'
+    expect(parseOTPURI(generateOtpauthURI(name, secret, 'steam')).accounts).toEqual([{ name, secret, type: 'steam' }])
+    expect(parseOTPURI(generateOtpauthURI(`:${name}`, secret, 'steam')).accounts).toEqual([{ name: `:${name}`, secret, type: 'steam' }])
+    expect(parseOTPURI(`otpauth://totp/%3ASteam%3Aalice?${new URLSearchParams({ secret, issuer: 'Steam' })}`).accounts)
+      .toEqual([{ name: 'Steam :Steam:alice', secret, type: 'steam' }])
+    const bad = await parseImportText(JSON.stringify([{ name, secret, type: 'steam', encoder: 'totp' }]))
+    expect(bad[0].accounts).toEqual([])
+    expect(bad[0].issues[0].reason).toBe('unsupported')
+  })
+  test('legacy Base32 stays numeric instead of being reinterpreted as a Steam Base64 key', async () => {
+    const legacySecret = 'A'.repeat(27)
+    const parsed = parseManualSecret(legacySecret)
+    expect(parsed).toEqual({ secret: legacySecret })
+    expect(parseManualSecret(legacySecret, 'totp')).toEqual(parsed)
+    expect(await TOTP.generateTOTP(parsed.secret, 30, parsed.type, 59000)).toBe('812658')
+    const accounts: Account[] = [{ name: 'Legacy', secret: legacySecret }, { name: 'Steam legacy', secret: legacySecret, type: 'steam' }]
+    const salt = newSalt(), key = await deriveKey('synthetic-legacy-password', salt)
+    const encrypted = await encryptAccounts(accounts, key, salt)
+    for (const [text, password] of [
+      [ImportExportManager.exportAccounts(accounts), undefined],
+      [JSON.stringify(encrypted), 'synthetic-legacy-password'],
+    ] as const) {
+      const result = importPreview(await parseImportText(text, password), [])
+      expect(result.accounts).toEqual(accounts)
+      expect(result.issues).toEqual([])
+      for (const account of result.accounts) {
+        expect(await TOTP.generateTOTP(account.secret, 30, account.type, 59000)).toBe(await TOTP.generateTOTP(legacySecret, 30, account.type, 59000))
+      }
+    }
+  })
   test('manual entry identifies Steam Base64 and preserves standard Base32 without a selector', () => {
     expect(parseManualSecret(shared)).toEqual({ secret, type: 'steam' })
     expect(parseManualSecret(shared.replace(/=+$/, ''))).toEqual({ secret, type: 'steam' })
@@ -100,22 +159,52 @@ describe('Steam import and round trips', () => {
     expect(parseOTPURI(uri).accounts).toEqual([{ name: 'my steam account', secret, type: 'steam' }])
     expect(parseOTPURI(uri).issues).toEqual([])
   })
-  test('requires explicit Steam encoding and rejects unsupported or conflicting parameters', () => {
+  test('numeric TOTP names stay unambiguous and unsupported parameters are rejected', () => {
     const standard = generateOtpauthURI('Steam demo', secret)
+    expect(new URL(standard).searchParams.has('issuer')).toBe(false)
     expect(parseOTPURI(standard).accounts[0].type).toBeUndefined()
     expect(parseOTPURI(standard.replace('digits=6', 'digits=5')).issues[0].reason).toBe('unsupported')
     const uri = generateOtpauthURI('Steam demo', secret, 'steam')
-    for (const bad of [uri.replace('SHA1', 'SHA256'), uri.replace('digits=5', 'digits=6'), uri.replace('period=30', 'period=60'), uri.replace('/totp/', '/hotp/'), uri.replace('encoder=steam', 'encoder=unknown'), uri + '&encoder=steam']) {
+    for (const bad of [uri.replace('SHA1', 'SHA256'), uri.replace('digits=5', 'digits=8'), uri.replace('period=30', 'period=60'), uri.replace('/totp/', '/hotp/'), uri.replace('encoder=steam', 'encoder=unknown'), uri + '&encoder=steam']) {
       expect(parseOTPURI(bad).accounts).toHaveLength(0)
       expect(parseOTPURI(bad).issues).toHaveLength(1)
     }
+  })
+  test('published Steam QR formats retain their five-character code', async () => {
+    const parameters = new URLSearchParams({ secret })
+    const legacy = `otpauth://totp/Steam:demo?${parameters}`
+    const variants = [legacy, `${legacy}&digits=6`,
+      `otpauth://totp/demo?${parameters}&issuer=Steam`,
+      `otpauth://totp/demo?${parameters}&encoder=Steam&digits=6`,
+      `otpauth://totp/demo?${parameters}&encoder=STEAM&digits=5`]
+    for (const uri of variants) {
+      const parsed = parseOTPURI(uri)
+      expect(parsed.issues).toEqual([])
+      const account = parsed.accounts[0]
+      expect(account.type).toBe('steam')
+      expect(await TOTP.generateTOTP(account.secret, 30, account.type, 59000))
+        .toBe(await TOTP.generateTOTP(secret, 30, 'steam', 59000))
+    }
+    for (const parameter of ['digits=8', 'algorithm=SHA256', 'period=60', 'encoder=unknown']) {
+      expect(parseOTPURI(`${legacy}&${parameter}`).issues[0].reason).toBe('unsupported')
+    }
+    // SHA-256/512 remain accepted only for numeric TOTP, never for Steam.
+    expect(parseOTPURI(`${legacy.replace('Steam:demo', 'Demo')}&algorithm=SHA512`).accounts)
+      .toEqual([{ name: 'Demo', secret, algorithm: 'SHA512' }])
   })
   test('reference-style JSON URI parameters preserve Steam rather than silently generating numbers', async () => {
     const url = generateOtpauthURI('demo', secret, 'steam')
     const result = await parseImportText(JSON.stringify([{ name: 'demo', secret, type: 'totp', digits: 5, url }]))
     expect(result[0].accounts).toEqual([{ name: 'demo', secret, type: 'steam' }])
+    for (const encoder of ['steam', 'Steam', 'STEAM']) {
+      const parsed = await parseImportText(JSON.stringify([{ name: 'demo', secret, encoder, digits: 5, url }]))
+      expect(parsed[0].issues).toEqual([])
+      expect(parsed[0].accounts).toEqual([{ name: 'demo', secret, type: 'steam' }])
+    }
     const bad = await parseImportText(JSON.stringify([{ ...steam, url: generateOtpauthURI(steam.name, secret) }]))
     expect(bad[0].accounts).toHaveLength(0)
+    const mismatch = await parseImportText(JSON.stringify([{ name: 'demo', secret, encoder: 'Steam', url: generateOtpauthURI('demo', secret) }]))
+    expect(mismatch[0].accounts).toHaveLength(0)
   })
   test('plain and encrypted backups preserve type while older accounts keep numeric defaults', async () => {
     const accounts: Account[] = [steam, { name: 'Legacy', secret }]

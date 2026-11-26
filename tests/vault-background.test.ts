@@ -5,9 +5,13 @@ test('background rejects untrusted senders and serves only summaries/codes to au
   let handler: (message: unknown, sender: unknown, respond: (result: any) => void) => boolean
   const sync: Record<string, any> = { accounts: [
     { name: 'Example', secret: 'JBSWY3DPEHPK3PXP', website: 'example.test' },
+    { name: 'Fast', secret: 'JBSWY3DPEHPK3PXP', algorithm: 'SHA512', digits: 8, period: 15 },
     { name: 'Steam demo', secret: 'AAAQEAYEAUDAOCAJBIFQYDIOB4IBCEQT', type: 'steam', website: 'steamcommunity.com' },
   ] }
   const session: Record<string, any> = {}
+  const local: Record<string, any> = {}
+  let onChanged!: (changes: Record<string, any>, area: string) => void
+  const runtimeNotifications: { type: string; invalidate?: boolean }[] = []
   let origins = ['https://example.test/*']
   const tabs = [
     { id: 1, url: 'https://example.test/login' },
@@ -19,14 +23,14 @@ test('background rejects untrusted senders and serves only summaries/codes to au
   const notifications: number[] = []
   const area = (data: Record<string, any>) => ({
     setAccessLevel: async () => {},
-    get: async (keys: string | string[]) => Object.fromEntries((typeof keys === 'string' ? [keys] : keys).filter(k => k in data).map(k => [k, data[k]])),
+    get: async (keys: string | string[] | null) => structuredClone(keys === null ? data : Object.fromEntries((typeof keys === 'string' ? [keys] : keys).filter(k => k in data).map(k => [k, data[k]]))),
     set: async (values: Record<string, any>) => { Object.assign(data, values) },
     remove: async (keys: string | string[]) => { for (const k of typeof keys === 'string' ? [keys] : keys) delete data[k] },
     getBytesInUse: async () => 0,
   })
   globalThis.chrome = {
     runtime: { id: 'test', getURL: (path: string) => `chrome-extension://test/${path}`,
-      onMessage: { addListener: (fn: typeof handler) => { handler = fn } }, sendMessage: async () => {} },
+      onMessage: { addListener: (fn: typeof handler) => { handler = fn } }, sendMessage: async (message: { type: string; invalidate?: boolean }) => { runtimeNotifications.push(message) } },
     permissions: { getAll: async () => ({ origins }) },
     tabs: { query: async () => tabs, sendMessage: async (tabId: number, message: { type: string }) => {
       if (!injected.has(tabId)) throw new Error('Receiving end does not exist')
@@ -38,7 +42,7 @@ test('background rejects untrusted senders and serves only summaries/codes to au
       if (target.allFrames) throw new Error('Unapproved child frame')
       injected.add(target.tabId)
     } },
-    storage: { sync: area(sync), local: area({}), session: area(session), onChanged: { addListener: () => {} } },
+    storage: { sync: area(sync), local: area(local), session: area(session), onChanged: { addListener: (fn: typeof onChanged) => { onChanged = fn } } },
   } as unknown as typeof chrome
   try {
     await import('../src/vault-background')
@@ -50,10 +54,38 @@ test('background rejects untrusted senders and serves only summaries/codes to au
     expect(await request('snapshot', page)).toMatchObject({ ok: false, error: 'denied' })
     expect(await request('summaries', { ...page, id: 'other' })).toMatchObject({ ok: false, error: 'denied' })
     expect(await request('snapshot', { id: 'test', url: 'chrome-extension://test/other.html' })).toMatchObject({ ok: false, error: 'denied' })
+    expect(await request('migrate', page)).toMatchObject({ ok: false, error: 'denied' })
+    for (const action of ['recoveries', 'recoveryBackup', 'resolve']) {
+      expect(await request(action, page, { candidateId: 'test', revision: 'test' }))
+        .toMatchObject({ ok: false, error: 'denied' })
+    }
+    const migration = await request('snapshot', popup)
+    expect(migration.value).toMatchObject({ storageMode: 'legacy', locked: false })
+    expect(migration.value.syncState).toBeUndefined()
+    const before = structuredClone({ sync, local, session })
+    const legacySummary = await request('summaries', page)
+    expect(legacySummary.value.storageMode).toBe('legacy')
+    expect(await request('code', page, { revision: legacySummary.value.revision, name: 'Steam demo' })).toMatchObject({ ok: true })
+    expect(await request('save', popup, { revision: migration.value.revision, accounts: sync.accounts })).toMatchObject({ ok: false, error: 'legacyUnsupported' })
+    expect({ sync, local, session }).toEqual(before)
+    for (const [key, invalidate] of [['accountVaultLegacyRecovery', false], ['accountVaultV2Recovery', false], ['accounts', true], ['state', true]] as const) {
+      runtimeNotifications.length = 0
+      onChanged({ [key]: { newValue: {} } }, 'local')
+      await new Promise(resolve => setTimeout(resolve, 0))
+      expect(runtimeNotifications).toContainEqual({ type: 'VAULT_CHANGED', invalidate })
+    }
+    expect(await request('migrate', popup, { revision: migration.value.revision })).toMatchObject({ ok: true })
     const summary = await request('summaries', page)
     expect(await request('snapshot', { ...popup, tab: { id: 2 } })).toMatchObject({ ok: true })
     expect(summary.ok).toBe(true)
-    expect(summary.value.accounts).toEqual([{ name: 'Example', website: 'example.test' }, { name: 'Steam demo', website: 'steamcommunity.com' }])
+    expect(summary.value.accounts).toEqual([{ name: 'Example', website: 'example.test', period: 30 }, { name: 'Fast', website: undefined, period: 15 }, { name: 'Steam demo', website: 'steamcommunity.com', period: 30 }])
+    for (const account of summary.value.accounts) {
+      expect(account).not.toHaveProperty('secret')
+      expect(account).not.toHaveProperty('algorithm')
+      expect(account).not.toHaveProperty('digits')
+    }
+    const fastCode = await request('code', page, { revision: summary.value.revision, name: 'Fast' })
+    expect(fastCode.value).toMatch(/^\d{8}$/)
     expect(JSON.stringify(summary)).not.toContain('JBSWY3DPEHPK3PXP')
     const code = await request('code', page, { revision: summary.value.revision, name: 'Example' })
     expect(code.value).toMatch(/^\d{6}$/)

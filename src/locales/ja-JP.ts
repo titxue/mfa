@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const jaJP: Translations = {
+  'qr.show_button': 'QRコードを表示',
+  'settings.appearance': '外観',
+  'settings.theme.light': 'ライト',
+  'settings.theme.dark': 'ダーク',
+  'settings.theme.system': 'システム',
   // ページタイトルとボタン
   'title': 'TOTPジェネレーター',
   'addAccount': 'アカウントを追加',
@@ -18,6 +23,15 @@ export const jaJP: Translations = {
   'form.title_edit': 'アカウントを編集',
   'form.title': 'アカウントを追加',
   'form.accountName': 'アカウント名',
+  'form.codeType': 'コードの種類',
+  'form.codeTypeTotp': '標準の認証コード',
+  'form.algorithm': 'アルゴリズム',
+  'form.digits': '桁数',
+  'form.period': '周期（秒）',
+  'form.advancedSettings': '詳細設定',
+  'form.advancedHint': 'サービス提供元から指定された場合にのみ、認証コードの設定を変更してください。',
+  'form.customSettings': 'カスタマイズ済み',
+  'form.steamSecretDesc': 'Steam の Base32 キーまたは Base64 shared_secret を入力してください。',
   'form.secretKey': 'シークレットキー',
   'form.accountInfo': 'アカウント情報',
   'form.accountNameDesc': 'このアカウントの識別しやすい名前を設定してください',
@@ -28,7 +42,7 @@ export const jaJP: Translations = {
   'form.secretKeyPlaceholder': 'Base32形式のキーを入力',
   'form.scanQRCode': 'QRコードをスキャン',
   'form.scanQRCodeDesc': 'TOTP QRコードを含む画像をアップロード',
-  'form.pasteQRCodeHint': 'またはCtrl+Vで画像/トークンを貼り付け',
+  'form.pasteQRCodeHint': 'QRコードやリンクを貼り付けるか、画像をドラッグしてください。',
   'form.dropImageHere': 'ドロップして画像をアップロード',
   'form.dropImageDesc': 'QRコードを含む画像をここにドラッグ＆ドロップ',
   'form.website': 'ウェブサイト',
@@ -42,6 +56,8 @@ export const jaJP: Translations = {
 
   // 設定
   'settings.title': '設定',
+  'settings.advancedHint': '同期の復元とその他の設定',
+  'settings.recovery': '復元とバックアップ履歴',
   'settings.accountManagement': 'アカウント管理',
   'settings.language': '言語設定',
   'settings.about': 'アプリについて',
@@ -104,7 +120,7 @@ export const jaJP: Translations = {
   'toast.qr_scanning': 'QRコードをスキャン中...',
   'toast.qr_success': 'QRコードの認識に成功しました',
   'toast.qr_no_code': 'QRコードが見つかりませんでした。もう一度お試しください',
-  'toast.unsupported_totp': '未対応の設定です。SHA1・6桁・30秒周期のみ対応しています。',
+  'toast.unsupported_totp': '未対応の設定です。30 秒周期の SHA1・6 桁コードと Steam Guard に対応しています。',
   'toast.qr_invalid_format': '無効なQRコード形式です',
   'toast.qr_parse_failed': 'QRコードの解析に失敗しました',
   'toast.qr_invalid_file_type': 'サポートされていないファイルタイプです。画像ファイルをアップロードしてください',

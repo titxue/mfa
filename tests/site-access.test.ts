@@ -67,3 +67,13 @@ test('manifest has optional host permissions only and includes worker', async ()
   expect(manifest.permissions).toEqual(['storage', 'activeTab', 'scripting', 'contextMenus'])
   expect(manifest.background.service_worker).toBe('background.js')
 })
+
+
+test('Steam API binding permission does not register webpage autofill', async () => {
+  const operations = mockSites(['https://api.steampowered.com/*'], false)
+  await reconcileSiteScripts()
+  expect(operations).toEqual([])
+  mockSites(['https://api.steampowered.com/*', 'https://example.com/*'], false)
+  const { grantedSites } = await import('../src/utils/site-access')
+  expect(await grantedSites()).toEqual(['https://example.com/*'])
+})

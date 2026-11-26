@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Github, Tag, ExternalLink, ChevronDown } from 'lucide-react'
+import { Github, Tag, ExternalLink, ChevronDown, Sun, Moon, Monitor } from 'lucide-react'
+import { useTheme } from '@/contexts/ThemeContext'
 import { useI18n } from '@/contexts/I18nContext'
 import { ImportExportManager } from '@/utils/import-export'
 import { VERSION } from '@/version'
@@ -59,6 +60,7 @@ export function SettingsModal({
   reload
 }: SettingsModalProps) {
   const { t, locale, setLocale, resetLanguage } = useI18n()
+  const { theme, saving: themeSaving, setTheme } = useTheme()
   const { settings, loading: settingsLoading, saving: settingsSaving, updateSettings } = useSettings()
   const [languageSaving, setLanguageSaving] = React.useState(false)
   const s = securityStrings(locale)
@@ -163,6 +165,29 @@ export function SettingsModal({
           </DialogHeader>
 
           <div className="min-h-0 space-y-6 overflow-y-auto overscroll-contain px-6 py-5">
+            <fieldset disabled={themeSaving} className="space-y-2">
+              <legend className="text-sm font-semibold">{t('settings.appearance')}</legend>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  ['light', Sun], ['dark', Moon], ['system', Monitor],
+                ] as const).map(([value, Icon]) => (
+                  <label key={value} className="min-w-0 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="theme"
+                      value={value}
+                      checked={theme === value}
+                      onChange={() => void setTheme(value).catch(() => toast.error(securityError(locale, new Error('storageError'))))}
+                      className="peer sr-only"
+                    />
+                    <span className="flex h-full flex-col items-center gap-2 rounded-lg border bg-background px-2 py-3 text-center text-xs text-muted-foreground peer-checked:border-primary peer-checked:bg-muted peer-checked:text-foreground peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-disabled:opacity-60">
+                      <Icon className="h-4 w-4" aria-hidden="true" />
+                      {t(`settings.theme.${value}`)}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
             {/* 语言设置 */}
             <div className="space-y-2">
               <h3
@@ -264,7 +289,7 @@ export function SettingsModal({
                   void chrome.tabs.query({ url }).then(tabs => {
                     if (tabs[0]?.id !== undefined) return chrome.tabs.update(tabs[0].id, { active: true })
                     return chrome.tabs.create({ url })
-                  })
+                  }).catch(() => toast.error(t('toast.fill_failed')))
                 }}>{bindingStrings(locale).title}</Button>
               </div>
             </div>

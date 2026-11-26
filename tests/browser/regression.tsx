@@ -5,7 +5,7 @@ import { useSettings } from '../../src/hooks/useSettings'
 import { Header } from '../../src/components/Header'
 import { AccountItem } from '../../src/components/AccountItem'
 import { I18nProvider } from '../../src/contexts/I18nContext'
-import { findSegmentedGroupFor, fillCode } from '../../src/utils/otp-field'
+import { findOTPField, findSegmentedGroupFor, fillCode } from '../../src/utils/otp-field'
 import { showInlineUI, hideInlineUI } from '../../src/content-script-menu'
 
 const fixture = document.querySelector<HTMLDivElement>('#fixture')!
@@ -38,24 +38,31 @@ function chromeMock(sendMessage: (message: any) => Promise<any>, set = async (_v
     storage: { sync: { get: async () => ({}), set } } }
 }
 
-await check('account save is optimistic, blocks overlapping writes and exposes disabled controls', async () => {
-  const gate = deferred()
+await check('account save is optimistic, serializes queued orders and exposes disabled controls', async () => {
+  const gates = [deferred(), deferred()]
   let writes = 0, state!: ReturnType<typeof useAccounts>
   let snapshot = { accounts: [testAccount], revision: 'one', protected: false, locked: false }
   chromeMock(async message => {
-    if (message.action === 'save') { writes++; await gate.promise; snapshot = { ...snapshot, accounts: message.accounts, revision: 'two' } }
+    if (message.action === 'save') {
+      const index = writes++
+      await gates[index].promise
+      snapshot = { ...snapshot, accounts: message.accounts, revision: index === 0 ? 'two' : 'three' }
+    }
     return { ok: true, value: snapshot }
   })
   function Harness() { state = useAccounts(); return <I18nProvider><Header saving={state.isSaving} onAddAccount={() => {}} onOpenSettings={() => {}} /></I18nProvider> }
   await render(<Harness />)
-  let save!: Promise<boolean>
+  let save!: Promise<boolean>, queued!: Promise<boolean>
   await act(async () => { save = state.updateAccounts([]) })
   assert(state.accounts.length === 0, 'optimistic update delayed')
   assert(state.isSaving && [...fixture.querySelectorAll('button')].every(button => button.disabled), 'write controls enabled during save')
-  await act(async () => { assert(!await state.updateAccounts([testAccount]), 'overlapping save accepted') })
-  assert(writes === 1 && state.error, 'overlap was silent or sent to storage')
-  await act(async () => { gate.resolve(); assert(await save, 'save failed') })
-  assert(!state.isSaving && state.revision === 'two', 'save never settled')
+  await act(async () => { queued = state.updateAccounts([testAccount]) })
+  assert(writes === 1 && state.accounts.length === 1, 'queued order was not optimistic or wrote concurrently')
+  await act(async () => { gates[0].resolve(); assert(await save, 'save failed') })
+  assert(writes === 2 && state.isSaving && state.accounts.length === 1, 'first save overwrote queued order or ended saving early')
+  assert([...fixture.querySelectorAll('button')].every(button => button.disabled), 'write controls enabled before queue settled')
+  await act(async () => { gates[1].resolve(); assert(await queued, 'queued save failed') })
+  assert(!state.isSaving && state.revision === 'three' && state.accounts.length === 1, 'save queue never settled')
 })
 
 await check('account save failure restores persisted accounts and reports the error', async () => {
@@ -82,7 +89,30 @@ await check('settings failure rolls back; overlapping settings writes are reject
   assert(state.settings.autofillInlineMenu && !state.saving && failure === 'storageError', 'failed setting did not roll back')
 })
 
-await check('segmented OTP needs semantic evidence and never hijacks unrelated inputs', async () => {
+await check('OTP needs semantic evidence and never hijacks unrelated inputs', async () => {
+  fixture.innerHTML = '<form><label>Username<input name="username" autocomplete="username" value="keep-me"></label>' +
+    '<label>Password<input type="password" autocomplete="current-password"></label><button>Sign in</button></form>'
+  assert(!findOTPField() && fillCode('123456').status === 'no-field', 'ordinary login treated as OTP')
+  assert(fixture.querySelector('input')!.value === 'keep-me', 'username overwritten')
+  fixture.innerHTML = '<form><h2>Verification code</h2><label>Postal code<input name="postal_code" inputmode="numeric" maxlength="6" value="654321"></label></form>'
+  assert(!findOTPField() && fillCode('123456').status === 'no-field', 'postal field treated as OTP')
+  assert(fixture.querySelector('input')!.value === '654321', 'postal code overwritten')
+  fixture.innerHTML = '<form><h2>Verification code</h2><input name="username" autocomplete="username" inputmode="numeric" maxlength="6" value="keep-me"></form>'
+  assert(fillCode('123456').status === 'no-field' && fixture.querySelector('input')!.value === 'keep-me', 'OTP heading overrode username autocomplete')
+  fixture.querySelector('input')!.removeAttribute('autocomplete')
+  assert(fillCode('123456').status === 'no-field', 'OTP heading overrode username purpose')
+  fixture.innerHTML = '<form><h2>Verification code</h2><input inputmode="numeric" maxlength="6"></form>'
+  assert(fillCode('123456').status === 'filled' && fixture.querySelector('input')!.value === '123456', 'local heading did not identify numeric OTP')
+  fixture.innerHTML = '<fieldset><legend>One-time verification code</legend><div><input inputmode="numeric" maxlength="6"></div></fieldset>'
+  assert(fillCode('123456').status === 'filled', 'local legend did not identify numeric OTP')
+  fixture.innerHTML = '<label>Verification code<input name="challenge"></label>'
+  let inputs = 0, changes = 0
+  fixture.querySelector('input')!.addEventListener('input', () => { inputs++ })
+  fixture.querySelector('input')!.addEventListener('change', () => { changes++ })
+  assert(fillCode('123456').status === 'filled', 'labelled single OTP not filled')
+  assert(fixture.querySelector('input')!.value === '123456' && inputs === 1 && changes === 1, 'framework input events missing')
+  fixture.innerHTML = '<input autocomplete="one-time-code" maxlength="5">'
+  assert(fillCode('ABCDE').status === 'filled' && fixture.querySelector('input')!.value === 'ABCDE', 'Steam single OTP not filled')
   fixture.innerHTML = '<div id="postal" aria-label="Postal code">' + '<input maxlength="1">'.repeat(6) + '</div><input id="other">'
   const first = fixture.querySelector('input')!
   assert(!findSegmentedGroupFor(first), 'postal group misidentified')
@@ -94,6 +124,13 @@ await check('segmented OTP needs semantic evidence and never hijacks unrelated i
   assert([...fixture.querySelectorAll('#postal input')].map(input => (input as HTMLInputElement).value).join('') === '123456', 'wrong values')
   fixture.innerHTML = '<div aria-label="OTP">' + '<input maxlength="1">'.repeat(5) + '</div>'
   assert(fillCode('ABCDE').status === 'filled', 'Steam segmented fill regressed')
+  fixture.innerHTML = '<form><h2>Verification code</h2><div>' + '<input maxlength="1">'.repeat(6) + '</div></form>'
+  assert(fillCode('123456').status === 'filled', 'OTP heading no longer identifies a segmented field')
+  const boxes = [...fixture.querySelectorAll<HTMLInputElement>('input')]
+  boxes.forEach(box => { box.value = '' })
+  assert(fillCode('ABCDE').status === 'no-field' && boxes.every(box => box.value === ''), 'partial Steam code filled a six-box group')
+  fixture.innerHTML = '<input autocomplete="one-time-code" maxlength="6" type="number">'
+  assert(fillCode('ABCDE').status === 'no-field', 'Steam code filled a numeric-only input')
 })
 
 await check('segmented groups resolve external aria-labelledby references', async () => {

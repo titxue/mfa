@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const deDE: Translations = {
+  'qr.show_button': 'QR-Code anzeigen',
+  'settings.appearance': 'Darstellung',
+  'settings.theme.light': 'Hell',
+  'settings.theme.dark': 'Dunkel',
+  'settings.theme.system': 'System',
   // Seitentitel und Schaltflächen
   'title': 'TOTP-Generator',
   'addAccount': 'Konto hinzufügen',
@@ -18,6 +23,15 @@ export const deDE: Translations = {
   'form.title_edit': 'Konto bearbeiten',
   'form.title': 'Konto hinzufügen',
   'form.accountName': 'Kontoname',
+  'form.codeType': 'Code-Typ',
+  'form.codeTypeTotp': 'Standard-TOTP',
+  'form.algorithm': 'Algorithmus',
+  'form.digits': 'Stellen',
+  'form.period': 'Zeitraum (Sekunden)',
+  'form.advancedSettings': 'Erweiterte Einstellungen',
+  'form.advancedHint': 'Ändern Sie die Code-Einstellungen nur, wenn Ihr Anbieter dies verlangt.',
+  'form.customSettings': 'Angepasst',
+  'form.steamSecretDesc': 'Steam Base32-Schlüssel oder Base64 shared_secret eingeben.',
   'form.secretKey': 'Geheimer Schlüssel',
   'form.accountInfo': 'Kontoinformationen',
   'form.accountNameDesc': 'Legen Sie einen leicht erkennbaren Namen für dieses Konto fest',
@@ -28,7 +42,7 @@ export const deDE: Translations = {
   'form.secretKeyPlaceholder': 'Schlüssel im Base32-Format eingeben',
   'form.scanQRCode': 'QR-Code scannen',
   'form.scanQRCodeDesc': 'Laden Sie ein Bild mit TOTP-QR-Code hoch',
-  'form.pasteQRCodeHint': 'oder drücken Sie Strg+V, um Bild/Token einzufügen',
+  'form.pasteQRCodeHint': 'QR-Code oder Link einfügen oder ein Bild hierher ziehen.',
   'form.dropImageHere': 'Loslassen zum Hochladen',
   'form.dropImageDesc': 'Ziehen Sie ein Bild mit QR-Code hierher',
   'form.website': 'Website',
@@ -42,6 +56,8 @@ export const deDE: Translations = {
 
   // Einstellungen
   'settings.title': 'Einstellungen',
+  'settings.advancedHint': 'Synchronisierung wiederherstellen und weitere Einstellungen',
+  'settings.recovery': 'Wiederherstellung und Sicherungsverlauf',
   'settings.accountManagement': 'Kontoverwaltung',
   'settings.language': 'Spracheinstellungen',
   'settings.about': 'Über die App',
@@ -104,7 +120,7 @@ export const deDE: Translations = {
   'toast.qr_scanning': 'QR-Code wird gescannt...',
   'toast.qr_success': 'QR-Code erfolgreich erkannt',
   'toast.qr_no_code': 'Kein QR-Code gefunden, bitte versuchen Sie es erneut',
-  'toast.unsupported_totp': 'Nicht unterstützte Einstellungen. Unterstützt werden nur SHA1, 6 Ziffern und ein Intervall von 30 Sekunden.',
+  'toast.unsupported_totp': 'Nicht unterstützte Einstellungen. Unterstützt: SHA1 mit 30 Sekunden, 6 Ziffern oder Steam Guard.',
   'toast.qr_invalid_format': 'Ungültiges QR-Code-Format',
   'toast.qr_parse_failed': 'QR-Code konnte nicht analysiert werden',
   'toast.qr_invalid_file_type': 'Nicht unterstützter Dateityp, bitte laden Sie eine Bilddatei hoch',

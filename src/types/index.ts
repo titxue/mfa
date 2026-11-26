@@ -1,4 +1,9 @@
 /**
+ * TOTP 哈希算法（RFC 6238）
+ */
+export type TOTPAlgorithm = 'SHA1' | 'SHA256' | 'SHA512'
+
+/**
  * 账户信息
  */
 export interface Account {
@@ -7,6 +12,12 @@ export interface Account {
   website?: string
   /** Missing on older accounts; defaults to standard six-digit TOTP. Secrets stay Base32. */
   type?: 'totp' | 'steam'
+  /** 哈希算法；缺省为 SHA1（Steam 固定 SHA1） */
+  algorithm?: TOTPAlgorithm
+  /** 验证码位数；缺省为 6（Steam 固定 5） */
+  digits?: 6 | 8
+  /** 时间步长（秒）；缺省为 30（Steam 固定 30） */
+  period?: number
 }
 
 /**

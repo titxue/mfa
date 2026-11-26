@@ -1,373 +1,306 @@
-# TOTP Generator Chrome Extension
+<p align="center">
+  <img src="public/icons/icon128.png" width="72" height="72" alt="MFA">
+</p>
 
-<div align="center">
+<h1 align="center">MFA</h1>
 
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?label=Chrome%20Web%20Store)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
-[![GitHub release](https://img.shields.io/github/v/release/titxue/mfa?label=GitHub)](https://github.com/titxue/mfa/releases)
-[![Chrome Web Store Users](https://img.shields.io/chrome-web-store/users/dhipejmoajhjflafhbibojfoeogbmjgf)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
-[![GitHub stars](https://img.shields.io/github/stars/titxue/mfa?style=social)](https://github.com/titxue/mfa)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <strong>Your verification codes. Right in your browser.</strong><br>
+  A compact authenticator for TOTP, Steam Guard, and everyday sign-ins.
+</p>
 
-**Modern Two-Factor Authentication (2FA) Solution**
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=readme_en"><img src="https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?style=flat-square&amp;label=Chrome%20Web%20Store&amp;color=334155" alt="Chrome Web Store version"></a>
+  <a href="https://github.com/titxue/mfa/actions/workflows/regression.yml"><img src="https://img.shields.io/github/actions/workflow/status/titxue/mfa/regression.yml?branch=master&amp;style=flat-square&amp;label=tests" alt="Regression test status"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-334155?style=flat-square" alt="MIT license"></a>
+</p>
 
-Time-based One-Time Password (TOTP) generator built with React 19 + TypeScript + Bun.
-Offline code generation, website filling, master password protection, encrypted backups, and **12 languages**. Accounts can sync through Chrome.
+<p align="center">
+  <a href="https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&amp;utm_medium=referral&amp;utm_campaign=readme_en"><img src="https://img.shields.io/badge/Install-Chrome_Web_Store-2563eb?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=white" alt="Install from Chrome Web Store"></a>
+</p>
 
-[Official website](https://mfa.xuejy.com/)
+<p align="center"><a href="https://mfa.xuejy.com/">Website</a> &nbsp;·&nbsp; <a href="https://mfa.xuejy.com/guide/how-to-use-totp-authenticator/">Setup guide</a> &nbsp;·&nbsp; <a href="#installation">Get started</a> &nbsp;·&nbsp; <a href="#usage">Usage</a> &nbsp;·&nbsp; <a href="#development">Development</a> &nbsp;·&nbsp; <a href="README.md">简体中文</a></p>
 
-[Install](#installation) • [Features](#features) • [Usage](#usage) • [Development](#development) • [i18n](#internationalization)
+<p align="center">
+  <img src="docs/assets/preview-light.png" width="320" alt="MFA in light mode, showing TOTP and Steam demo accounts">
+  &nbsp;
+  <img src="docs/assets/preview-dark.png" width="320" alt="MFA in dark mode, showing TOTP and Steam demo accounts">
+</p>
+<p align="center"><sub>Light and dark themes · Actual extension UI with demo accounts</sub></p>
 
-[中文文档](README.md)
+Generate codes and read QR images locally, even offline. Use Chrome sync across devices, and enable a master passphrase when you want account encryption.
 
-</div>
 
----
+## Features
 
-## ✨ Features
+<table>
+  <tr>
+    <td width="50%" valign="top"><strong>Codes, ready offline</strong><br>Standard six-digit TOTP and five-character Steam Guard, with live countdowns.</td>
+    <td width="50%" valign="top"><strong>Fill without retyping</strong><br>Click an account to fill a code. Enable per-site menus or clipboard fallback.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><strong>Bring your accounts</strong><br>Import QR images, otpauth links, or Google Authenticator export batches.</td>
+    <td width="50%" valign="top"><strong>Back up with protection</strong><br>Use a master passphrase, manual locking, and encrypted JSON backups.</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><strong>Keep things organized</strong><br>Edit accounts, drag to reorder, and export individual account QR codes.</td>
+    <td width="50%" valign="top"><strong>Make it yours</strong><br>Choose from 12 main-interface languages and light, dark, or system themes.</td>
+  </tr>
+</table>
 
-- 🔐 **TOTP Code Generation** - 30s interval, RFC 6238 standard, real-time countdown progress ring
-- 📷 **QR Code Scanning** - Image upload recognition, paste/drag upload, auto-fill, offline processing
-- 📤 **QR Code Export** - Right-click an account card and select the QR code menu item, download PNG images, easy cross-device migration
-- 🎯 **Smart Auto-Fill** - Fill web pages with optional clipboard fallback; grant site access to use the inline account menu
-- 🎨 **Drag & Drop Sorting** - Freely adjust account order, smooth animation effects
-- 💾 **Data Management** - Chrome account sync, plain/encrypted JSON backups, import count preview, duplicate detection
-- 🌍 **12 Languages** - Simplified/Traditional Chinese, English, Spanish, French, Portuguese, German, Russian, Arabic, Japanese, Korean, Hindi
-- 🎨 **Modern UI** - shadcn/ui design system, smooth animations, responsive layout
-- 🔒 **Privacy & Security** - Codes and QR images are processed locally; enable password protection to encrypt accounts before Chrome sync
+## Installation
 
----
+1. **Install** — Add MFA from the [Chrome Web Store](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf?utm_source=github&utm_medium=referral&utm_campaign=readme_en) and pin it to the toolbar. Requires Chrome 102+.
+2. **Add an account** — Click “+”, then upload or paste a QR image, paste an otpauth link, or enter a secret. Review and save.
+3. **Use a code** — Open MFA on your sign-in page and click an account to fill its code. Clipboard fallback can be enabled in settings.
 
-## 🚀 Installation
+<details>
+<summary><strong>Build and load from source</strong></summary>
 
-### Chrome Web Store (Recommended)
-
-[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/dhipejmoajhjflafhbibojfoeogbmjgf?label=Install&style=for-the-badge&logo=googlechrome)](https://chromewebstore.google.com/detail/totp-authenticator-2fa-ot/dhipejmoajhjflafhbibojfoeogbmjgf)
-
-### Developer Mode
+Install Bun 1.2+ and run:
 
 ```bash
 git clone https://github.com/titxue/mfa.git
 cd mfa
 bun install
 bun run build
-# Chrome → chrome://extensions/ → Developer mode → Load unpacked → Select dist directory
 ```
 
----
+1. Open `chrome://extensions/` and enable Developer mode.
+2. Select Load unpacked and choose the project's `dist/` directory.
+3. Pin the extension to the toolbar and click its icon to open your accounts.
 
-## 📖 Usage
+To update a development build, rebuild and select Reload on the extensions page. Keep the same loading directory; uninstalling removes the extension's local data. Store and development builds usually have different extension IDs and separate accounts. Use a backup to migrate between them.
 
-### Add Account
+</details>
 
-**QR Code Scanning (Recommended)**
-1. Click "+" button
-2. Click "Scan QR Code"
-3. Upload image containing TOTP QR code
-4. Standard QR codes fill the form for confirmation; Google migration QR codes open the bulk import preview
+## Usage
 
-You can also paste/drag QR images or paste an `otpauth://totp/` URI. Only **SHA1, 6 digits, and a 30-second period** are supported; unsupported parameters are rejected.
+| Action | How |
+| --- | --- |
+| Fill a code | Open the extension on the target webpage and click an account card |
+| Copy when filling fails | Enable clipboard fallback in settings |
+| Edit or delete an account | Right-click its card and choose the corresponding menu item |
+| Display or download a QR code | Right-click the card and select Show QR Code |
+| Reorder accounts | Drag account cards |
+| Use the webpage account menu | Right-click the target webpage and enable the automatic menu through the extension's menu, then approve access; site access settings provide the same option |
 
-**Manual Input**
-1. Click "+" button
-2. Enter account name and Base32 secret key
-3. Click "Save"
+The webpage menu also requires its global setting to be enabled. Individual site grants can be revoked. Chrome internal pages and restricted pages such as the Chrome Web Store do not allow filling scripts. See the [site access guide](docs/SITE_ACCESS.md) (Chinese).
 
-### Use Verification Code
+<details>
+<summary><strong>Account setup and Steam secret formats</strong></summary>
 
-- **Auto-Fill**: Left-click account card
-- **Clipboard fallback**: When enabled in settings, copy the code if filling fails
-- **Delete Account**: Right-click account card
+Click “+” to open the account form, then choose an input method:
 
-### Data Management
+- **QR image**: Select Scan QR Code, or paste or drop an image. A standard QR code fills the form for review before saving.
+- **Link**: Paste an `otpauth://totp/` link, review the parsed account, and save.
+- **Manual entry**: Enter an account name and secret. Standard TOTP uses Base32; an optional website helps match accounts in the webpage menu.
 
-- **Plain backup import**: Select JSON → preview the file account count → confirm. Duplicate accounts are skipped.
-- **Encrypted backup import**: Select JSON → enter the backup password → “Decrypt and preview” → check the count → confirm. Wrong passwords or damaged files prevent import.
-- **Export**: Protected accounts export encrypted backups by default. Plain export requires the current password.
-- **Language**: Choose from 12 languages in settings.
+For manual Steam entry, select Steam Guard and explicitly choose Base32 or Base64. The `shared_secret` in a `.maFile` is case-sensitive Base64. Do not infer the account type solely from the secret's length or appearance. Existing accounts can also change type through the edit menu.
 
-### Password Protection and Sync
+</details>
 
-Enable password protection in settings with a master password of at least 8 characters. Account names, secrets, and websites are encrypted together. Unlock state stays in the local browser session: closing the popup does not lock it, restarting the browser does, and you can lock manually.
+<details>
+<summary><strong>Import formats, migration, and backups</strong></summary>
 
-Another device needs the same password after receiving encrypted records. Offline or unsynced devices may retain old plaintext copies; enabling protection cannot immediately lock those copies remotely. Concurrent cross-device edits are not guaranteed to be conflict-free, so avoid editing on multiple devices at once.
+Open Settings → Import to choose files, paste images or text, or drop files. Review and select accounts before confirming. Existing account names are skipped rather than overwritten.
 
-Changing the password or disabling protection requires the current password. Disabling protection restores plaintext sync. Forgotten passwords cannot be recovered, and old backups still require their export password. See [password protection and sync](docs/PASSWORD_PROTECTION.md) and [site access](docs/SITE_ACCESS.md) (Chinese).
+| Input format | Support |
+| --- | --- |
+| This extension's JSON backups | Preview plain backups directly; enter the backup passphrase to decrypt and preview encrypted backups |
+| otpauth links or QR codes | Standard TOTP and compatible Steam QR codes |
+| Google Authenticator migration QR codes | `otpauth-migration://offline`; collect every QR code from the same export batch |
+| TXT files | One supported link per line; blank lines and `#` comments are ignored |
+| Third-party JSON arrays | The `extract_otp_secrets` export format |
+| Steam `.maFile` / JSON | Unencrypted files; only `account_name` and `shared_secret` are imported |
 
-### Steam Guard codes
+For Google Authenticator, use its transfer or export feature, then add each exported QR image. The preview tracks batch progress and ignores repeated scans. Closing the import dialog clears unsaved preview data.
 
-**In-extension enrollment**: Settings → **Set up Steam Guard** opens a dedicated tab for password login, email/mobile verification, status checks, key initialization, phone-code verification and direct vault saving. QR login is not included. The new wizard uses Chinese or English (English fallback for other locales).
+Standard TOTP supports only SHA1, 6 digits, and a 30-second period. HOTP, other algorithms, digit counts or periods, and damaged entries produce errors or skip reasons. CSV, camera scanning, multiple independent QR symbols in one image, and proprietary backups outside the formats above are not supported.
 
-Steam API access is requested when needed and does not grant webpage autofill access. Existing authenticators are never automatically revoked or transferred. Pending keys are encrypted in local storage; session tokens and unlock keys are restricted to trusted extension session storage. After a browser restart, sign in again and unlock the checkpoint. CLI checkpoints can also be restored from this page.
+Use Settings → Export to back up accounts. Password-protected accounts export encrypted JSON by default; plain export requires the current passphrase. Without protection, exports are plaintext JSON. Encrypted backups always require the passphrase used at export time; changing the master passphrase does not update old backups.
 
-Download a recovery checkpoint before phone activation if needed. Only verified keys can be saved or exported as an importable encrypted backup. Existing names are not overwritten. The browser enrollment path still needs live-account verification; the CLI joint-enrollment flow has been tested by the user.
+</details>
 
-- **Manual entry**: Add Account → enter the name and paste the **case-sensitive Base64 `shared_secret`** from your `.maFile`. Steam is detected automatically. Standard Base32 remains ordinary TOTP; QR and file metadata determine their account type.
-- **Import**: Settings → Import accepts one or more unencrypted `.maFile` / JSON files. Only `account_name` and `shared_secret` are imported; Session, login tokens, `identity_secret` and recovery codes are discarded.
-- Steam uses **5 alphanumeric characters refreshed every 30 seconds**, with copy and single-field/five-box autofill support. Generation uses the system clock, so keep it accurate.
-- Steam type survives plain/encrypted backups and QR export (`encoder=steam`). The receiving app must support Steam; update this extension on other synced devices to recognize the new account type.
+<details>
+<summary><strong>Steam Guard enrollment and local helper</strong></summary>
 
-Code generation stays offline; online enrollment connects only to Steam APIs. Trade confirmations are not included. Steam login QR codes are not shared-secret export QR codes.
+Add an existing secret manually or import a `.maFile`. Login sessions, tokens, `identity_secret`, and recovery codes are not imported as account data. Codes are generated locally. Exported QR codes include a Steam type marker, which the receiving application must also support.
 
-An experimental [local Steam linking helper](tools/steam-link/README.md) is available to investigate joint enrollment with the iPhone app. It is separate from the extension, can keep the login session while the owner prepares enrollment and requests another status check, and never revokes an active authenticator. Live account enrollment still requires owner verification.
+Settings → Set up Steam Guard opens a dedicated page for passphrase login, email or mobile verification, status checks, key initialization, phone-code verification, and saving. It requests Steam API access when needed, without granting webpage filling access. It does not automatically revoke or transfer an existing authenticator. Steam QR login and trade confirmations are not supported.
 
-### Migrate from Google Authenticator and other apps
+Pending enrollment keys are encrypted locally, and a recovery checkpoint can be downloaded. After restarting the browser, sign in again and unlock the checkpoint. Keys must be verified before they can be saved to the vault or exported as an importable encrypted backup. Browser enrollment still needs live-account verification; simulated tests do not establish that online enrollment works.
 
-1. Use Google Authenticator's transfer/export accounts feature to obtain export QR images.
-2. Open **Settings → Import** and choose one or more QR images, paste an image, or drop files. The Add Account QR input also accepts migration images.
-3. If an export contains several QR codes, add every image from that export. The preview tracks progress and ignores repeated scans; import becomes available once all parts are present.
-4. Review and select accounts, then confirm. Accounts with existing names are skipped, never overwritten. Closing the dialog clears unsaved preview data.
+The repository also includes a separate experimental [local Steam linking helper](tools/steam-link/README.md) (Chinese) for testing enrollment shared with the official mobile app. It is not included in the extension package.
 
-Supported inputs: standard `otpauth://totp/` links and QR codes, Google `otpauth-migration://offline?data=…`, TXT with one link per line (blank lines and `#` comments ignored), JSON arrays exported by [extract_otp_secrets](https://github.com/scito/extract_otp_secrets), and this extension's plain/encrypted JSON backups. Links or JSON can also be pasted into the import dialog. Only encrypted backups request a backup password.
+</details>
 
-Standard accounts support **SHA1, 6-digit, 30-second TOTP**; explicitly marked Steam accounts use five-character Steam Guard codes. HOTP, other algorithms/digits/periods, unknown enum values and damaged entries are skipped with a reason. Embedded JSON `url` parameters are also checked; parameters already discarded by another tool cannot be recovered from a secret. Other authenticator apps must supply standard otpauth data. Proprietary backups other than Steam .maFile, CSV, camera scanning and multiple independent QR symbols in one image are not supported.
+## Password protection and sync
 
-Parsing is local to the extension; QR images, links and secrets are never uploaded for recognition. Imported accounts use the existing Chrome sync and optional password protection.
+Password protection is off by default. Without it, the extension does not encrypt account records before writing them to Chrome sync storage. Enable protection in settings with a master passphrase of at least 8 characters to encrypt account names, secrets, and websites.
 
----
+- **Locking**: Closing the popup does not lock accounts. Lock manually, or unlock again after a browser restart or extension reload. Unlock state stays in the local browser session.
+- **Password management**: Changing the passphrase or disabling protection requires the current passphrase. Disabling protection restores plaintext storage. Forgotten passphrases cannot be recovered; encrypted backups also require their corresponding passphrase.
+- **Device sync**: Devices need the same extension ID, Chrome account, and extension data sync enabled. Data stays local while offline or sync is disabled, and resumes syncing when connected with sync enabled.
+- **Sync boundaries**: A successful local save does not confirm delivery to another device. Offline devices may retain old copies. Simultaneous edits on several devices are not guaranteed to merge.
+- **Capacity**: All accounts share one sync record, subject to approximately 8 KB per item and 100 KB in total. Oversized writes fail rather than truncating accounts. See the [Chrome Storage documentation](https://developer.chrome.com/docs/extensions/reference/api/storage#sync).
 
-## 💡 Why Choose This
+QR codes and backups contain secrets that can restore verification codes. Store them carefully. See [passphrase protection and Chrome sync](docs/PASSWORD_PROTECTION.md) (Chinese) for implementation details and limitations.
 
-| Feature | This Extension | Description |
-|---------|----------------|-------------|
-| 🎨 UI Design | shadcn/ui + Radix UI | Modern component library |
-| 🌍 Languages | 12 languages | Multilingual support |
-| 📷 QR Code | Upload/Paste/Drag | Multiple methods |
-| 🚀 Development | Bun + file watching | Rebuild on changes |
-| 📦 Tech Stack | React 19 + TypeScript | Latest technology |
-| 📝 Type Safety | 100% TypeScript | Compile-time checks |
-| 🔧 Extensibility | Automated architecture | Easy to add languages |
+<details>
+<summary><strong>What permissions does MFA use?</strong></summary>
 
----
+| Permission | Purpose |
+| --- | --- |
+| `storage` | Store accounts, settings, and local session state |
+| `activeTab` | Temporarily access the current webpage after the user opens the extension to fill a code |
+| `scripting` | Inject field detection and filling scripts into permitted pages |
+| `contextMenus` | Provide per-site menu enable/disable actions |
+| Optional HTTP / HTTPS host permissions | Per-site access for webpage menus; Steam enrollment separately requests Steam API access when needed |
 
-## 🛠️ Tech Stack
+Optional host permissions do not grant access to all websites at installation. Users can review and revoke site grants in settings.
 
-- **Frontend**: React 19 + TypeScript + Tailwind CSS
-- **UI Library**: shadcn/ui (based on Radix UI)
-- **Build Tool**: Bun + Tailwind CSS
-- **Core Libraries**: jsQR, lucide-react, sonner
-- **Standard**: Chrome Extension Manifest V3
+</details>
 
----
+## Development
 
-## 🌍 Internationalization
+Built with **React 19 · TypeScript · Bun · Tailwind CSS · shadcn/ui**, using **Manifest V3**. Start here to build, test, or contribute.
 
-### Supported Languages (12)
+<details>
+<summary><strong>Requirements and commands</strong></summary>
 
-<div align="center">
+Building the extension requires Bun 1.2+. Full checks and the local Steam helper also require Node.js 22+ and npm, matching the CI environment. Run the following commands from the repository root:
 
-| Region | Language | Code |
-|--------|----------|------|
-| 🇨🇳 | 中文（简体） | zh-CN |
-| 🇹🇼 | 中文（繁體） | zh-TW |
-| 🇺🇸 | English | en-US |
-| 🇪🇸 | Español | es-ES |
-| 🇫🇷 | Français | fr-FR |
-| 🇧🇷 | Português | pt-BR |
-| 🇩🇪 | Deutsch | de-DE |
-| 🇷🇺 | Русский | ru-RU |
-| 🇸🇦 | العربية | ar-SA |
-| 🇯🇵 | 日本語 | ja-JP |
-| 🇰🇷 | 한국어 | ko-KR |
-| 🇮🇳 | हिन्दी | hi-IN |
+| Command | Purpose |
+| --- | --- |
+| `bun install` | Install extension and test dependencies |
+| `bun run dev` | Watch source, public assets, and build configuration; rebuild on changes |
+| `bun run build` | Produce the extension in `dist/` |
+| `bun run type-check` | Check TypeScript; build first on a fresh checkout to generate the version module |
+| `bun run test:unit` | Run unit and component tests |
+| `bun run test:e2e` | Build and run Playwright browser tests |
+| `bun run steam:link:test` | Run local Steam helper tests |
+| `bun run steam:link:check` | Type-check the local Steam helper |
+| `bun run test` | Run unit, Steam helper, and browser tests in sequence |
+| `bun run generate-icons` | Generate extension icons using Canvas |
 
-</div>
+`bun run dev` batches changes and rebuilds serially, continuing after failures. Reload the extension manually in Chrome after a rebuild.
 
-### Features
+</details>
 
-- ✅ **Auto-Detection** - Automatically switch based on browser language
-- ✅ **Manual Switch** - Choose any language in settings
-- ✅ **Complete Translation** - 100% UI text translated
-- ✅ **Type Safety** - TypeScript compile-time checks
-
-### Add New Language
-
-Main UI languages are loaded through a registry:
-
-1. **Create translation file** `src/locales/xx-XX.ts`
-2. **Register language** Add configuration in `src/locales/index.ts`
-
-See: [Add New Language Guide](docs/ADD_NEW_LANGUAGE.md)
-
-The language picker is generated from the registry. Security strings, inline-menu copy, and store metadata still need separate updates.
-
----
-
-## 🔧 Development
-
-### Requirements
-- Bun 1.2+
-- Chrome 102+
-
-### Commands
+<details>
+<summary><strong>Run all checks</strong></summary>
 
 ```bash
-bun install              # Install dependencies
-bun run dev              # Watch source, public assets, and build configuration
-bun run build            # Production build
-bun run type-check       # Type checking
-bun run test             # Automated tests
-bun run generate-icons   # Generate icons
+bun install
+npm ci --prefix tools/steam-link --ignore-scripts --no-audit --no-fund
+bunx playwright install chromium
+bun run build
+bun run type-check
+bun run steam:link:check
+bun run test
 ```
 
-### Project Structure
+On Linux, use `bunx playwright install --with-deps chromium` to install browser system dependencies. Browser tests use synthetic accounts and isolated temporary profiles. They do not read your everyday Chrome accounts or verify live Chrome sync or Steam enrollment.
 
-```
+[CI](.github/workflows/regression.yml) runs on pull requests and pushes to `master` / `main`. Failed browser runs save screenshots and traces under `output/playwright/results/`; CI uploads these diagnostics. See the [browser regression guide](tests/browser/README.md) for the manual DOM test entry point.
+
+</details>
+
+<details>
+<summary><strong>Architecture and website build</strong></summary>
+
+```text
 src/
-├── components/          # React components
-├── contexts/           # React Context (I18n)
-├── hooks/              # Custom Hooks
-├── locales/            # Translation files
-│   ├── index.ts       # Language registry (add new languages here)
-│   ├── zh-CN.ts       # Simplified Chinese
-│   ├── en-US.ts       # English
-│   └── ...            # Other languages
-├── utils/              # Utility functions
-└── types/              # TypeScript types
+├── popup/               # Extension popup entry point
+├── components/          # Accounts, settings, import, and protection UI
+├── contexts/            # Language and theme contexts
+├── hooks/               # Account, code, and settings state
+├── locales/             # Main UI and feature-specific translations
+├── utils/               # TOTP, QR, import, vault, and webpage filling
+├── steam-link/          # In-extension Steam enrollment page and backend
+├── types/               # TypeScript types
+├── background.ts        # Service worker entry point
+├── vault-background.ts  # Vault messages and sender checks
+└── content-script.ts    # Webpage field detection, menus, and filling
+public/                  # Manifest, icons, and static assets
+scripts/                 # Development file watcher
+tests/                   # Unit, component, DOM, and extension browser tests
+tools/steam-link/        # Standalone local Steam helper
+website/                 # Project website
+docs/                    # Guides, compatibility reviews, and release records
+build.ts                 # Bun build and version synchronization
 ```
 
-### Add New Language
+The background `VaultService` owns account operations, and the popup calls it through messages. Webpage scripts receive authorized account summaries and codes, not secrets. The frontend uses React 19, TypeScript 5.9, Tailwind CSS 3.4, shadcn/ui, and Radix UI. jsQR reads QR codes, qrcode generates them, and dnd-kit handles sorting.
 
-Detailed guide: [docs/ADD_NEW_LANGUAGE.md](docs/ADD_NEW_LANGUAGE.md)
+`package.json` is the version source. The build generates `src/version.ts` and updates the output Manifest. Do not edit generated files manually. Build the website separately:
 
-**Quick Steps**:
-1. Create `src/locales/xx-XX.ts` translation file
-2. Register in `src/locales/index.ts` (7 lines of config)
-3. Run `bun run build`
+```bash
+npm ci --prefix website
+npm --prefix website run build
+```
 
-Also update `src/locales/security.ts`, inline-menu strings, and store name/description mappings in `build.ts`.
+The website build synchronizes the extension version from the root `package.json`.
 
-`bun run dev` batches file changes and rebuilds serially, continuing after build failures. Generated `src/version.ts` and `dist/` do not cause rebuild loops. Reload the extension in Chrome after rebuilding.
-
-The background `VaultService` owns account operations. The popup communicates through messages; authorized content scripts receive account summaries and codes, not secrets.
-
-The official site lives in `website/`: run `npm install`, then `npm run build`. Use `npm run deploy` from an authenticated Cloudflare environment to publish. Its version is synced from the root `package.json`.
-
-### Permissions
-- `storage` - Local/sync storage
-- `activeTab` - Auto-fill
-- `scripting` - Page script injection
-- `contextMenus` - Site access context menu
-- Optional `http://*/*` / `https://*/*` host permissions - User-granted access per site for inline filling
-
----
-
-## ❓ FAQ
-
-<details>
-<summary><strong>How to backup data?</strong></summary>
-
-With password protection enabled, JSON exports are encrypted by default; plain export requires the current password. Without protection, exports contain plaintext secrets. Encrypted backups require the password used when exported.
 </details>
 
 <details>
-<summary><strong>Verification code inaccurate?</strong></summary>
+<summary><strong>Internationalization</strong></summary>
 
-Check if system time is accurate (TOTP is time-based).
+The main interface detects the browser language and also allows manual selection:
+
+| Language | Code | Language | Code |
+| --- | --- | --- | --- |
+| 简体中文 | `zh-CN` | Deutsch | `de-DE` |
+| 繁體中文 | `zh-TW` | Русский | `ru-RU` |
+| English | `en-US` | العربية | `ar-SA` |
+| Español | `es-ES` | 日本語 | `ja-JP` |
+| Français | `fr-FR` | 한국어 | `ko-KR` |
+| Português | `pt-BR` | हिन्दी | `hi-IN` |
+
+To add a language, create `src/locales/xx-XX.ts`, register it in `src/locales/index.ts`, and update security, import, Steam, inline-menu, and store metadata strings. The Steam enrollment wizard currently provides Chinese and English, with English fallback for other languages. See the [language guide](docs/ADD_NEW_LANGUAGE.md) (Chinese).
+
+</details>
+
+## FAQ
+
+<details>
+<summary><strong>Why is a code incorrect?</strong></summary>
+
+Check the computer clock, account type, secret encoding, and the service's required algorithm, digit count, and period. Standard TOTP and Steam Guard use different output encodings.
+
 </details>
 
 <details>
-<summary><strong>Auto-fill failed?</strong></summary>
+<summary><strong>Why does filling fail?</strong></summary>
 
-Some websites use unusual input fields. Enable clipboard fallback to copy when filling fails. The inline menu requires site access permission.
+Chrome may restrict the page, or the input may not be recognized. Enable clipboard fallback and paste manually. The webpage account menu requires both site permission and its global setting to be enabled.
+
 </details>
 
 <details>
-<summary><strong>Does data sync with Google account?</strong></summary>
+<summary><strong>Why are accounts missing on another device?</strong></summary>
 
-The extension uses `chrome.storage.sync`. Both devices need the same extension ID and Chrome account, with extension data sync enabled. Data stays local while offline or sync is disabled, and resumes syncing when connected with sync enabled.
+Check the extension ID, Chrome account, and extension data sync settings on both devices, then allow time for sync. After receiving encrypted records, unlock them with the same master passphrase.
 
-- Different extension IDs have separate data. Use the same manifest public key to keep a consistent development ID across different loading paths.
-- Without extension password protection, account records are not encrypted by the extension.
-- All accounts share one record, limited to about 8 KB; total sync capacity is about 100 KB. Oversized writes report an error rather than truncating accounts.
-- Sync can be delayed. A successful local save does not confirm delivery to other devices.
 </details>
 
----
+## Documentation and contributing
 
-## 🤝 Contributing
+- [Password protection and sync](docs/PASSWORD_PROTECTION.md) (Chinese)
+- [Site access and webpage menus](docs/SITE_ACCESS.md) (Chinese)
+- [Local Steam linking helper](tools/steam-link/README.md) (Chinese)
+- [Store feature compatibility review](docs/STORE-FEATURE-COVERAGE-20261102.md) (Chinese)
+- [2.3.9 release and upgrade verification](docs/RELEASE-2.3.9.md) (Chinese)
+- [GitHub Releases](https://github.com/titxue/mfa/releases)
 
-Issues and Pull Requests welcome!
-
-**Development Guidelines**
-- Use TypeScript for type safety
-- Follow React Hooks best practices
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
-- Don't commit console.log
-
-**Contribution Types**
-
-1. **Translation** - Help add new languages or improve existing translations
-   - See [Add New Language Guide](docs/ADD_NEW_LANGUAGE.md)
-   - Include security strings, inline-menu copy, and store metadata.
-
-2. **Feature Development** - Add new features or improve existing ones
-   - Create Issue for discussion first
-   - Ensure TypeScript type checks and builds pass
-
-3. **Bug Fixes** - [Report Bug](https://github.com/titxue/mfa/issues/new)
-   - Provide description, reproduction steps, browser version
-
-4. **Documentation** - Improve docs, fix errors, add examples
+Use [Issues](https://github.com/titxue/mfa/issues) for bugs and suggestions, or submit a [Pull Request](https://github.com/titxue/mfa/pulls). Include reproduction steps, browser version, and extension version in bug reports. Do not submit real account secrets, QR codes, or backups. Code changes should pass relevant tests, type checks, and builds, with both README versions kept in sync.
 
 ---
 
-## 📋 Changelog
-
-### v2.2.0
-
-- Master password protection, encrypted account storage, manual locking, and encrypted backups.
-- Per-site access and inline verification-code menus.
-- Account count previews for plain backups; decrypt and preview encrypted backups before confirming import.
-- Unsupported TOTP parameters are rejected instead of silently generating incorrect codes.
-- Failed settings writes restore prior values and show errors; development mode now watches files.
-- Updated the bilingual website and setup guides.
-
-### v2.1.0 (2026-01-29)
-- ✨ **Major i18n Update** - Expanded from 2 to 12 languages
-  - Added: Traditional Chinese, Spanish, French, Portuguese, German, Russian, Arabic, Japanese, Korean, Hindi
-  - Auto-detect browser language and switch
-  - Support regional variants (e.g., es-MX, fr-CA, pt-PT)
-- 🏗️ **Language Architecture Optimization** - Automated language registration
-  - Adding new language reduced from 5 files to 2 files
-  - Auto-generated types, auto-updated UI
-  - Single source of truth, eliminated code duplication
-  - See [Architecture Docs](docs/LANGUAGE_ARCHITECTURE.md)
-
-### v2.0.5 (2026-01-07)
-- ✨ Added QR code export - Double-click account card to generate/download QR code
-- ✨ Improved paste/drag upload - Support paste images and otpauth:// URI text
-- 🐛 Fixed drag-sort breaking click-copy
-- ⚡️ Optimized drag activation threshold (5px movement) to avoid accidental triggers
-
-### v2.0.1 (2025-12-21)
-- 🐛 Fixed QR code parsing errors
-- ✨ Unified version management
-- ✨ Added icon generation system
-- 🎨 Improved settings page UI
-- 🧹 Cleaned Git repo and log statements
-- 📝 Enhanced documentation
-
-### v2.0.0 (2025-12)
-- ✨ New architecture: React 19 + TypeScript + Bun
-- ✨ QR code scanning
-- ✨ shadcn/ui design system
-- ✨ Manifest V3 standard
-- ⚡️ Build speed < 400ms
-
----
-
-## 📄 License
-
-MIT License
-
----
-
-<div align="center">
-
-**⭐ If this project helps you, please give it a Star!**
-
-[Report Bug](https://github.com/titxue/mfa/issues) • [Feature Request](https://github.com/titxue/mfa/issues) • [Contribute](https://github.com/titxue/mfa/pulls)
-
-Made with ❤️ by [titxue](https://github.com/titxue)
-
-</div>
+<p align="center">
+  <a href="https://opensource.org/licenses/MIT">MIT License</a> &nbsp;·&nbsp;
+  <a href="https://github.com/titxue/mfa/issues">Report an issue</a> &nbsp;·&nbsp;
+  <a href="https://github.com/titxue/mfa/releases">Release history</a>
+</p>

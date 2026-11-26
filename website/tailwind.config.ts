@@ -8,6 +8,7 @@ export default {
         ink: '#132238',
         cloud: '#f6f8fb',
         mint: '#1f9d8a',
+        'mint-ink': '#0f766e',
         saffron: '#f4b23c',
       },
       boxShadow: {

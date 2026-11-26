@@ -180,6 +180,7 @@ if (!(globalThis as typeof window).__MFA_CS_INITIALIZED__) {
     const menuAccounts: MenuAccount[] = accounts.map((a) => ({
       name: a.name,
       website: a.website,
+      period: a.period,
     }))
     // 自动识别当前网站：过滤出匹配的账户
     const matches = matchAccountsForSite(menuAccounts, window.location.hostname)

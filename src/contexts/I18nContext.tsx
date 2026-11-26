@@ -32,7 +32,7 @@ function formatMessage(
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Language>('zh-CN')
+  const [locale, setLocaleState] = useState<Language>(detectSystemLanguage)
   const hasUserChangedLocaleRef = useRef(false)
 
   useEffect(() => {

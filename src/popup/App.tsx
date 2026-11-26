@@ -12,13 +12,16 @@ import { UnlockScreen } from '@/components/PasswordProtection'
 import { vaultRequest } from '@/utils/vault-client'
 import { useI18n } from '@/contexts/I18nContext'
 import { securityError } from '@/locales/security'
+import { legacyStrings } from '@/locales/legacy-vault'
 import { toast } from 'sonner'
+import { SyncRecovery } from '@/components/SyncRecovery'
 
 /**
  * 主应用组件
  */
 export function App() {
   const state = useAccounts()
+  if (!state.loading && state.syncState) return <SyncRecovery key={state.revision} reload={state.reload} />
   if (state.loading || state.locked) return <UnlockScreen loading={state.loading} error={state.error} reload={state.reload} />
   return <UnlockedApp state={state} />
 }
@@ -26,7 +29,7 @@ export function App() {
 function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
   const { accounts, addAccount, deleteAccount, updateAccounts, updateAccount } = state
   const { locale } = useI18n()
-  const { codes, remaining } = useTOTP(accounts)
+  const { codes, remaining, remainings } = useTOTP(accounts)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
@@ -35,7 +38,6 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
   useEffect(() => {
     setShowEditModal(false)
     setEditingAccount(null)
-    setShowAddModal(false)
   }, [state.revision])
 
   const handleEditAccount = (accountName: string) => {
@@ -58,6 +60,8 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
         } : undefined}
       />
 
+      {state.storageMode === 'legacy' && <p className="px-4 py-2 text-xs text-muted-foreground">{legacyStrings(locale).notice}</p>}
+
       {state.error && <p role="alert" className="px-4 text-xs text-destructive">{securityError(locale, state.error)}</p>}
 
       <div className="flex-1">
@@ -66,6 +70,7 @@ function UnlockedApp({ state }: { state: ReturnType<typeof useAccounts> }) {
           accounts={accounts}
           codes={codes}
           remaining={remaining}
+          remainings={remainings}
           onDeleteAccount={deleteAccount}
           onEditAccount={handleEditAccount}
           onReorder={updateAccounts}

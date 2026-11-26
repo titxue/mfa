@@ -1,7 +1,7 @@
 
-/**
- * 自动填充设置
- */
+export type ThemePreference = 'light' | 'dark' | 'system'
+
+/** 自动填充设置 */
 export interface AutofillSettings {
   /** 聚焦 OTP 输入框时显示页面内联菜单（1Password 风格） */
   autofillInlineMenu: boolean
@@ -71,9 +71,8 @@ export class StorageManager {
   /**
    * 获取语言设置
    */
-  static async getLanguage(): Promise<string> {
-    const language = await this.getFromStorage<string>('language')
-    return language || 'zh-CN'
+  static async getLanguage(): Promise<string | undefined> {
+    return this.getFromStorage<string>('language')
   }
 
   /**
@@ -81,6 +80,15 @@ export class StorageManager {
    */
   static async saveLanguage(language: string): Promise<void> {
     await this.saveToStorage('language', language)
+  }
+
+  static async getTheme(): Promise<ThemePreference> {
+    const theme = await this.getFromStorage<string>('theme', 'local')
+    return theme === 'light' || theme === 'dark' ? theme : 'system'
+  }
+
+  static async saveTheme(theme: ThemePreference): Promise<void> {
+    await this.saveToStorage('theme', theme, 'local')
   }
 
   /**

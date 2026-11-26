@@ -8,7 +8,16 @@ test('accepts defaults and explicit supported TOTP parameters', () => {
     expect(parseOTPURI(uri + suffix).accounts).toEqual(expected)
   }
 })
-for (const parameter of ['algorithm=SHA256', 'algorithm=SHA512', 'digits=8', 'period=60', 'period=0', 'period=abc', 'algorithm=', 'digits=', 'period=']) {
+test('accepts SHA-256/SHA-512, 8 digits and 60-second periods', () => {
+  const secret = 'JBSWY3DPEHPK3PXP'
+  expect(parseOTPURI(`${uri}&algorithm=SHA256`).accounts).toEqual([{ name: 'Example alice', secret, algorithm: 'SHA256' }])
+  expect(parseOTPURI(`${uri}&algorithm=sha512`).accounts).toEqual([{ name: 'Example alice', secret, algorithm: 'SHA512' }])
+  expect(parseOTPURI(`${uri}&digits=8`).accounts).toEqual([{ name: 'Example alice', secret, digits: 8 }])
+  expect(parseOTPURI(`${uri}&period=60`).accounts).toEqual([{ name: 'Example alice', secret, period: 60 }])
+  expect(parseOTPURI(`${uri}&algorithm=SHA512&digits=8&period=60`).accounts)
+    .toEqual([{ name: 'Example alice', secret, algorithm: 'SHA512', digits: 8, period: 60 }])
+})
+for (const parameter of ['algorithm=MD5', 'algorithm=SHA999', 'digits=0', 'digits=7', 'period=0', 'period=abc', 'algorithm=', 'digits=', 'period=']) {
   test(`rejects unsupported parameters: ${parameter}`, () => {
     const result = parseOTPURI(uri + '&' + parameter)
     expect(result.accounts).toEqual([])

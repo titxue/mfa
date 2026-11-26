@@ -1,6 +1,6 @@
 import type { Account } from '@/types'
 import { vault, type VaultSnapshot } from './vault'
-export type VaultAction = 'snapshot' | 'save' | 'unlock' | 'lock' | 'enable' | 'change' | 'disable' | 'backup' | 'summaries' | 'code'
+export type VaultAction = 'snapshot' | 'save' | 'unlock' | 'lock' | 'enable' | 'change' | 'disable' | 'backup' | 'summaries' | 'code' | 'recoveries' | 'recoveryBackup' | 'migrate' | 'resolve'
 export type AccountSummary = Omit<Account, 'secret'>
 export interface VaultRequest {
   type: 'MFA_VAULT'
@@ -11,6 +11,7 @@ export interface VaultRequest {
   nextPassword?: string
   plain?: boolean
   name?: string
+  candidateId?: string
 }
 export async function vaultRequest<T = VaultSnapshot>(action: VaultAction, data: Omit<Partial<VaultRequest>, 'type' | 'action'> = {}): Promise<T> {
   if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
@@ -26,6 +27,10 @@ export async function vaultRequest<T = VaultSnapshot>(action: VaultAction, data:
       case 'enable': case 'change': case 'disable':
         await vault.protect(action, data.password ?? '', data.nextPassword ?? '', data.revision!); break
       case 'backup': return await vault.backup(!!data.plain, data.password ?? '') as T
+      case 'recoveries': return await vault.recoveryState() as T
+      case 'recoveryBackup': return await vault.recoveryBackup(data.candidateId) as T
+      case 'migrate': await vault.migrate(data.revision!); break
+      case 'resolve': await vault.resolve(data.candidateId!, data.revision!, data.password ?? ''); break
       case 'snapshot': break
       default: throw new Error('invalid')
     }

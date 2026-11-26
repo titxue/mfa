@@ -32,4 +32,3 @@ export async function openCheckpoint(encrypted: string, key: CryptoKey): Promise
     return result
   } catch { throw new LinkError('checkpointPassword') }
 }
-

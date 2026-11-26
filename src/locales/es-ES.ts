@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const esES: Translations = {
+  'qr.show_button': 'Mostrar código QR',
+  'settings.appearance': 'Apariencia',
+  'settings.theme.light': 'Claro',
+  'settings.theme.dark': 'Oscuro',
+  'settings.theme.system': 'Sistema',
   // Título de página y botones
   'title': 'Generador TOTP',
   'addAccount': 'Agregar cuenta',
@@ -18,6 +23,15 @@ export const esES: Translations = {
   'form.title_edit': 'Editar cuenta',
   'form.title': 'Agregar cuenta',
   'form.accountName': 'Nombre de cuenta',
+  'form.codeType': 'Tipo de código',
+  'form.codeTypeTotp': 'TOTP estándar',
+  'form.algorithm': 'Algoritmo',
+  'form.digits': 'Dígitos',
+  'form.period': 'Periodo (segundos)',
+  'form.advancedSettings': 'Ajustes avanzados',
+  'form.advancedHint': 'Cambia los ajustes del código solo si tu proveedor lo requiere.',
+  'form.customSettings': 'Personalizado',
+  'form.steamSecretDesc': 'Introduce la clave Base32 o shared_secret Base64 de Steam.',
   'form.secretKey': 'Clave secreta',
   'form.accountInfo': 'Información de cuenta',
   'form.accountNameDesc': 'Establece un nombre fácilmente reconocible para esta cuenta',
@@ -28,7 +42,7 @@ export const esES: Translations = {
   'form.secretKeyPlaceholder': 'Introduce la clave en formato Base32',
   'form.scanQRCode': 'Escanear código QR',
   'form.scanQRCodeDesc': 'Sube una imagen que contenga un código QR TOTP',
-  'form.pasteQRCodeHint': 'o presiona Ctrl+V para pegar imagen/token',
+  'form.pasteQRCodeHint': 'Pega un código QR o un enlace, o arrastra una imagen.',
   'form.dropImageHere': 'Suelta para subir la imagen',
   'form.dropImageDesc': 'Arrastra y suelta aquí una imagen con código QR',
   'form.website': 'Sitio web',
@@ -42,6 +56,8 @@ export const esES: Translations = {
 
   // Configuración
   'settings.title': 'Configuración',
+  'settings.advancedHint': 'Recuperación de sincronización y ajustes adicionales',
+  'settings.recovery': 'Recuperación e historial de copias',
   'settings.accountManagement': 'Gestión de cuentas',
   'settings.language': 'Configuración de idioma',
   'settings.about': 'Acerca de la aplicación',
@@ -104,7 +120,7 @@ export const esES: Translations = {
   'toast.qr_scanning': 'Escaneando código QR...',
   'toast.qr_success': 'Código QR reconocido exitosamente',
   'toast.qr_no_code': 'No se encontró código QR, por favor intenta nuevamente',
-  'toast.unsupported_totp': 'Configuración no compatible. Solo se admite SHA1, 6 dígitos y un período de 30 segundos.',
+  'toast.unsupported_totp': 'Configuración no compatible. Se admite SHA1 con 30 segundos: 6 dígitos o Steam Guard.',
   'toast.qr_invalid_format': 'Formato de código QR inválido',
   'toast.qr_parse_failed': 'Error al analizar el código QR',
   'toast.qr_invalid_file_type': 'Tipo de archivo no compatible, por favor sube un archivo de imagen',

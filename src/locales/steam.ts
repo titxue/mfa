@@ -41,4 +41,21 @@ const autoHints: Record<Language, string> = {
   'ko-KR': 'Base32 키 또는 Steam shared_secret(Base64)을 붙여넣으세요. 유형을 자동으로 감지합니다.',
   'hi-IN': 'Base32 कुंजी या Steam shared_secret (Base64) पेस्ट करें। प्रकार अपने आप पहचाना जाता है।',
 }
-export function steamStrings(locale: Language) { return { ...(messages[locale] ?? en), autoHint: autoHints[locale] ?? autoHints['en-US'] } }
+const encodingLabels: Record<Language, [string, string]> = {
+  'zh-CN': ['密钥格式', '请选择密钥格式'],
+  'zh-TW': ['金鑰格式', '請選擇金鑰格式'],
+  'en-US': ['Secret format', 'Choose a secret format'],
+  'es-ES': ['Formato de la clave', 'Elige el formato de la clave'],
+  'fr-FR': ['Format de la clé', 'Choisissez le format de la clé'],
+  'pt-BR': ['Formato da chave', 'Escolha o formato da chave'],
+  'de-DE': ['Schlüsselformat', 'Schlüsselformat auswählen'],
+  'ru-RU': ['Формат ключа', 'Выберите формат ключа'],
+  'ar-SA': ['تنسيق المفتاح', 'اختر تنسيق المفتاح'],
+  'ja-JP': ['キーの形式', 'キーの形式を選択してください'],
+  'ko-KR': ['키 형식', '키 형식을 선택하세요'],
+  'hi-IN': ['कुंजी का प्रारूप', 'कुंजी का प्रारूप चुनें'],
+}
+export function steamStrings(locale: Language) {
+  const [encoding, chooseEncoding] = encodingLabels[locale] ?? encodingLabels['en-US']
+  return { ...(messages[locale] ?? en), autoHint: autoHints[locale] ?? autoHints['en-US'], encoding, chooseEncoding }
+}

@@ -11,7 +11,7 @@ import { Loader2, Download } from 'lucide-react'
 import { useI18n } from '@/contexts/I18nContext'
 import { toast } from 'sonner'
 import { generateOtpauthURI, generateQRDataURL, downloadQRCodeImage } from '@/utils/qr-generator'
-import type { Account } from '@/types'
+import type { Account, TOTPAlgorithm } from '@/types'
 
 interface QRCodeModalProps {
   open: boolean
@@ -19,6 +19,9 @@ interface QRCodeModalProps {
   accountName: string
   accountSecret: string
   accountType?: Account['type']
+  accountAlgorithm?: TOTPAlgorithm
+  accountDigits?: 6 | 8
+  accountPeriod?: number
 }
 
 /**
@@ -29,7 +32,10 @@ export function QRCodeModal({
   onOpenChange,
   accountName,
   accountSecret,
-  accountType
+  accountType,
+  accountAlgorithm,
+  accountDigits,
+  accountPeriod
 }: QRCodeModalProps) {
   const { t } = useI18n()
   const [qrDataURL, setQrDataURL] = useState<string>('')
@@ -44,7 +50,11 @@ export function QRCodeModal({
       setQrDataURL('')
 
       try {
-        const uri = generateOtpauthURI(accountName, accountSecret, accountType)
+        const uri = generateOtpauthURI(accountName, accountSecret, accountType, {
+          algorithm: accountAlgorithm,
+          digits: accountDigits,
+          period: accountPeriod
+        })
         const dataURL = await generateQRDataURL(uri)
         setQrDataURL(dataURL)
       } catch (error) {
@@ -56,7 +66,7 @@ export function QRCodeModal({
     }
 
     generateQR()
-  }, [open, accountName, accountSecret, accountType, t])
+  }, [open, accountName, accountSecret, accountType, accountAlgorithm, accountDigits, accountPeriod, t])
 
   // 下载二维码
   const handleDownload = () => {

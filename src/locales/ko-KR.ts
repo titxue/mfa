@@ -1,6 +1,11 @@
 import type { Translations } from './zh-CN'
 
 export const koKR: Translations = {
+  'qr.show_button': 'QR 코드 표시',
+  'settings.appearance': '화면 모드',
+  'settings.theme.light': '라이트',
+  'settings.theme.dark': '다크',
+  'settings.theme.system': '시스템',
   // 페이지 제목 및 버튼
   'title': 'TOTP 생성기',
   'addAccount': '계정 추가',
@@ -18,6 +23,15 @@ export const koKR: Translations = {
   'form.title_edit': '계정 편집',
   'form.title': '계정 추가',
   'form.accountName': '계정 이름',
+  'form.codeType': '코드 유형',
+  'form.codeTypeTotp': '표준 인증 코드',
+  'form.algorithm': '알고리즘',
+  'form.digits': '자릿수',
+  'form.period': '주기 (초)',
+  'form.advancedSettings': '고급 설정',
+  'form.advancedHint': '서비스 제공업체에서 요구하는 경우에만 인증 코드 설정을 변경하세요.',
+  'form.customSettings': '사용자 지정됨',
+  'form.steamSecretDesc': 'Steam Base32 키 또는 Base64 shared_secret을 입력하세요.',
   'form.secretKey': '비밀 키',
   'form.accountInfo': '계정 정보',
   'form.accountNameDesc': '이 계정에 대해 쉽게 식별할 수 있는 이름을 설정하세요',
@@ -28,7 +42,7 @@ export const koKR: Translations = {
   'form.secretKeyPlaceholder': 'Base32 형식의 키를 입력하세요',
   'form.scanQRCode': 'QR 코드 스캔',
   'form.scanQRCodeDesc': 'TOTP QR 코드가 포함된 이미지를 업로드하세요',
-  'form.pasteQRCodeHint': '또는 Ctrl+V를 눌러 이미지/토큰을 붙여넣기',
+  'form.pasteQRCodeHint': 'QR 코드나 링크를 붙여넣거나 이미지를 끌어다 놓으세요.',
   'form.dropImageHere': '놓아서 이미지 업로드',
   'form.dropImageDesc': 'QR 코드가 포함된 이미지를 여기에 드래그 앤 드롭하세요',
   'form.website': '웹사이트',
@@ -42,6 +56,8 @@ export const koKR: Translations = {
 
   // 설정
   'settings.title': '설정',
+  'settings.advancedHint': '동기화 복구 및 추가 설정',
+  'settings.recovery': '복구 및 백업 기록',
   'settings.accountManagement': '계정 관리',
   'settings.language': '언어 설정',
   'settings.about': '앱 정보',
@@ -104,7 +120,7 @@ export const koKR: Translations = {
   'toast.qr_scanning': 'QR 코드 스캔 중...',
   'toast.qr_success': 'QR 코드 인식 성공',
   'toast.qr_no_code': 'QR 코드를 찾을 수 없습니다. 다시 시도해주세요',
-  'toast.unsupported_totp': '지원하지 않는 설정입니다. SHA1, 6자리, 30초 주기만 지원합니다.',
+  'toast.unsupported_totp': '지원하지 않는 설정입니다. 30초 주기의 SHA1 6자리 코드와 Steam Guard를 지원합니다.',
   'toast.qr_invalid_format': '잘못된 QR 코드 형식입니다',
   'toast.qr_parse_failed': 'QR 코드 분석 실패',
   'toast.qr_invalid_file_type': '지원되지 않는 파일 형식입니다. 이미지 파일을 업로드해주세요',
