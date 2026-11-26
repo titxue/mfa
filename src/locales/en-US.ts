@@ -83,6 +83,8 @@ export const enUS: Translations = {
   'settings.import': 'Import',
   'settings.appName': 'TOTP Generator',
   'settings.appDescription': 'Secure two-factor authentication tool',
+  'settings.rateExtension': 'Rate this extension',
+  'settings.reviewConfirmed': 'I’ve rated this extension',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Usage Instructions',

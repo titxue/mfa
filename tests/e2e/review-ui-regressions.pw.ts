@@ -150,3 +150,35 @@ test('first use follows system English and a language reset still follows it aft
   await popup.reload(); await popup.getByRole('button', { name: 'Settings', exact: true }).click()
   await expect(popup.locator('#language')).toHaveValue('en-US')
 })
+
+test('review confirmation is manual, device-local and reversible', async ({ popup, worker }) => {
+  const settings = popup.getByRole('button', { name: '设置', exact: true })
+  const checkbox = popup.getByRole('checkbox', { name: '我已评价', exact: true })
+  const readConfirmation = () => worker.evaluate(async () =>
+    (await chrome.storage.local.get('reviewConfirmedByUser')).reviewConfirmedByUser)
+
+  await settings.click()
+  await expect(checkbox).toBeEnabled()
+  await expect(checkbox).not.toBeChecked()
+
+  const reviewLink = popup.getByRole('link', { name: '评价此扩展' })
+  // Exercise the click without navigating to the live store in the test profile.
+  await reviewLink.evaluate(link => link.addEventListener('click', event => event.preventDefault(), { once: true }))
+  await reviewLink.click()
+  expect(await readConfirmation()).toBeUndefined()
+  await expect(checkbox).not.toBeChecked()
+
+  await checkbox.check()
+  await expect.poll(readConfirmation).toBe(true)
+  expect(await worker.evaluate(() => chrome.storage.sync.get('reviewConfirmedByUser'))).toEqual({})
+  await popup.reload()
+  await settings.click()
+  await expect(checkbox).toBeChecked()
+
+  await checkbox.uncheck()
+  await expect.poll(readConfirmation).toBe(false)
+  await popup.reload()
+  await settings.click()
+  await expect(checkbox).toBeEnabled()
+  await expect(checkbox).not.toBeChecked()
+})

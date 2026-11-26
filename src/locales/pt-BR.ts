@@ -83,6 +83,8 @@ export const ptBR: Translations = {
   'settings.import': 'Importar',
   'settings.appName': 'Gerador TOTP',
   'settings.appDescription': 'Ferramenta segura de autenticação de dois fatores',
+  'settings.rateExtension': 'Avaliar esta extensão',
+  'settings.reviewConfirmed': 'Já avaliei esta extensão',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Instruções de uso',

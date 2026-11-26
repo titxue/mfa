@@ -83,6 +83,8 @@ export const zhTW: Translations = {
   'settings.import': '匯入',
   'settings.appName': 'TOTP 生成器',
   'settings.appDescription': '安全的雙重驗證碼生成工具',
+  'settings.rateExtension': '為這個擴充功能評分',
+  'settings.reviewConfirmed': '我已評分',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': '使用說明',

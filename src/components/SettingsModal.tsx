@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Github, Tag, ExternalLink, ChevronDown, Sun, Moon, Monitor } from 'lucide-react'
+import { Github, Star, Tag, ExternalLink, ChevronDown, Sun, Moon, Monitor } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useI18n } from '@/contexts/I18nContext'
 import { ImportExportManager } from '@/utils/import-export'
+import { StorageManager } from '@/utils/storage'
 import { VERSION } from '@/version'
 import type { Account, Language } from '@/types'
 import { toast } from 'sonner'
@@ -36,6 +37,47 @@ import { securityStrings, securityError } from '@/locales/security'
 import { vaultRequest } from '@/utils/vault-client'
 import { importStrings } from '@/locales/import'
 import { bindingStrings } from '@/steam-link/strings'
+
+function ReviewConfirmation() {
+  const { t, locale } = useI18n()
+  const [confirmed, setConfirmed] = React.useState<boolean | null>(null)
+  const [saving, setSaving] = React.useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    void StorageManager.getReviewConfirmation().then(value => {
+      if (mounted) setConfirmed(value)
+    })
+    return () => { mounted = false }
+  }, [])
+
+  async function changeConfirmation(next: boolean) {
+    const previous = confirmed
+    setConfirmed(next)
+    setSaving(true)
+    try {
+      await StorageManager.saveReviewConfirmation(next)
+    } catch (error) {
+      setConfirmed(previous)
+      toast.error(securityError(locale, error))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm">
+      <input
+        type="checkbox"
+        className="size-4 shrink-0 accent-primary disabled:cursor-not-allowed"
+        checked={confirmed === true}
+        disabled={confirmed === null || saving}
+        onChange={event => void changeConfirmation(event.currentTarget.checked)}
+      />
+      {t('settings.reviewConfirmed')}
+    </label>
+  )
+}
 
 interface SettingsModalProps {
   open: boolean
@@ -329,6 +371,20 @@ export function SettingsModal({
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-between" asChild>
+                    <a
+                      href="https://chromewebstore.google.com/detail/dhipejmoajhjflafhbibojfoeogbmjgf/reviews/my-review"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Star className="w-4 h-4" aria-hidden="true" />
+                        {t('settings.rateExtension')}
+                      </span>
+                      <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                    </a>
+                  </Button>
+                  <ReviewConfirmation />
                 </CardContent>
               </Card>
             </div>

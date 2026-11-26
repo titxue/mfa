@@ -83,6 +83,8 @@ export const deDE: Translations = {
   'settings.import': 'Importieren',
   'settings.appName': 'TOTP-Generator',
   'settings.appDescription': 'Sicheres Zwei-Faktor-Authentifizierungstool',
+  'settings.rateExtension': 'Diese Erweiterung bewerten',
+  'settings.reviewConfirmed': 'Ich habe diese Erweiterung bewertet',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Bedienungsanleitung',

@@ -83,6 +83,8 @@ export const esES: Translations = {
   'settings.import': 'Importar',
   'settings.appName': 'Generador TOTP',
   'settings.appDescription': 'Herramienta segura de autenticación de dos factores',
+  'settings.rateExtension': 'Valorar esta extensión',
+  'settings.reviewConfirmed': 'Ya he valorado esta extensión',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Instrucciones de uso',

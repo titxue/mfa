@@ -83,6 +83,8 @@ export const hiIN: Translations = {
   'settings.import': 'आयात करें',
   'settings.appName': 'TOTP जनरेटर',
   'settings.appDescription': 'सुरक्षित दो-कारक प्रमाणीकरण उपकरण',
+  'settings.rateExtension': 'इस एक्सटेंशन को रेट करें',
+  'settings.reviewConfirmed': 'मैंने इस एक्सटेंशन को रेट किया है',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'उपयोग निर्देश',

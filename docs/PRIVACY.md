@@ -12,6 +12,8 @@ The developer does not collect, receive or have access to your account names, au
 
 You provide account names, authentication secrets and optional website addresses. MFA stores these, your preferences and synchronization recovery records in browser storage. Code generation runs on your device. MFA does not send your account vault to a developer-operated server and includes no advertising or analytics service.
 
+If you mark the extension as reviewed in Settings, MFA saves your choice in this browser profile.
+
 When Chrome Sync is enabled, synchronized account records and preferences can be transmitted to and stored by Google through Chrome's synchronization service. Google's policies and your Chrome synchronization settings apply. This is off-device transmission, even though MFA has no account server of its own.
 
 Optional password protection encrypts the active account vault. Unlock keys and sessions stay local. Before successfully enabling or changing protection, MFA validates and re-encrypts the retained recovery copies observed and included in that operation. Disabling protection makes those validated copies plain. A copy that cannot be unlocked blocks the operation before writes begin. Interrupted operations may retain copies under their previous protection state until recovery is completed. Previously exported backups, system/browser backups and copies on offline devices are not remotely re-encrypted. Browser synchronization cannot provide atomic writes across all devices.

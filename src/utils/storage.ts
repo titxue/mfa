@@ -82,6 +82,14 @@ export class StorageManager {
     await this.saveToStorage('language', language)
   }
 
+  static async getReviewConfirmation(): Promise<boolean> {
+    return (await this.getFromStorage<boolean>('reviewConfirmedByUser', 'local')) === true
+  }
+
+  static async saveReviewConfirmation(confirmed: boolean): Promise<void> {
+    await this.saveToStorage('reviewConfirmedByUser', confirmed, 'local')
+  }
+
   static async getTheme(): Promise<ThemePreference> {
     const theme = await this.getFromStorage<string>('theme', 'local')
     return theme === 'light' || theme === 'dark' ? theme : 'system'

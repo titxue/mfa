@@ -83,6 +83,8 @@ export const arSA: Translations = {
   'settings.import': 'استيراد',
   'settings.appName': 'مولد TOTP',
   'settings.appDescription': 'أداة آمنة للمصادقة الثنائية',
+  'settings.rateExtension': 'تقييم هذه الإضافة',
+  'settings.reviewConfirmed': 'سبق أن قيّمت هذه الإضافة',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'تعليمات الاستخدام',

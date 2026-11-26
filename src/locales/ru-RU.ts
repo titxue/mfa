@@ -83,6 +83,8 @@ export const ruRU: Translations = {
   'settings.import': 'Импорт',
   'settings.appName': 'Генератор TOTP',
   'settings.appDescription': 'Безопасный инструмент двухфакторной аутентификации',
+  'settings.rateExtension': 'Оценить расширение',
+  'settings.reviewConfirmed': 'Я уже оценил(а) это расширение',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': 'Инструкция по использованию',

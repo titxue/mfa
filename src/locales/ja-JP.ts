@@ -83,6 +83,8 @@ export const jaJP: Translations = {
   'settings.import': 'インポート',
   'settings.appName': 'TOTPジェネレーター',
   'settings.appDescription': '安全な二要素認証ツール',
+  'settings.rateExtension': 'この拡張機能を評価する',
+  'settings.reviewConfirmed': 'この拡張機能は評価済みです',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': '使用方法',

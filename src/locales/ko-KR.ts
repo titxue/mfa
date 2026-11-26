@@ -83,6 +83,8 @@ export const koKR: Translations = {
   'settings.import': '가져오기',
   'settings.appName': 'TOTP 생성기',
   'settings.appDescription': '안전한 2단계 인증 도구',
+  'settings.rateExtension': '이 확장 프로그램 평가하기',
+  'settings.reviewConfirmed': '이 확장 프로그램을 평가했어요',
   'settings.appGithub': 'GitHub',
   'settings.appGithubUrl': 'https://github.com/titxue/mfa',
   'settings.usage': '사용 방법',
